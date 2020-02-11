@@ -90,3 +90,30 @@ Proof.
       destruct H0.
       discriminate H.
 Qed. 
+
+Inductive tree_pattern (O : Type) :=
+  | NTPatt
+  | IPatt : tree_pattern O -> O -> tree_pattern O -> tree_pattern O.
+
+Arguments NTPatt {_}.
+Arguments IPatt {_} _ _ _.
+
+Inductive matches {L O} : tree_pattern O -> parse_tree L O -> Prop :=
+  | NT_match pt :
+      matches NTPatt pt
+  | INode_match tp1 tp2 pt1 pt2 o :
+      matches tp1 pt1 ->
+      matches tp2 pt2 -> 
+      matches (IPatt tp1 o tp2) (INode pt1 o pt2).
+
+Inductive sub_matches {L O} : tree_pattern O -> parse_tree L O -> Prop :=
+  | Refl_match tp pt :
+      matches tp pt ->
+      sub_matches tp pt
+  | LSub_match tp pt1 o pt2 :
+      sub_matches tp pt1 ->
+      sub_matches tp (INode pt1 o pt2)
+  | RSub_match tp pt1 o pt2 :
+      sub_matches tp pt2 ->
+      sub_matches tp (INode pt1 o pt2).
+
