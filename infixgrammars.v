@@ -127,10 +127,10 @@ Definition dlanguage {L O} (g : dgrammar O) (w : word L O) : Prop :=
   exists pt,
     yield pt = w /\
     (
-      forall o1 o2, g.(dleft) o1 o2 ->
+      forall o1 o2,
+      g.(dleft) o1 o2 ->
       ~ sub_matches (IPatt NTPatt o1 (IPatt NTPatt o2 NTPatt)) pt
     ).
-
 
 
 Section dgrammar_theorems.
@@ -139,6 +139,16 @@ Implicit Types g : dgrammar O.
 Implicit Types pt : parse_tree L O.
 Implicit Types w : word L O.
 
+Lemma super_safety g pt w :
+  yield pt = w -> dlanguage g w.
+Admitted.
+
 Theorem safety g w :
   language w -> dlanguage g w.
-Admitted.
+Proof.
+  intros.
+  unfold language in H.
+  destruct H.
+  eapply super_safety.
+  eassumption.
+Qed.
