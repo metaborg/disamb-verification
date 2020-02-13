@@ -139,9 +139,76 @@ Implicit Types g : dgrammar O.
 Implicit Types pt : parse_tree L O.
 Implicit Types w : word L O.
 
+Lemma yield_infix_left pt1 pt1' pt2 o :
+  yield pt1 = yield pt1' ->
+  yield (INode pt1 o pt2) = yield (INode pt1' o pt2).
+Proof.
+  intros.
+  simpl.
+  rewrite H.
+  reflexivity.
+Qed.
+
+Lemma yield_eq_nested_infix pt1 pt2 pt3 o1 o2 :
+  yield (INode (INode pt1 o1 pt2) o2 pt3) = yield (INode pt1 o1 (INode pt2 o2 pt3)).
+Proof.
+  simpl.
+  rewrite <- app_assoc.
+  reflexivity.
+Qed.
+
 Lemma super_safety g pt w :
   yield pt = w -> dlanguage g w.
-Admitted.
+Proof.
+  unfold dlanguage.
+  revert w.
+  induction pt.
+
+  (* BASE CASE: Atomic parse trees are safe *)
+  - intros.
+    exists (ANode l).
+    split.
+    + assumption.
+    + intros.
+      intro N.
+      inv N.
+      inv H1.
+
+  (* INDUCTIVE CASE: Infix parse trees are safe given that their subtrees are safe *)
+  - intros.
+  
+    (* Transforming pt1 into x, which is left-associative *)
+    destruct IHpt1 with (w := yield pt1). reflexivity.
+    destruct H0.
+
+    destruct pt2.
+    (* Right tree is atomic: our tree should automatically be left-associative *)
+    + exists (INode x o0 (ANode l)).
+      split.
+      * eapply yield_infix_left in H0.
+        rewrite H0.
+        assumption.
+      * intros.
+        intro N.
+
+        (* We have to show that no subtree in pt has the form A[A o1 A[A o2 A]] *)
+        inv N.
+        ** inv H3.
+           inv H10.
+        ** destruct H1 with (o1 := o1) (o2 := o2); assumption.
+        ** inv H5.
+           inv H.
+
+
+    (* Right tree is infix: we can transform our tree such that it is left-associative *)
+    + exists (INode (INode x o0 pt2_1) o1 pt2_2).
+      split.
+        * rewrite yield_eq_nested_infix.
+          eapply yield_infix_left in H0.
+          rewrite H0.
+          assumption.
+        * admit.
+Admitted.     
 
 Theorem safety g w :
   language w -> dlanguage g w.
