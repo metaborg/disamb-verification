@@ -132,9 +132,13 @@ Definition dlanguage {L O} (g : dgrammar O) (w : word L O) : Prop :=
       ~ sub_matches (IPatt NTPatt o1 (IPatt NTPatt o2 NTPatt)) pt
     ).
 
+Definition valid_pt {L O} (g : dgrammar O) (pt : parse_tree L O) : Prop :=
+  forall o1 o2, g.(dleft) o1 o2 ->
+    ~ sub_matches (IPatt NTPatt o1 (IPatt NTPatt o2 NTPatt)) pt.
 
 Section dgrammar_theorems.
 Context {L O : Type}.
+Implicit Types l : L.
 Implicit Types g : dgrammar O.
 Implicit Types pt : parse_tree L O.
 Implicit Types w : word L O.
@@ -157,58 +161,55 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma super_safety g pt w :
-  yield pt = w -> dlanguage g w.
+Lemma safety_atomic_pt g l :
+  valid_pt g (ANode l).
 Proof.
-  unfold dlanguage.
-  revert w.
-  induction pt.
-
-  (* BASE CASE: Atomic parse trees are safe *)
-  - intros.
-    exists (ANode l).
-    split.
-    + assumption.
-    + intros.
-      intro N.
-      inv N.
-      inv H1.
-
-  (* INDUCTIVE CASE: Infix parse trees are safe given that their subtrees are safe *)
-  - intros.
+  unfold valid_pt.
+  intros.
+  intro N.
+  inv N.
+  inv H0.
+Qed.
   
-    (* Transforming pt1 into x, which is left-associative *)
-    destruct IHpt1 with (w := yield pt1). reflexivity.
-    destruct H0.
-
-    destruct pt2.
-    (* Right tree is atomic: our tree should automatically be left-associative *)
+Lemma safety_pt g pt :
+  exists pt', yield pt = yield pt' /\ valid_pt g pt'.
+Proof.
+  induction pt.
+  - exists (ANode l).
+    split.
+    + reflexivity.
+    + apply safety_atomic_pt.
+  - destruct IHpt1.
+    destruct H.
+    unfold valid_pt in H0.
+    clear IHpt2.
+    induction pt2.
     + exists (INode x o0 (ANode l)).
       split.
-      * eapply yield_infix_left in H0.
-        rewrite H0.
-        assumption.
-      * intros.
+      * eapply yield_infix_left in H.
+        rewrite H.
+        reflexivity.
+      * unfold valid_pt.
+        intros.
         intro N.
-
-        (* We have to show that no subtree in pt has the form A[A o1 A[A o2 A]] *)
         inv N.
-        ** inv H3.
+        ** inv H2.
            inv H10.
-        ** destruct H1 with (o1 := o1) (o2 := o2); assumption.
-        ** inv H5.
-           inv H.
-
-
-    (* Right tree is infix: we can transform our tree such that it is left-associative *)
-    + exists (INode (INode x o0 pt2_1) o1 pt2_2).
+        ** destruct H0 with (o1 := o1) (o2 := o2); assumption.
+        ** inv H4.
+           inv H2.
+    + destruct IHpt2_1.
+      destruct H1.
+      unfold valid_pt in H2.
+      destruct IHpt2_2.
+      destruct H3.
+      unfold valid_pt in H4.
+      exists (INode (INode x o0 x0) o1 x1).
       split.
-        * rewrite yield_eq_nested_infix.
-          eapply yield_infix_left in H0.
-          rewrite H0.
-          assumption.
-        * admit.
-Admitted.     
+      * simpl.
+        rewrite H.
+        simpl in H1.
+        rewrite H1.
 
 Theorem safety g w :
   language w -> dlanguage g w.
