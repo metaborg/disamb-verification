@@ -131,3 +131,14 @@ Definition dlanguage {L O} (g : dgrammar O) (w : word L O) : Prop :=
       ~ sub_matches (IPatt NTPatt o1 (IPatt NTPatt o2 NTPatt)) pt
     ).
 
+
+
+Section dgrammar_theorems.
+Context {L O : Type}.
+Implicit Types g : dgrammar O.
+Implicit Types pt : parse_tree L O.
+Implicit Types w : word L O.
+
+Theorem safety g w :
+  language w -> dlanguage g w.
+Admitted.
