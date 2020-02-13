@@ -37,7 +37,7 @@ Example yield_large_nested_infix :
   = [inl B; inr p; inl C; inr o; inl A; inr q; inl C; inr o; inl B].
 Proof. reflexivity. Qed.
 
-Definition language {L O} (w : word L O) :=
+Definition language {L O} (w : word L O) : Prop :=
   exists pt, yield pt = w.
 
 Example simple_infix_in_language :
@@ -116,4 +116,18 @@ Inductive sub_matches {L O} : tree_pattern O -> parse_tree L O -> Prop :=
   | RSub_match tp pt1 o pt2 :
       sub_matches tp pt2 ->
       sub_matches tp (INode pt1 o pt2).
+
+Record dgrammar (O : Type) := mkDgrammar {
+  dleft : O -> O -> Prop
+}.
+
+Arguments dleft {_} _ _.
+
+Definition dlanguage {L O} (g : dgrammar O) (w : word L O) : Prop :=
+  exists pt,
+    yield pt = w /\
+    (
+      forall o1 o2, g.(dleft) o1 o2 ->
+      ~ sub_matches (IPatt NTPatt o1 (IPatt NTPatt o2 NTPatt)) pt
+    ).
 
