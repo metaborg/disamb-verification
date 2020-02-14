@@ -1,5 +1,8 @@
 Require Import List.
 Import ListNotations.
+Import Plus.
+Load StrongInduction.
+Require Import Psatz.
 
 Ltac inv H := inversion H; clear H; subst.
 
@@ -136,6 +139,12 @@ Definition valid_pt {L O} (g : dgrammar O) (pt : parse_tree L O) : Prop :=
   forall o1 o2, g.(dleft) o1 o2 ->
     ~ sub_matches (IPatt NTPatt o1 (IPatt NTPatt o2 NTPatt)) pt.
 
+Fixpoint size {L O} (pt : parse_tree L O) : nat :=
+  match pt with
+  | ANode _ => 0
+  | INode pt1 _ pt2 => S (size pt1 + size pt2)
+  end.
+
 Section dgrammar_theorems.
 Context {L O : Type}.
 Implicit Types l : L.
@@ -153,6 +162,28 @@ Proof.
   reflexivity.
 Qed.
 
+Lemma yield_infix_right pt1 pt2 pt2' o :
+  yield pt2 = yield pt2' ->
+  yield (INode pt1 o pt2) = yield (INode pt1 o pt2').
+Proof.
+  intros.
+  simpl.
+  rewrite H.
+  reflexivity.
+Qed.
+
+Lemma yield_infix pt1 pt2 pt1' pt2' o :
+  yield pt1 = yield pt1' ->
+  yield pt2 = yield pt2' ->
+  yield (INode pt1 o pt2) = yield (INode pt1' o pt2').
+Proof.
+  intros.
+  simpl.
+  rewrite H.
+  rewrite H0.
+  reflexivity.
+Qed.
+
 Lemma yield_eq_nested_infix pt1 pt2 pt3 o1 o2 :
   yield (INode (INode pt1 o1 pt2) o2 pt3) = yield (INode pt1 o1 (INode pt2 o2 pt3)).
 Proof.
@@ -160,6 +191,10 @@ Proof.
   rewrite <- app_assoc.
   reflexivity.
 Qed.
+
+Lemma yield_eq_size_eq pt1 pt2 :
+  yield pt1 = yield pt2 -> size pt1 = size pt2.
+Admitted.
 
 Lemma safety_atomic_pt g l :
   valid_pt g (ANode l).
@@ -170,46 +205,86 @@ Proof.
   inv N.
   inv H0.
 Qed.
-  
-Lemma safety_pt g pt :
+
+Lemma valid_pt_valid_st g pt1 pt2 o :
+  valid_pt g (INode pt1 o pt2) -> valid_pt g pt1 /\ valid_pt g pt2.
+Proof.
+  unfold valid_pt.
+  intros.
+  split; intros; intro N; destruct H with (o1 := o1) (o2 := o2).
+  - assumption.
+  - apply LSub_match.
+    assumption.
+  - assumption.
+  - apply RSub_match.
+    assumption.
+Qed.
+
+Lemma safety_pt n g pt :
+  size pt = n ->
   exists pt', yield pt = yield pt' /\ valid_pt g pt'.
 Proof.
-  induction pt.
-  - exists (ANode l).
+  revert pt.
+  strong induction n.
+
+  intros.
+
+  destruct pt as [lex|pt1 op1 pt2]; simpl in *. 
+  - exists (ANode lex).
     split.
     + reflexivity.
     + apply safety_atomic_pt.
-  - destruct IHpt1.
-    destruct H.
-    unfold valid_pt in H0.
-    clear IHpt2.
-    induction pt2.
-    + exists (INode x o0 (ANode l)).
+
+  - destruct H with (n0 := size pt1) (pt := pt1) as (pt1'&[??]); [lia|reflexivity|].
+    destruct H with (n0 := size pt2) (pt := pt2) as (pt2'&[??]); [lia|reflexivity|].
+    apply yield_eq_size_eq in H3 as H5.
+
+    destruct pt2' as [lex|pt2' op2 pt3']; simpl in *.
+    + exists (INode pt1' op1 (ANode lex)).
       split.
-      * eapply yield_infix_left in H.
-        rewrite H.
+      * simpl.
+        rewrite H1.
+        rewrite H3.
         reflexivity.
       * unfold valid_pt.
         intros.
         intro N.
         inv N.
-        ** inv H2.
-           inv H10.
-        ** destruct H0 with (o1 := o1) (o2 := o2); assumption.
-        ** inv H4.
-           inv H2.
-    + destruct IHpt2_1.
-      destruct H1.
-      unfold valid_pt in H2.
-      destruct IHpt2_2.
-      destruct H3.
-      unfold valid_pt in H4.
-      exists (INode (INode x o0 x0) o1 x1).
+        ** inv H7.
+           inv H14.
+        ** destruct H2 with (o1 := o1) (o2 := o2); assumption.
+        ** inv H9.
+           inv H0.
+
+    + exists (INode (INode pt1' op1 pt2') op2 pt3').
       split.
       * simpl.
-        rewrite H.
-        simpl in H1.
+        rewrite <- app_assoc.
+        simpl.
         rewrite H1.
+        rewrite H3.
+        reflexivity.
+      * unfold valid_pt.
+        intros.
+        intro N.
+        apply valid_pt_valid_st in H4 as H7.
+        destruct H7.
+        inv N.
+        ** inv H9.
+           unfold valid_pt in H4.
+           destruct H4 with (o1 := op2) (o2 := o2). assumption.
+           apply Refl_match.
+           apply INode_match.
+           *** apply NT_match.
+           *** assumption.
+        ** inv H11.
+           *** inv H0.
+               unfold valid_pt in H4.
+               destruct H4 with (o1 := op1) (o2 := o2). assumption.
+               apply Refl_match.
+               apply INode_match.
+           
+
 
 Theorem safety g w :
   language w -> dlanguage g w.
