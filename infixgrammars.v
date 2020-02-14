@@ -126,18 +126,13 @@ Record dgrammar (O : Type) := mkDgrammar {
 
 Arguments dleft {_} _ _.
 
-Definition dlanguage {L O} (g : dgrammar O) (w : word L O) : Prop :=
-  exists pt,
-    yield pt = w /\
-    (
-      forall o1 o2,
-      g.(dleft) o1 o2 ->
-      ~ sub_matches (IPatt NTPatt o1 (IPatt NTPatt o2 NTPatt)) pt
-    ).
-
 Definition valid_pt {L O} (g : dgrammar O) (pt : parse_tree L O) : Prop :=
   forall o1 o2, g.(dleft) o1 o2 ->
     ~ sub_matches (IPatt NTPatt o1 (IPatt NTPatt o2 NTPatt)) pt.
+
+Definition dlanguage {L O} (g : dgrammar O) (w : word L O) : Prop :=
+  exists pt,
+    yield pt = w /\ valid_pt g pt.
 
 Fixpoint size {L O} (pt : parse_tree L O) : nat :=
   match pt with
@@ -222,7 +217,7 @@ Qed.
 
 Lemma safety_pt n g pt :
   size pt = n ->
-  exists pt', yield pt = yield pt' /\ valid_pt g pt'.
+  exists pt', yield pt' = yield pt  /\ valid_pt g pt'.
 Proof.
   revert pt.
   strong induction n.
@@ -237,8 +232,8 @@ Proof.
 
   - destruct H with (n0 := size pt1) (pt := pt1) as (pt1'&[??]); [lia|reflexivity|].
     destruct H with (n0 := size pt2) (pt := pt2) as (pt2'&[??]); [lia|reflexivity|].
-    apply yield_eq_size_eq in H3 as H5.
-
+    apply yield_eq_size_eq in H1 as H6.
+    apply yield_eq_size_eq in H3 as H7.
     destruct pt2' as [lex|pt2' op2 pt3']; simpl in *.
     + exists (INode pt1' op1 (ANode lex)).
       split.
@@ -250,48 +245,55 @@ Proof.
         intros.
         intro N.
         inv N.
-        ** inv H7.
-           inv H14.
+        ** inv H8.
+           inv H15.
         ** destruct H2 with (o1 := o1) (o2 := o2); assumption.
-        ** inv H9.
+        ** inv H10.
            inv H0.
 
-    + exists (INode (INode pt1' op1 pt2') op2 pt3').
+    + destruct H with (n0 := size (INode pt1' op1 pt2')) (pt := INode pt1' op1 pt2')
+        as (pt1''&[??]). simpl. lia. reflexivity.
+      
+      simpl in *.
+
+      exists (INode pt1'' op2 pt3').
       split.
       * simpl.
+        rewrite <- H1.
+        rewrite <- H3.
+        rewrite H5.
         rewrite <- app_assoc.
-        simpl.
-        rewrite H1.
-        rewrite H3.
         reflexivity.
       * unfold valid_pt.
         intros.
         intro N.
-        apply valid_pt_valid_st in H4 as H7.
-        destruct H7.
+        apply valid_pt_valid_st in H4 as H10.
+        destruct H10.
         inv N.
-        ** inv H9.
+        ** inv H12.
            unfold valid_pt in H4.
            destruct H4 with (o1 := op2) (o2 := o2). assumption.
            apply Refl_match.
            apply INode_match.
            *** apply NT_match.
            *** assumption.
-        ** inv H11.
-           *** inv H0.
-               unfold valid_pt in H4.
-               destruct H4 with (o1 := op1) (o2 := o2). assumption.
-               apply Refl_match.
-               apply INode_match.
-           
+        ** unfold valid_pt in H8.
+           destruct H8 with (o1 := o1) (o2 := o2). assumption.
+           assumption.
+        ** unfold valid_pt in H11.
+           destruct H11 with (o1 := o1) (o2 := o2). assumption.
+           assumption.
+Qed.
 
 
 Theorem safety g w :
   language w -> dlanguage g w.
 Proof.
+  unfold language.
+  unfold dlanguage.
   intros.
-  unfold language in H.
-  destruct H.
-  eapply super_safety.
-  eassumption.
+  destruct H as [pt].
+  rewrite <- H.
+  apply safety_pt with (n := size pt).
+  reflexivity.
 Qed.
