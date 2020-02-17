@@ -106,6 +106,26 @@ Fixpoint size {L O} (pt : parse_tree L O) : nat :=
   | INode pt1 _ pt2 => S (size pt1 + size pt2)
   end.
 
+Create HintDb valid_pt.
+Hint Resolve Head_match : valid_pt.
+Hint Resolve LSub_match : valid_pt.
+Hint Resolve RSub_match : valid_pt.
+Hint Resolve NT_match : valid_pt.
+Hint Resolve INode_match : valid_pt.
+Ltac inv_match :=
+  match goal with
+  | H : matches _ (ANode _) |- _ => inv H
+  | H : matches _ (INode _ _ _) |- _ => inv H
+  | H : sub_matches _ _ |- _ => inv H
+  end.
+Ltac destruct_valid :=
+  match goal with
+  | H1 : valid_pt _ _, H2 : left_assoc _ ?o1 ?o2 |- _ => destruct H1 with (o1 := o1) (o2 := o2)
+  end.
+Hint Extern 10 => destruct_valid : valid_pt.
+Hint Extern 12 (valid_pt _ _) => 
+  unfold valid_pt; intros; intro : valid_pt.
+Hint Extern 14 => inv_match : valid_pt.
 
 Section InfixGrammarTheorems.
 Context {L O : Type}.
@@ -118,17 +138,8 @@ Implicit Types w : word L O.
 Lemma valid_pt_valid_st g pt1 pt2 o :
   valid_pt g (INode pt1 o pt2) -> valid_pt g pt1 /\ valid_pt g pt2.
 Proof.
-  (* Simple direct proof by using the definition of subtree matching. *)
-  unfold valid_pt.
-  intros.
-  split; intros; intro N; destruct H with (o1 := o1) (o2 := o2).
-  - assumption.
-  - apply LSub_match.
-    assumption.
-  - assumption.
-  - apply RSub_match.
-    assumption.
-Qed.
+  debug eauto 8 with valid_pt.
+Qed. 
 
 (* For every parse tree, we can construct a parse tree that is
     - valid
@@ -152,14 +163,7 @@ Proof.
   
   (* BASE CASE: pt = ANode lex *)
   - exists (ANode lex).
-    split; [|split].
-    + reflexivity.
-    + reflexivity.
-    + unfold valid_pt.
-      intros.
-      intro N.
-      inv N.
-      inv H2.
+    eauto with valid_pt.
 
   (* INDUCTIVE CASE: pt = INode pt1 pt2 *)
   - (* pt1' is the valid version of pt1 *)
@@ -179,7 +183,8 @@ Proof.
         rewrite H2.
         rewrite H5.
         reflexivity.
-      * unfold valid_pt.
+      * eauto 10 with valid_pt.
+        unfold valid_pt.
         intros.
         intro N.
         inv N.
