@@ -187,10 +187,6 @@ Proof.
   reflexivity.
 Qed.
 
-Lemma yield_eq_size_eq pt1 pt2 :
-  yield pt1 = yield pt2 -> size pt1 = size pt2.
-Admitted.
-
 Lemma safety_atomic_pt g l :
   valid_pt g (ANode l).
 Proof.
@@ -217,7 +213,7 @@ Qed.
 
 Lemma safety_pt n g pt :
   size pt = n ->
-  exists pt', yield pt' = yield pt  /\ valid_pt g pt'.
+  exists pt', size pt' = size pt /\ yield pt' = yield pt /\ valid_pt g pt'.
 Proof.
   revert pt.
   strong induction n.
@@ -226,20 +222,23 @@ Proof.
 
   destruct pt as [lex|pt1 op1 pt2]; simpl in *. 
   - exists (ANode lex).
-    split.
+    split; [|split].
+    + reflexivity.
     + reflexivity.
     + apply safety_atomic_pt.
 
   - destruct H with (n0 := size pt1) (pt := pt1) as (pt1'&[??]); [lia|reflexivity|].
+    destruct H2.
     destruct H with (n0 := size pt2) (pt := pt2) as (pt2'&[??]); [lia|reflexivity|].
-    apply yield_eq_size_eq in H1 as H6.
-    apply yield_eq_size_eq in H3 as H7.
+    destruct H5.
     destruct pt2' as [lex|pt2' op2 pt3']; simpl in *.
     + exists (INode pt1' op1 (ANode lex)).
-      split.
+      split; [|split].
       * simpl.
-        rewrite H1.
-        rewrite H3.
+        lia.
+      * simpl.
+        rewrite H2.
+        rewrite H5.
         reflexivity.
       * unfold valid_pt.
         intros.
@@ -247,41 +246,43 @@ Proof.
         inv N.
         ** inv H8.
            inv H15.
-        ** destruct H2 with (o1 := o1) (o2 := o2); assumption.
+        ** destruct H3 with (o1 := o1) (o2 := o2); assumption.
         ** inv H10.
            inv H0.
 
     + destruct H with (n0 := size (INode pt1' op1 pt2')) (pt := INode pt1' op1 pt2')
         as (pt1''&[??]). simpl. lia. reflexivity.
       
+      destruct H8.
       simpl in *.
 
       exists (INode pt1'' op2 pt3').
-      split.
+      split; [|split].
+      * simpl. lia.
       * simpl.
-        rewrite <- H1.
-        rewrite <- H3.
-        rewrite H5.
+        rewrite <- H2.
+        rewrite <- H5.
+        rewrite H8.
         rewrite <- app_assoc.
         reflexivity.
       * unfold valid_pt.
         intros.
         intro N.
-        apply valid_pt_valid_st in H4 as H10.
-        destruct H10.
+        apply valid_pt_valid_st in H6 as H11.
+        destruct H11.
         inv N.
-        ** inv H12.
-           unfold valid_pt in H4.
-           destruct H4 with (o1 := op2) (o2 := o2). assumption.
+        ** inv H13.
+           unfold valid_pt in H6.
+           destruct H6 with (o1 := op2) (o2 := o2). assumption.
            apply Refl_match.
            apply INode_match.
            *** apply NT_match.
            *** assumption.
-        ** unfold valid_pt in H8.
-           destruct H8 with (o1 := o1) (o2 := o2). assumption.
+        ** unfold valid_pt in H9.
+           destruct H9 with (o1 := o1) (o2 := o2). assumption.
            assumption.
-        ** unfold valid_pt in H11.
-           destruct H11 with (o1 := o1) (o2 := o2). assumption.
+        ** unfold valid_pt in H12.
+           destruct H12 with (o1 := o1) (o2 := o2). assumption.
            assumption.
 Qed.
 
@@ -294,6 +295,8 @@ Proof.
   intros.
   destruct H as [pt].
   rewrite <- H.
-  apply safety_pt with (n := size pt).
-  reflexivity.
+  specialize safety_pt with (n := size pt) (g := g) (pt := pt). intros.
+  destruct H0. reflexivity.
+  destruct H0. destruct H1.
+  exists x; assumption.
 Qed.
