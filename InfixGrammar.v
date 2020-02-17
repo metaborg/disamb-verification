@@ -1,7 +1,7 @@
 Require Import List.
 Import ListNotations.
-Load "Lib/StrongInduction".
 Require Import Psatz.
+Load "Lib/StrongInduction".
 
 Ltac inv H := inversion H; clear H; subst.
 
