@@ -1,7 +1,6 @@
 Require Import List.
 Import ListNotations.
-Import Plus.
-Load StrongInduction.
+Load "Lib/StrongInduction".
 Require Import Psatz.
 
 Ltac inv H := inversion H; clear H; subst.
@@ -298,5 +297,5 @@ Proof.
   specialize safety_pt with (n := size pt) (g := g) (pt := pt). intros.
   destruct H0. reflexivity.
   destruct H0. destruct H1.
-  exists x; assumption.
+  exists x. split; assumption.
 Qed.
