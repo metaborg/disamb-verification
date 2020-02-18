@@ -183,8 +183,7 @@ Proof.
         rewrite H2.
         rewrite H5.
         reflexivity.
-      * eauto 10 with valid_pt.
-        unfold valid_pt.
+      * unfold valid_pt.
         intros.
         intro N.
         inv N.
