@@ -1,3 +1,4 @@
+From stdpp Require Import list.
 Require Import List.
 Import ListNotations.
 Require Import Psatz.
@@ -229,6 +230,15 @@ Proof.
   exists x. split; assumption.
 Qed.
 
+Lemma list_length_one {A} (l1 l2 : list A) (a1 a2 : A) :
+  [a1] = l1 ++ a2 :: l2 -> a1 = a2.
+Proof.
+  intros.
+  destruct l1; simpl in H.
+  - inv H. reflexivity.
+  - destruct l1; inv H.
+Qed.
+
 Theorem completeness g pt1 pt2 :
   total g ->
   valid_pt (dpattern g) pt1 ->
@@ -236,5 +246,49 @@ Theorem completeness g pt1 pt2 :
   yield pt1 = yield pt2 ->
   pt1 = pt2.
 Proof.
+  intro HTotal. unfold total in HTotal.
+  intro HValidPt1.
+  revert pt2.
+  induction HValidPt1.
+  - intros.
+    destruct pt2; simpl in H1.
+    + inv H1. reflexivity.
+    + apply list_length_one in H1. inv H1.
+  
+  - intros.
 
+    rename pt1 into pt1_1.
+    rename pt2 into pt1_2.
+    rename pt0 into pt2.
+
+    destruct pt2; simpl in H1.
+    + symmetry in H1. apply list_length_one in H1.
+      inv H1.
+    + inv H0.
+      destruct pt2_2, pt1_2; simpl in H1.
+      * simplify_list_eq.
+        destruct IHHValidPt1_1 with (pt2 := pt2_1). assumption. assumption. reflexivity.
+      * specialize HTotal with (o1 := o) (o2 := o1).
+        destruct H.
+        unfold matches_set.
+        eexists.
+        split.
+        ** eapply Left. apply HTotal.
+        ** apply INode_match. apply NT_match. apply INode_match. apply NT_match. apply NT_match.
+      * specialize HTotal with (o1 := o0) (o2 := o1).
+        destruct H5.
+        unfold matches_set.
+        eexists.
+        split.
+        ** eapply Left. apply HTotal.
+        ** apply INode_match. apply NT_match. apply INode_match. apply NT_match. apply NT_match.
+      * specialize HTotal with (o1 := o) (o2 := o2).
+        destruct H.
+        unfold matches_set.
+        eexists.
+        split.
+        ** eapply Left. apply HTotal.
+        ** apply INode_match. apply NT_match. apply INode_match. apply NT_match. apply NT_match.
+Qed.
+        
 End InfixGrammarTheorems.
