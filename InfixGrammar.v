@@ -111,6 +111,13 @@ Fixpoint size {L O} (pt : parse_tree L O) : nat :=
 Definition total {O} (g : dgrammar O) : Prop :=
   forall o1 o2, g.(left_assoc) o1 o2.
 
+Create HintDb valid_pt.
+Hint Resolve ANode_valid : valid_pt.
+Hint Resolve INode_valid : valid_pt.
+Hint Resolve NT_match : valid_pt.
+Hint Resolve INode_match : valid_pt.
+Hint Resolve Left : valid_pt.
+
 Section InfixGrammarTheorems.
 Context {L O : Type}.
 Implicit Types l : L.
@@ -206,15 +213,13 @@ Proof.
            unfold matches_set.
            exists tp. split. assumption.
            inv H10. inv H11.
-           apply INode_match.
-           *** apply NT_match.
-           *** assumption.
+           eauto with valid_pt.
 
         ** assumption.
         ** inv H6. assumption.
 Qed.
 
-(* For every sentence in a language, that sentence will still exists in the disambiguated
+(* For every sentence in a language, that sentence will still exist in the disambiguated
    language. *)
 Theorem safety g w :
   language w -> dlanguage g w.
@@ -230,6 +235,7 @@ Proof.
   exists x. split; assumption.
 Qed.
 
+(* Trivial helper lemma *)
 Lemma list_length_one {A} (l1 l2 : list A) (a1 a2 : A) :
   [a1] = l1 ++ a2 :: l2 -> a1 = a2.
 Proof.
@@ -239,6 +245,8 @@ Proof.
   - destruct l1; inv H.
 Qed.
 
+(* If we have a total set of disambiguation rules, then our grammar is unambiguous
+  (for every sentence in the language there exists exactly one corresponding parse tree). *)
 Theorem completeness g pt1 pt2 :
   total g ->
   valid_pt (dpattern g) pt1 ->
@@ -249,7 +257,7 @@ Proof.
   intro HTotal. unfold total in HTotal.
   intro HValidPt1.
   revert pt2.
-  induction HValidPt1.
+  induction HValidPt1 as [lex|pt1_1 o1 pt1_2].
   - intros.
     destruct pt2; simpl in H1.
     + inv H1. reflexivity.
@@ -257,38 +265,25 @@ Proof.
   
   - intros.
 
-    rename pt1 into pt1_1.
-    rename pt2 into pt1_2.
-    rename pt0 into pt2.
-
-    destruct pt2; simpl in H1.
+    destruct pt2 as [lex|pt2_1 o2 pt2_2]; simpl in H1.
     + symmetry in H1. apply list_length_one in H1.
       inv H1.
     + inv H0.
       destruct pt2_2, pt1_2; simpl in H1.
       * simplify_list_eq.
-        destruct IHHValidPt1_1 with (pt2 := pt2_1). assumption. assumption. reflexivity.
-      * specialize HTotal with (o1 := o) (o2 := o1).
+        destruct IHHValidPt1_1 with (pt2 := pt2_1); auto.
+      * specialize HTotal with (o1 := o1) (o2 := o).
         destruct H.
         unfold matches_set.
-        eexists.
-        split.
-        ** eapply Left. apply HTotal.
-        ** apply INode_match. apply NT_match. apply INode_match. apply NT_match. apply NT_match.
-      * specialize HTotal with (o1 := o0) (o2 := o1).
+        eauto 10 with valid_pt.
+      * specialize HTotal with (o1 := o2) (o2 := o).
         destruct H5.
         unfold matches_set.
-        eexists.
-        split.
-        ** eapply Left. apply HTotal.
-        ** apply INode_match. apply NT_match. apply INode_match. apply NT_match. apply NT_match.
-      * specialize HTotal with (o1 := o) (o2 := o2).
-        destruct H.
+        eauto 10 with valid_pt.
+      * specialize HTotal with (o1 := o2) (o2 := o).
+        destruct H5.
         unfold matches_set.
-        eexists.
-        split.
-        ** eapply Left. apply HTotal.
-        ** apply INode_match. apply NT_match. apply INode_match. apply NT_match. apply NT_match.
+        eauto 10 with valid_pt.
 Qed.
-        
+
 End InfixGrammarTheorems.
