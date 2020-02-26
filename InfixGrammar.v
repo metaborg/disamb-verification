@@ -125,15 +125,6 @@ Implicit Types g : dgrammar O.
 Implicit Types pt : parse_tree L O.
 Implicit Types w : word L O.
 
-(* If a parse tree is valid, then its subtrees are also valid. *)
-Lemma valid_pt_valid_st tps pt1 pt2 o :
-  valid_pt tps (INode pt1 o pt2) -> valid_pt tps pt1 /\ valid_pt tps pt2.
-Proof.
-  intros.
-  inv H.
-  split; assumption.
-Qed.
-
 (* Atomic nodes are always valid under subtree exclusion. *)
 Lemma valid_anode (g : dgrammar O) (lex : L) :
   valid_pt (dpattern g) (ANode lex).
