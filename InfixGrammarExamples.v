@@ -21,9 +21,9 @@ Qed.
 
 
 Inductive ex_lex :=
-  | A
-  | B
-  | C.
+  | L
+  | M
+  | N.
 
 Inductive ex_op :=
   | o
@@ -31,30 +31,30 @@ Inductive ex_op :=
   | q.
 
 Example yield_simple_infix :
-  yield (INode (ANode A) o (ANode B)) = [inl A; inr o; inl B].
+  yield (INode (ANode L) o (ANode M)) = [inl L; inr o; inl M].
 Proof. reflexivity. Qed.
 
 Example yield_large_nested_infix :
-  yield (INode (INode (ANode B) p (ANode C)) o (INode (ANode A) q (INode (ANode C) o (ANode B)))) 
-  = [inl B; inr p; inl C; inr o; inl A; inr q; inl C; inr o; inl B].
+  yield (INode (INode (ANode M) p (ANode N)) o (INode (ANode L) q (INode (ANode N) o (ANode M)))) 
+  = [inl M; inr p; inl N; inr o; inl L; inr q; inl N; inr o; inl M].
 Proof. reflexivity. Qed.
 
 Example simple_infix_in_language :
-  language [inl A; inr o; inl B].
+  language [inl L; inr o; inl M].
 Proof.
-  exists (INode (ANode A) o (ANode B)).
+  exists (INode (ANode L) o (ANode M)).
   apply yield_simple_infix.
 Qed.
 
 Example large_nested_infix_in_language :
-  language [inl B; inr p; inl C; inr o; inl A; inr q; inl C; inr o; inl B].
+  language [inl M; inr p; inl N; inr o; inl L; inr q; inl N; inr o; inl M].
 Proof.
-  exists (INode (INode (ANode B) p (ANode C)) o (INode (ANode A) q (INode (ANode C) o (ANode B)))).
+  exists (INode (INode (ANode M) p (ANode N)) o (INode (ANode L) q (INode (ANode N) o (ANode M)))).
   apply yield_large_nested_infix.
 Qed.
 
 Example lex_op_not_in_language :
-  ~ language [inl A; inr o].
+  ~ language [inl L; inr o].
 Proof.
   intro H.
   inv H.
