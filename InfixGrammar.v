@@ -1,7 +1,4 @@
 From stdpp Require Import list.
-Require Import List.
-Import ListNotations.
-Require Import Psatz.
 Load "Lib/StrongInduction".
 
 Ltac inv H := inversion H; clear H; subst.
@@ -55,7 +52,7 @@ Arguments NTPatt {_}.
 Arguments IPatt {_} _ _ _.
 
 (* matches pt tp states that parse tree pt matches the tree pattern tp. *)
-Inductive matches {L O} : parse_tree L O -> tree_pattern O ->  Prop :=
+Inductive matches {L O} : parse_tree L O -> tree_pattern O -> Prop :=
   (* Every parse tree matches the nonterminal pattern node. *)
   | NT_match pt :
       matches pt NTPatt
@@ -84,7 +81,8 @@ Inductive valid_pt {L O} (tps : tree_pattern O -> Prop) : parse_tree L O  -> Pro
 
 (* Disambiguation rules for Infix Expression Grammars *)
 Record dgrammar (O : Type) := mkDgrammar {
-  left_assoc : O -> O -> Prop
+  left_assoc : O -> O -> Prop;
+  left_assoc_sym o1 o2 : left_assoc o1 o2 -> left_assoc o2 o1;
 }.
 
 Arguments left_assoc {_} _ _.
@@ -155,8 +153,7 @@ Proof.
   
   (* BASE CASE: pt = ANode lex *)
   - exists (ANode lex).
-    split. reflexivity. split. reflexivity.
-    apply valid_anode.
+    auto using valid_anode.
 
   (* INDUCTIVE CASE: pt = INode pt1 pt2 *)
   - (* pt1' is the valid version of pt1 *)
@@ -245,32 +242,49 @@ Theorem completeness g pt1 pt2 :
   yield pt1 = yield pt2 ->
   pt1 = pt2.
 Proof.
+  (* Proof by induction over (the valid_pt property) of pt1 *)
   intro HTotal. unfold total in HTotal.
   intro HValidPt1.
   revert pt2.
   induction HValidPt1 as [lex|pt1_1 o1 pt1_2].
+
+  (* BASE CASE: pt1 = lex *)
   - intros.
     destruct pt2; simpl in H1.
+
+    (* CASE: pt2 = lex2. Proof: by yield equivalence *)
     + inv H1. reflexivity.
+    (* CASE: pt2 = INode .... Proof: by discriminating yield equivalence *)
     + apply list_length_one in H1. inv H1.
-  
+
+  (* INDUCTIVE CASE: pt1 = INode pt1_1 o1 pt1_2 *)
   - intros.
 
     destruct pt2 as [lex|pt2_1 o2 pt2_2]; simpl in H1.
+    (* CASE: pt2 = lex. Proof: by discriminating yield equivalence *)
     + symmetry in H1. apply list_length_one in H1.
       inv H1.
+    
+    (* CASE: pt2 = pt2_1 o2 pt2_2*)
     + inv H0.
       destruct pt2_2, pt1_2; simpl in H1.
+      (* CASE: pt1_2 = lex1, pt2_2 = lex2. Proof: by yield equivalence and IH for pt1_1 *)
       * simplify_list_eq.
         destruct IHHValidPt1_1 with (pt2 := pt2_1); auto.
+      (* CASE: pt1_2 = pt1_2_1 o pt1_2_2, pt2_2 = lex.
+         Proof: by discriminating the validity of pt1 using left-assoc of o1 and o. *)
       * specialize HTotal with (o1 := o1) (o2 := o).
         destruct H.
         unfold matches_set.
         eauto 10 with valid_pt.
+      (* CASE: pt1_2 = lex, pt2_2 = pt2_2_1 o pt2_2_1.
+         Proof: by discriminating the validity of pt2 using left-assoc of o2 and o. *)
       * specialize HTotal with (o1 := o2) (o2 := o).
         destruct H5.
         unfold matches_set.
         eauto 10 with valid_pt.
+      (* CASE: pt1_2 = pt1_2_1 o0 pt1_2_2, pt2_2 = pt2_2_1 o pt2_2_1.
+         Proof: by discriminating the validity of pt2 using left-assoc of o2 and o. *)
       * specialize HTotal with (o1 := o2) (o2 := o).
         destruct H5.
         unfold matches_set.
