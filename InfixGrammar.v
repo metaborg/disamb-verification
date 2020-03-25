@@ -1,4 +1,5 @@
 From stdpp Require Import list.
+From stdpp Require Import relations.
 Load "Lib/StrongInduction".
 
 Ltac inv H := inversion H; clear H; subst.
@@ -148,7 +149,7 @@ Definition complete g : Prop :=
   forall t1 t2, valid (cpatterns g) t1 -> valid (cpatterns g) t2 ->
     yield t1 = yield t2 -> t1 = t2.
 
-Definition total {O} (g : dgrammar O) : Prop :=
+Definition total g : Prop :=
   forall o1 o2, exists r, g.(rel) o1 o2 = Some r.
 
 Create HintDb valid_pt.
@@ -171,6 +172,39 @@ Hint Resolve IR : valid_pt.
 ==================================================================================
 *)
 
+Inductive reorder_step : parse_tree -> parse_tree -> Prop :=
+  | RI_LR t11 o1 t12 o t2 :
+      reorder_step (INode (INode t11 o1 t12) o t2)
+                   (INode t11 o1 (INode t12 o t2))
+  | RI_RL t1 o t21 o2 t22 :
+      reorder_step (INode t1 o (INode t21 o2 t22))
+                   (INode (INode t1 o t21) o2 t22)
+  | RI_t1 t1 o t2 t1' :
+      reorder_step t1 t1' ->
+      reorder_step (INode t1 o t2) (INode t1' o t2)
+  | RI_t2 t1 o t2 t2' :
+      reorder_step t1 t2' ->
+      reorder_step (INode t1 o t2) (INode t1 o t2').
+
+Definition reorder := rtc reorder_step.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+(* 
 
 
 Section InfixGrammarTheorems.
@@ -348,4 +382,4 @@ Proof.
         eauto 10 with valid_pt.
 Qed.
 
-End InfixGrammarTheorems.
+End InfixGrammarTheorems. *)
