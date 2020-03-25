@@ -152,13 +152,13 @@ Definition complete g : Prop :=
 Definition total g : Prop :=
   forall o1 o2, exists r, g.(rel) o1 o2 = Some r.
 
-Create HintDb valid_pt.
-Hint Resolve ANode_valid : valid_pt.
-Hint Resolve INode_valid : valid_pt.
-Hint Resolve NT_match : valid_pt.
-Hint Resolve INode_match : valid_pt.
-Hint Resolve IL : valid_pt.
-Hint Resolve IR : valid_pt.
+Create HintDb igrammar.
+Hint Resolve ANode_valid : igrammar.
+Hint Resolve INode_valid : igrammar.
+Hint Resolve NT_match : igrammar.
+Hint Resolve INode_match : igrammar.
+Hint Resolve IL : igrammar.
+Hint Resolve IR : igrammar.
 
 (* 
 ==================================================================================
@@ -183,10 +183,28 @@ Inductive reorder_step : parse_tree -> parse_tree -> Prop :=
       reorder_step t1 t1' ->
       reorder_step (INode t1 o t2) (INode t1' o t2)
   | RI_t2 t1 o t2 t2' :
-      reorder_step t1 t2' ->
+      reorder_step t2 t2' ->
       reorder_step (INode t1 o t2) (INode t1 o t2').
 
 Definition reorder := rtc reorder_step.
+
+Ltac super_simpl := try simpl in *; try simplify_list_eq; try reflexivity.
+
+Lemma reorder_step_preserves_yields t t' :
+  reorder_step t t' -> yield t = yield t'.
+Proof.
+  intros. induction H; super_simpl.
+  - rewrite IHreorder_step. reflexivity.
+  - rewrite IHreorder_step. reflexivity.
+Qed.
+
+Lemma reorder_preserves_yields t t' :
+  reorder t t' -> yield t = yield t'.
+Proof.
+  intros. induction H; auto.
+  rewrite <- IHrtc.
+  auto using reorder_step_preserves_yields.
+Qed.
 
 
 
