@@ -79,12 +79,24 @@ Inductive valid_pt {L O} (tps : tree_pattern O -> Prop) : parse_tree L O  -> Pro
       valid_pt tps pt2 ->
       valid_pt tps (INode pt1 o pt2).
 
+(* Possible disambiguation rules between two operators. *)
 Inductive DRelation :=
-  | Left_assoc.
+  | Left_assoc
+  | Right_assoc
+  | Priority.
 
-(* Disambiguation rules for Infix Expression Grammars *)
+(* Disambiguated Grammars. *)
 Record dgrammar (O : Type) := mkDgrammar {
   rel : O -> O -> option DRelation;
+
+  (* Associativity is symmetric. *)
+  left_assoc_sym o1 o2 : rel o1 o2 = Some Left_assoc -> rel o2 o1 = Some Left_assoc;
+  right_assoc_sym o1 o2 : rel o1 o2 = Some Right_assoc -> rel o2 o1 = Some Right_assoc;
+  (* Priority is irreflexive and transitive. *)
+  priority_irefl o o : rel o o <> Some Priority;
+  priority_trans o1 o2 o3 : rel o1 o2 = Some Priority ->
+                            rel o2 o3 = Some Priority ->
+                            rel o1 o3 = Some Priority
 }.
 
 Arguments rel {_} _ _.
