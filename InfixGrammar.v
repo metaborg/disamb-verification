@@ -198,6 +198,12 @@ Proof.
   - rewrite IHreorder_step. reflexivity.
 Qed.
 
+Fixpoint size t : nat :=
+  match t with
+  | ANode l => 0
+  | INode t1 o t2 => S (size t1 + size t2)
+  end.
+
 Lemma reorder_preserves_yields t t' :
   reorder t t' -> yield t = yield t'.
 Proof.
@@ -206,7 +212,130 @@ Proof.
   auto using reorder_step_preserves_yields.
 Qed.
 
+Inductive pos_tree :=
+  | PANode : L -> nat -> pos_tree
+  | PINode : pos_tree -> O -> nat -> pos_tree -> pos_tree.
 
+Implicit Types pt : pos_tree.
+
+Inductive wf_pos_tree : nat -> pos_tree -> nat -> Prop :=
+  | Wfpos_PANode i l :
+      wf_pos_tree i (PANode l i) (S i)
+  | Wfpos_PINode i j k pt1 o pt2 :
+      wf_pos_tree i pt1 j ->
+      wf_pos_tree (S j) pt2 k ->
+      wf_pos_tree i (PINode pt1 o j pt2) k.
+
+Fixpoint unpos pt : parse_tree :=
+  match pt with
+  | PANode l _ => ANode l
+  | PINode pt1 o _ pt2 => INode (unpos pt1) o (unpos pt2)
+  end.
+
+Inductive op_in_tree o i : pos_tree -> Prop :=
+  | Op_Eq pt1 pt2 :
+      op_in_tree o i (PINode pt1 o i pt2)
+  | Op_In1 pt1 pt2 o' i' :
+      op_in_tree o i pt1 ->
+      op_in_tree o i (PINode pt1 o' i' pt2)
+  | Op_In2 pt1 pt2 o' i' :
+      op_in_tree o i pt2 ->
+      op_in_tree o i (PINode pt1 o' i' pt2).
+
+Lemma pos_yield pt n0 n1 o i :
+  wf_pos_tree n0 pt n1 ->
+  op_in_tree o i pt -> nth_error (yield (unpos pt)) (i - n0) = Some (inr o).
+Proof.
+  intros. induction H.
+  - inv H0. 
+  - simpl.
+    inv H0.
+    + 
+    +
+    +
+
+
+
+
+
+
+(* Inductive op_in_tree o : parse_tree -> Prop :=
+  | Op_Eq t1 t2 :
+      op_in_tree o (INode t1 o t2)
+  | Op_In1 t1 t2 o' :
+      op_in_tree o t1 ->
+      op_in_tree o (INode t1 o' t2)
+  | Op_In2 t1 t2 o' :
+      op_in_tree o t2 ->
+      op_in_tree o (INode t1 o' t2).
+
+Lemma in_app_inv {A} (l1 l2 : list A) (a : A) :
+  In a (l1 ++ l2) -> In a l1 \/ In a l2.
+Proof.
+  intros.
+  induction l1; simpl in *.
+  - auto.
+  - destruct H.
+    + subst. auto.
+    + apply IHl1 in H.
+      destruct H; auto.
+Qed.
+
+Lemma op_in_yield_op_in_tree o t :
+  In (inr o) (yield t) -> op_in_tree o t.
+Proof.
+  intros.
+  induction t.
+  - simpl in H.
+    destruct H. discriminate H. contradiction.
+  - simpl in H.
+    apply in_app_inv in H.
+    destruct H.
+    + apply IHt1 in H.
+      apply Op_In1.
+      assumption.
+    + apply in_inv in H.
+      destruct H.
+      * inv H.
+        apply Op_Eq.
+      * apply Op_In2.
+        apply IHt2.
+        assumption.
+Qed.
+
+Lemma op_in_tree_op_in_yield o t :
+  op_in_tree o t -> exists t1 t2, yield t = yield (INode t1 o t2).
+Proof.
+  intros.
+  induction H.
+  - eauto.
+  - destruct IHop_in_tree. destruct H0.
+    simpl.
+    rewrite H0.
+    exists x. exists (INode x0 o' t2).
+    simpl. rewrite <- app_assoc. reflexivity.
+  - destruct IHop_in_tree. destruct H0.
+    simpl.
+    rewrite H0.
+    exists (INode t1 o' x). exists x0.
+    simpl. rewrite <- app_assoc. reflexivity.
+Qed. *)
+
+
+
+
+
+Lemma reorder_completes_yields_helper n t t' :
+  n = size t + size t' ->
+  yield t = yield t' -> reorder t t'.
+Proof.
+  intro. strong induction n.
+  intros.
+  destruct t, t'; super_simpl.
+  - admit.
+  - admit.
+  - rename o0 into o'.
+    
 
 
 
