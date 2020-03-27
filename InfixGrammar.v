@@ -1,3 +1,5 @@
+Require Import PeanoNat.
+Require Import Arith.
 From stdpp Require Import list.
 From stdpp Require Import relations.
 Load "Lib/StrongInduction".
@@ -232,6 +234,26 @@ Fixpoint unpos pt : parse_tree :=
   | PINode pt1 o _ pt2 => INode (unpos pt1) o (unpos pt2)
   end.
 
+Lemma wf_pos_indices_lt i pt j :
+  wf_pos_tree i pt j -> i < j.
+Proof.
+  intros.
+  induction H; simpl; lia.
+Qed.
+
+Lemma wf_pos_tree_size i pt j : 
+  wf_pos_tree i pt j -> length (yield (unpos pt)) = j - i.
+Proof.
+  intros.
+  induction H.
+  - simpl. lia.
+  - simpl.
+    rewrite app_length. simpl.
+    apply wf_pos_indices_lt in H.
+    apply wf_pos_indices_lt in H0.
+    lia.
+Qed.
+
 Inductive op_in_tree o i : pos_tree -> Prop :=
   | Op_Eq pt1 pt2 :
       op_in_tree o i (PINode pt1 o i pt2)
@@ -242,17 +264,170 @@ Inductive op_in_tree o i : pos_tree -> Prop :=
       op_in_tree o i pt2 ->
       op_in_tree o i (PINode pt1 o' i' pt2).
 
-Lemma pos_yield pt n0 n1 o i :
-  wf_pos_tree n0 pt n1 ->
-  op_in_tree o i pt -> nth_error (yield (unpos pt)) (i - n0) = Some (inr o).
+Lemma nth_length_app {A} (a : A) (l1 l2 : list A) :
+  nth_error (l1 ++ a :: l2) (length l1) = Some a.
+Proof.
+  induction l1; auto.
+Qed.
+
+Lemma nth_error_app {A} (a : A) (l1 l2 : list A) (n : nat) :
+  nth_error l1 n = Some a ->
+  nth_error (l1 ++ l2) n = Some a.
+Proof.
+  intros.
+  rewrite nth_error_app1. assumption.
+  apply nth_error_Some.
+  rewrite H.
+  auto.
+Qed.
+
+Lemma op_between_indices i0 pt n i o :
+  wf_pos_tree i0 pt n -> op_in_tree o i pt -> i0 < i /\ i < n.
+Proof.
+  revert i0 i n.
+  induction pt; intros.
+  - inv H0.
+  - inv H.
+    apply wf_pos_indices_lt in H7 as ?.
+    apply wf_pos_indices_lt in H8 as ?.
+    inv H0.
+    + split; lia.
+    + eapply IHpt1 in H7; [|eassumption].
+      destruct H7.
+      split; lia.
+    + eapply IHpt2 in H8; [|eassumption].
+      destruct H8.
+      split; lia.
+Qed.
+
+Lemma pos_yield pt i0 n o i :
+  wf_pos_tree i0 pt n ->
+  op_in_tree o i pt -> nth_error (yield (unpos pt)) (i - i0) = Some (inr o).
 Proof.
   intros. induction H.
   - inv H0. 
   - simpl.
     inv H0.
-    + 
-    +
-    +
+    + apply wf_pos_tree_size in H.
+      rewrite <- H.
+      apply nth_length_app. 
+    + apply IHwf_pos_tree1 in H3.
+      rewrite <- H3.
+      rewrite nth_error_app1. reflexivity.
+      apply nth_error_Some.
+      rewrite H3.
+      auto.
+    + eapply op_between_indices in H3 as ?; [|eassumption].
+      destruct H0.
+      apply IHwf_pos_tree2 in H3.
+      apply wf_pos_tree_size in H as ?.
+      apply wf_pos_indices_lt in H as ?.
+      rewrite nth_error_app2.
+      rewrite H4.
+      assert (R: inr o0 :: yield (unpos pt2) = [inr o0] ++ yield (unpos pt2)). {
+        reflexivity.
+      }
+      rewrite R.
+      rewrite nth_error_app2.
+      simpl.
+      rewrite <- H3.
+      assert (R2: i - i0 - (j - i0) - 1 = i - S j). { lia. }
+      rewrite R2. reflexivity.
+      simpl.
+      apply wf_pos_indices_lt in H1 as ?.
+      apply wf_pos_tree_size in H1 as ?.
+      assert (nth_error (yield (unpos pt2)) (i - S j) <> None). {
+        rewrite H3. auto.
+      }
+      apply nth_error_Some in H8.
+      rewrite H7 in H8.
+      lia.
+      lia.
+Qed.
+
+Lemma nth_error_split2 {A} (a : A) (l1 l2 : list A) i :
+  nth_error (l1 ++ l2) i = Some a ->
+  nth_error l1 i = Some a \/
+  nth_error l2 (i - (length l1)) = Some a /\ le (length l1) i.
+Proof.
+  revert i.
+  induction l1; intros.
+  - simpl in *.
+    right.
+    rewrite <- H.
+    assert (i - 0 = i). { lia. }
+    rewrite H0.
+    split.
+    + reflexivity.
+    + lia.
+  - simpl in *.
+    destruct i.
+    + auto.
+    + simpl in H.
+      apply IHl1 in H.
+      destruct H.
+      * auto.
+      * right.
+        destruct H.
+        rewrite <- H.
+        assert (S i - S (length l1) = i - length l1). { lia. }
+        split.
+        ** rewrite H1. reflexivity.
+        ** lia.
+Qed.
+
+Lemma yield_pos pt i0 n o i :
+  wf_pos_tree i0 pt n ->
+  nth_error (yield (unpos pt)) i = Some (inr o) -> op_in_tree o (i0 + i) pt.
+Proof.
+  intro. revert i.
+  induction H; intros; simpl in *.
+  - apply nth_error_In in H.
+    simpl in H.
+    destruct H.
+    + discriminate H.
+    + contradiction.
+  - apply nth_error_split2 in H1.
+    destruct H1.
+    + apply Op_In1.
+      apply IHwf_pos_tree1.
+      assumption. 
+    + destruct H1.
+      assert (inr o0 :: yield (unpos pt2) = [inr o0] ++ yield (unpos pt2)). { reflexivity. }
+      rewrite H3 in H1.
+      apply nth_error_split2 in H1.
+      destruct H1.
+      * apply wf_pos_tree_size in H as ?.
+        apply wf_pos_indices_lt in H as ?.
+        (* assert (j = length (yield (unpos pt1)) + i0). { lia. }
+        rewrite H6. *)
+        assert (i0 - length (yield (unpos pt1)) = 0). {
+          destruct (i0 - length (yield (unpos pt1))); [reflexivity|].
+          simpl in H1.
+          destruct n; simpl in H1; discriminate H1.
+        }
+        rewrite H6 in H1.
+        simpl in H1.
+        inv H1.
+        assert (i + i0 = j). { lia. }
+        rewrite H1.
+        apply Op_Eq.
+      * destruct H1.
+        simpl in H4.
+        apply Op_In2.
+        apply IHwf_pos_tree2 in H1.
+        simpl in H1.
+        apply wf_pos_tree_size in H as ?.
+        apply wf_pos_indices_lt in H as ?.
+        apply wf_pos_tree_size in H0 as ?.
+        apply wf_pos_indices_lt in H0 as ?.
+        assert (i + i0 = S (j + (i0 - length (yield (unpos pt1)) - 1))). {
+          lia.
+        }
+        rewrite H9.
+        assumption.
+Qed.
+
 
 
 
