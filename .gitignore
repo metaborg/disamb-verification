@@ -1,3 +1,8 @@
 /stdpp
 .vscode
 .lia.cache
+*.vos
+*.vok
+*.vo
+*.glob
+*.aux
