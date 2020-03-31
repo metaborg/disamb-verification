@@ -50,3 +50,11 @@ Definition pos_equivalent pt1 pt2 : Prop :=
   forall s i, nth_symbol i s pt1 <-> nth_symbol i s pt2.
 
 End PosTree.
+
+Create HintDb pos_tree.
+Hint Resolve Wfpos_PANode : pos_tree.
+Hint Resolve Wfpos_PINode : pos_tree.
+Hint Resolve L_nth : pos_tree.
+Hint Resolve O_nth : pos_tree.
+Hint Resolve Symbol_nth1 : pos_tree.
+Hint Resolve Symbol_nth2 : pos_tree.

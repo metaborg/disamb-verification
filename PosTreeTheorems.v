@@ -1,4 +1,3 @@
-Require Import InfixGrammar.
 Require Import PosTree.
 Require Import MyUtils.
 From stdpp Require Import list.
@@ -227,7 +226,6 @@ Proof.
   - assumption.
 Qed.
 
-
 Lemma pos_equivalent_subtrees pt1 pt1_1 pt1_2 pt2 pt2_1 pt2_2 o i n0 n :
   pt1 = PINode pt1_1 o i pt1_2 ->
   pt2 = PINode pt2_1 o i pt2_2 ->
@@ -286,3 +284,17 @@ Proof.
       apply H0 in H6.
       eauto using symbol_nth_subtree_r.
 Qed.
+
+Lemma pos_equivalent_transitive pt1 pt2 pt3 :
+  pos_equivalent pt1 pt2 -> pos_equivalent pt2 pt3 -> pos_equivalent pt1 pt3.
+Proof.
+  unfold pos_equivalent.
+  intros.
+  split; intros.
+  - apply H0. apply H.
+    assumption.
+  - apply H. apply H0.
+    assumption.
+Qed.
+
+End PosTreeTheorems.
