@@ -1,4 +1,4 @@
-From stdpp Require Import list.
+From stdpp Require Export list.
 
 Section InfixGrammars.
 Context {L O : Type}.

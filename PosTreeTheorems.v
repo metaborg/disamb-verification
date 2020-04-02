@@ -1,6 +1,5 @@
-Require Import PosTree.
-Require Import MyUtils.
-From stdpp Require Import list.
+Require Export PosTree.
+Require Export MyUtils.
 
 Section PosTreeTheorems.
 Context {L O : Type}.

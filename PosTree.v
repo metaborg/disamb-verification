@@ -1,6 +1,5 @@
 Require Export InfixGrammar.
 Require Import Utils.
-From stdpp Require Import list.
 
 Section PosTree.
 Context {L O : Type}.
