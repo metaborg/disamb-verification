@@ -2,7 +2,10 @@ From stdpp Require Import list.
 
 Ltac inv H := inversion H; clear H; subst.
 
-Lemma nth_error_equality {A} (l1 l2 : list A) :
+(* If two lists have the same elements at the same indices, then the two lists are equal.
+   This Lemma differs from list_eq in that we do not have to consider out-of-bounds
+   cases. *)
+Lemma lookup_some_equality {A} (l1 l2 : list A) :
   (forall i a, l1 !! i = Some a <-> l2 !! i = Some a) ->
   l1 = l2.
 Proof.
