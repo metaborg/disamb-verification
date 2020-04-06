@@ -1,6 +1,9 @@
 /stdpp
+out
+.idea
 .vscode
 .lia.cache
+*.iml
 *.vos
 *.vok
 *.vo
