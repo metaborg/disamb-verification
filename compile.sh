@@ -5,4 +5,5 @@ coqc Reordering.v
 coqc MyUtils.v
 coqc PosTreeTheorems.v
 coqc ReorderingTheorems.v
+coqc Lib/StrongInduction.v
 echo FINISHED

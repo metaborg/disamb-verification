@@ -1,4 +1,5 @@
 /stdpp
+.idea
 .vscode
 .lia.cache
 *.vos
@@ -6,3 +7,5 @@
 *.vo
 *.glob
 *.aux
+*.class
+*.iml
