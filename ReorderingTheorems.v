@@ -1,6 +1,8 @@
 Require Export Reordering.
 Require Export PosTreeTheorems.
 
+Require Import MyUtils.
+
 Section ReorderingTheorems.
 Context {L O : Type}.
 Implicit Types l : L.

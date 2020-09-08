@@ -1,5 +1,6 @@
 Require Export PosTree.
-Require Export MyUtils.
+
+Require Import MyUtils.
 
 Section PosTreeTheorems.
 Context {L O : Type}.
@@ -125,7 +126,7 @@ Proof.
   split.
   - intros.
     unfold pos_equivalent in H1.
-    apply nth_error_equality.
+    apply lookup_some_equality.
     intros.
     split.
     + intros.
