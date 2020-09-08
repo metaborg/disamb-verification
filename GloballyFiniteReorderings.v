@@ -4,7 +4,7 @@ From stdpp Require Import list.
 Require Export PosTreeTheorems.
 Require Import MyUtils.
 
-Section FiniteReorderings.
+Section GloballyFiniteReorderings.
 
 Context {L O : Type}.
 
@@ -204,3 +204,5 @@ Proof.
   apply H in H0. rewrite H0.
   apply build_reorderings_correct.
 Qed.
+
+End GloballyFiniteReorderings.
