@@ -180,4 +180,33 @@ Proof.
   - inv H0. contradiction.
   - inv H1. contradiction.
 Qed.
- 
+
+Create HintDb gtr.
+Hint Resolve ORC1 : gtr.
+Hint Resolve ORC2 : gtr.
+Hint Resolve ORC3 : gtr.
+Hint Resolve OR1 : gtr.
+Hint Resolve OR2 : gtr.
+Hint Resolve OR3 : gtr.
+Hint Resolve OR4 : gtr.
+Hint Resolve right_assoc_sym : gtr.
+Hint Resolve right_assoc_trans : gtr.
+
+Lemma gtrc_trans g oc1 oc2 oc3 t t' t'' :
+  gtrc g oc1 t t' → gtlc g oc2 t' t'' →
+  g.(rel) oc1 oc2 = Some Right_assoc → g.(rel) oc2 oc3 = Some Right_assoc →
+  gtrc g oc3 t t''.
+Proof.
+  intro. revert t'' oc2 oc3. induction H; intros.
+  - inv H0.
+  - assert (rel g o oc3 = Some Right_assoc). { eauto using gtr. }
+    }
+    apply g.(left_assoc_sym) in H4 as ?.
+    inv H1; eauto with gtl.
+  - assert (rel g o oc3 = Some Left_assoc). {
+      eapply g.(left_assoc_trans). apply g.(left_assoc_sym). eassumption.
+      eapply g.(left_assoc_trans); eassumption.
+    }
+    apply g.(left_assoc_sym) in H5 as ?.
+    inv H2; eauto with gtl.
+Qed.
