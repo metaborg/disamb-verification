@@ -9,7 +9,7 @@ Implicit Types s : L + O.
 Implicit Types t : @parse_tree L O.
 Implicit Types g : @dgrammar O.
 
-Inductive gtp g : parse_tree → parse_tree → Prop :=
+(* Inductive gtp g : parse_tree → parse_tree → Prop :=
   | OP1 o o' t1 t2 t'1 t'2 :
       g.(rel) o o' = Some Priority →
       gtp g (INode t1 o t2) (INode t'1 o' t'2)
@@ -18,22 +18,22 @@ Inductive gtp g : parse_tree → parse_tree → Prop :=
       gtp g (INode t1 o t2) (INode t1' o t2)
   | OP3 o t1 t2 t2' :
       gtp g t2 t2' →
-      gtp g (INode t1 o t2) (INode t1 o t2').
+      gtp g (INode t1 o t2) (INode t1 o t2'). *)
 
-Inductive gtp_trans g : parse_tree → parse_tree → Prop :=
-  | OPT1 o o' t1 t2 t'1 t'2 :
+Inductive gtp g : parse_tree → parse_tree → Prop :=
+  | OP1 o o' t1 t2 t'1 t'2 :
     g.(rel) o o' = Some Priority →
-    gtp_trans g (INode t1 o t2) (INode t'1 o' t'2)
-  | OPT2 o t1 t2 t1' :
-    gtp_trans g t1 t1' →
-    gtp_trans g (INode t1 o t2) (INode t1' o t2)
-  | OPT3 o t1 t2 t2' :
-    gtp_trans g t2 t2' →
-    gtp_trans g (INode t1 o t2) (INode t1 o t2')
-  | OPT4 o t1 t2 t1' t2' :
-    gtp_trans g t1 t1' →
-    gtp_trans g t2 t2' →
-    gtp_trans g (INode t1 o t2) (INode t1' o t2').
+    gtp g (INode t1 o t2) (INode t'1 o' t'2)
+  | OP2 o t1 t2 t1' :
+    gtp g t1 t1' →
+    gtp g (INode t1 o t2) (INode t1' o t2)
+  | OP3 o t1 t2 t2' :
+    gtp g t2 t2' →
+    gtp g (INode t1 o t2) (INode t1 o t2')
+  | OP4 o t1 t2 t1' t2' :
+    gtp g t1 t1' →
+    gtp g t2 t2' →
+    gtp g (INode t1 o t2) (INode t1' o t2').
 
 Definition r_gtp g t t' := yield t = yield t' ∧ gtp g t t'.
 
@@ -51,6 +51,18 @@ Inductive gtlc g oc : parse_tree → parse_tree → Prop :=
       gtlc g oc t2 t'2 →
       gtlc g oc (INode t1 o t2) (INode t'1 o' t'2).
 
+(* Inductive gtl g : parse_tree → parse_tree → Prop :=
+  | OL1 o o' t1 t2 t'1 t'2 :
+      g.(rel) o o' = Some Left_assoc →
+      gtlc g o (INode t1 o t2) (INode t'1 o' t'2) →
+      gtl g (INode t1 o t2) (INode t'1 o' t'2)
+  | OL2 o t1 t2 t1' :
+      gtl g t1 t1' →
+      gtl g (INode t1 o t2) (INode t1' o t2)
+  | OL3 o t1 t2 t2' :
+      gtl g t2 t2' →
+      gtl g (INode t1 o t2) (INode t1 o t2'). *)
+
 Inductive gtl g : parse_tree → parse_tree → Prop :=
   | OL1 o o' t1 t2 t'1 t'2 :
       g.(rel) o o' = Some Left_assoc →
@@ -61,23 +73,11 @@ Inductive gtl g : parse_tree → parse_tree → Prop :=
       gtl g (INode t1 o t2) (INode t1' o t2)
   | OL3 o t1 t2 t2' :
       gtl g t2 t2' →
-      gtl g (INode t1 o t2) (INode t1 o t2').
-
-Inductive gtl_trans g : parse_tree → parse_tree → Prop :=
-  | OLT1 o o' t1 t2 t'1 t'2 :
-      g.(rel) o o' = Some Left_assoc →
-      gtlc g o (INode t1 o t2) (INode t'1 o' t'2) →
-      gtl_trans g (INode t1 o t2) (INode t'1 o' t'2)
-  | OLT2 o t1 t2 t1' :
-      gtl_trans g t1 t1' →
-      gtl_trans g (INode t1 o t2) (INode t1' o t2)
-  | OLT3 o t1 t2 t2' :
-      gtl_trans g t2 t2' →
-      gtl_trans g (INode t1 o t2) (INode t1 o t2')
-  | OLT4 o t1 t2 t1' t2' :
-      gtl_trans g t1 t1' →
-      gtl_trans g t2 t2' →
-      gtl_trans g (INode t1 o t2) (INode t1' o t2').
+      gtl g (INode t1 o t2) (INode t1 o t2')
+  | OL4 o t1 t2 t1' t2' :
+      gtl g t1 t1' →
+      gtl g t2 t2' →
+      gtl g (INode t1 o t2) (INode t1' o t2').
 
 Definition r_gtl g t t' := yield t = yield t' ∧ gtl g t t'.
 
@@ -95,6 +95,18 @@ Inductive gtrc g oc : parse_tree → parse_tree → Prop :=
       gtrc g oc t1 t'1 →
       gtrc g oc (INode t1 o t2) (INode t'1 o' t'2).
 
+(* Inductive gtr g : parse_tree → parse_tree → Prop :=
+  | OR1 o o' t1 t2 t'1 t'2 :
+      g.(rel) o o' = Some Right_assoc →
+      gtrc g o (INode t1 o t2) (INode t'1 o' t'2) →
+      gtr g (INode t1 o t2) (INode t'1 o' t'2)
+  | OR2 o t1 t2 t1' :
+      gtr g t1 t1' →
+      gtr g (INode t1 o t2) (INode t1' o t2)
+  | OR3 o t1 t2 t2' :
+      gtr g t2 t2' →
+      gtr g (INode t1 o t2) (INode t1 o t2'). *)
+
 Inductive gtr g : parse_tree → parse_tree → Prop :=
   | OR1 o o' t1 t2 t'1 t'2 :
       g.(rel) o o' = Some Right_assoc →
@@ -105,7 +117,11 @@ Inductive gtr g : parse_tree → parse_tree → Prop :=
       gtr g (INode t1 o t2) (INode t1' o t2)
   | OR3 o t1 t2 t2' :
       gtr g t2 t2' →
-      gtr g (INode t1 o t2) (INode t1 o t2').
+      gtr g (INode t1 o t2) (INode t1 o t2')
+  | OR4 o t1 t1' t2 t2' :
+      gtr g t1 t1' →
+      gtr g t2 t2' →
+      gtr g (INode t1 o t2) (INode t1' o t2').
 
 Definition r_gtr g t t' := yield t = yield t' ∧ gtr g t t'.
 

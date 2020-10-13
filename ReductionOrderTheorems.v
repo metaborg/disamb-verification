@@ -12,26 +12,26 @@ Implicit Types s : L + O.
 Implicit Types t : @parse_tree L O.
 Implicit Types g : @dgrammar O.
 
-Lemma gtp_gtp_trans g t t' :
+(* Lemma gtp_gtp_trans g t t' :
   gtp g t t' → gtp_trans g t t'.
 Proof.
   intros. induction H.
   - auto using OPT1.
   - auto using OPT2.
   - auto using OPT3.
-Qed.
+Qed. *)
 
-Lemma gtp_trans_trans g t t' t'' :
-  gtp_trans g t t' → gtp_trans g t' t'' → gtp_trans g t t''.
+Lemma gtp_trans g t t' t'' :
+  gtp g t t' → gtp g t' t'' → gtp g t t''.
 Proof.
   intro. revert t''. induction H; intros.
-  - inv H0; eauto using OPT1, g.(priority_trans).
-  - inv H0; auto using OPT1, OPT2, OPT4.
-  - inv H0; auto using OPT1, OPT3, OPT4.
-  - inv H1; auto using OPT1, OPT4.
+  - inv H0; eauto using OP1, g.(priority_trans).
+  - inv H0; auto using OP1, OP2, OP4.
+  - inv H0; auto using OP1, OP3, OP4.
+  - inv H1; auto using OP1, OP4.
 Qed. 
 
-Lemma gtp_gtp_trans_trans g t t' t'' :
+(* Lemma gtp_gtp_trans_trans g t t' t'' :
   gtp g t t' → gtp_trans g t' t'' → gtp_trans g t t''.
 Proof.
   intro. revert t''. induction H; intros.
@@ -46,10 +46,10 @@ Proof.
   intros. induction H.
   - auto using gtp_gtp_trans.
   - eauto using gtp_gtp_trans_trans.
-Qed.
+Qed. *)
 
-Lemma gtp_trans_irreflexive g t t' :
-  gtp_trans g t t' → t ≠ t'.
+Lemma gtp_irreflexive g t t' :
+  gtp g t t' → t ≠ t'.
 Proof.
   intro. induction H.
   - intro. inv H0. apply g.(priority_irefl) in H. apply H.
@@ -58,11 +58,11 @@ Proof.
   - intro. inv H1. contradiction.
 Qed. 
 
-Lemma gtp_acyclic g :
+(* Lemma gtp_acyclic g :
   Irreflexive (tc (@gtp L O g)).
 Proof.
   intro. intro. apply gtp_trans_complete in H. apply gtp_trans_irreflexive in H. contradiction.
-Qed.
+Qed. *)
 
 Lemma gtlc_trans g oc1 oc2 oc3 t t' t'' :
   gtlc g oc1 t t' → gtlc g oc2 t' t'' →
@@ -99,7 +99,7 @@ Qed.
 Lemma olc2_gtl_gtlc g t t1 t2 u u1 u2 (v : @parse_tree L O) o p oc :
   u = INode u1 p u2 → t = INode t1 o t2 →
   g.(rel) oc o = Some Left_assoc → g.(rel) o p ≠ Some Left_assoc →
-  gtl_trans g u v → gtlc g oc t v.
+  gtl g u v → gtlc g oc t v.
 Proof.
   intros. inv H3.
   - inv H6. rename o' into q. rename t'1 into v1. rename t'2 into v2.
@@ -118,7 +118,7 @@ Proof.
 Qed.
 
 Lemma gtlc_gtl_gtlc g o t u v :
-  gtlc g o t u → gtl_trans g u v → gtlc g o t v.
+  gtlc g o t u → gtl g u v → gtlc g o t v.
 Proof.
   intro. revert v. induction H; intros.
   - inv H0.
@@ -142,7 +142,7 @@ Proof.
 Qed.
 
 Lemma gtl_gtlc_gtlc g oc t u v :
-  gtl_trans g t u → gtlc g oc u v → gtlc g oc t v.
+  gtl g t u → gtlc g oc u v → gtlc g oc t v.
 Proof.
   intro. revert v. induction H; intros.
   - inv H0. contradiction.
@@ -157,40 +157,61 @@ Proof.
   - inv H1; auto using OLC1, OLC2, OLC3.
 Qed.
 
-Lemma glt_trans_trans g t t' t'' :
-  gtl_trans g t t' → gtl_trans g t' t'' → gtl_trans g t t''.
+Lemma glt_trans g t t' t'' :
+  gtl g t t' → gtl g t' t'' → gtl g t t''.
 Proof.
   intro. revert t''. induction H; intros.
   - inv H1.
-    + apply OLT1. 
+    + apply OL1. 
       * eauto using g.(left_assoc_trans).
       * eapply gtlc_trans; try eassumption.
         apply g.(left_assoc_sym). assumption.
-    + apply OLT1. 
+    + apply OL1. 
       * eauto using g.(left_assoc_trans).
       * inv H0. contradiction.
         apply OLC3; assumption.
-    + apply OLT1. assumption.
+    + apply OL1. assumption.
       inv H0. contradiction.
       apply OLC3; try assumption.
       eauto using gtlc_gtl_gtlc.
     + inv H0. contradiction.
-      eapply OLT1. assumption.
+      eapply OL1. assumption.
       apply OLC3; try assumption.
       eauto using gtlc_gtl_gtlc.
 
-  - inv H0; auto using OLT2, OLT4.
+  - inv H0; auto using OL2, OL4.
     inv H6. contradiction.
-    apply OLT1. assumption.
+    apply OL1. assumption.
     apply OLC3; assumption.
 
-  - inv H0; auto using OLT3, OLT4.
-    apply OLT1. assumption.
+  - inv H0; auto using OL3, OL4.
+    apply OL1. assumption.
     inv H6. contradiction.
     apply OLC3; eauto using gtl_gtlc_gtlc.
 
-  - inv H1; auto using OLT2, OLT3, OLT4.
-    apply OLT1. assumption.
+  - inv H1; auto using OL2, OL3, OL4.
+    apply OL1. assumption.
     inv H7. contradiction.
     apply OLC3; eauto using gtl_gtlc_gtlc.
 Qed.
+
+Lemma gtlc_irreflexive g oc t t' :
+  gtlc g oc t t' → t ≠ t'.
+Proof.
+  intro. induction H; intro.
+  - inv H0.
+  - inv H1. contradiction.
+  - inv H2. contradiction.
+Qed.
+
+Lemma gtl_irreflexive g t t' :
+  gtl g t t' → t ≠ t'.
+Proof.
+  intro. induction H; intro.
+  - inv H0. contradiction. inv H1.
+    apply gtlc_irreflexive in H10. contradiction.
+  - inv H0. contradiction.
+  - inv H0. contradiction.
+  - inv H1. contradiction.
+Qed.
+ 
