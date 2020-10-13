@@ -64,6 +64,17 @@ Proof.
   intro. intro. apply gtp_trans_complete in H. apply gtp_trans_irreflexive in H. contradiction.
 Qed. *)
 
+Create HintDb gtl.
+Hint Resolve OLC1 : gtl.
+Hint Resolve OLC2 : gtl.
+Hint Resolve OLC3 : gtl.
+Hint Resolve OL1 : gtl.
+Hint Resolve OL2 : gtl.
+Hint Resolve OL3 : gtl.
+Hint Resolve OL4 : gtl.
+Hint Resolve left_assoc_sym : gtl.
+Hint Resolve left_assoc_trans : gtl.
+
 Lemma gtlc_trans g oc1 oc2 oc3 t t' t'' :
   gtlc g oc1 t t' → gtlc g oc2 t' t'' →
   g.(rel) oc1 oc2 = Some Left_assoc → g.(rel) oc2 oc3 = Some Left_assoc →
@@ -76,25 +87,16 @@ Proof.
       eapply g.(left_assoc_trans); eassumption.
     }
     apply g.(left_assoc_sym) in H4 as ?.
-    inv H1.
-    + auto using OLC1.
-    + apply OLC2. assumption. intro. apply H11.
-      eapply g.(left_assoc_trans). apply H3. assumption.
-    + exfalso. apply H0. eapply g.(left_assoc_trans). apply H2. assumption.
+    inv H1; eauto with gtl.
   - assert (rel g o oc3 = Some Left_assoc). {
       eapply g.(left_assoc_trans). apply g.(left_assoc_sym). eassumption.
       eapply g.(left_assoc_trans); eassumption.
     }
     apply g.(left_assoc_sym) in H5 as ?.
-    inv H2.
-    + auto using OLC1.
-    + apply OLC2. assumption.
-      intro. apply H12.
-      eapply g.(left_assoc_trans). apply H4. assumption.
-    + apply OLC3. assumption.
-      eapply g.(left_assoc_trans). apply g.(left_assoc_sym). apply H4. assumption.
-      eapply IHgtlc; eassumption.
+    inv H2; eauto with gtl.
 Qed.
+
+Hint Resolve gtlc_trans : gtl.
 
 Lemma olc2_gtl_gtlc g t t1 t2 u u1 u2 (v : @parse_tree L O) o p oc :
   u = INode u1 p u2 → t = INode t1 o t2 →
@@ -105,16 +107,16 @@ Proof.
   - inv H6. rename o' into q. rename t'1 into v1. rename t'2 into v2.
     apply OLC2. assumption.
     intro. destruct H2.
-    eauto using g.(left_assoc_trans), g.(left_assoc_sym).
+    eauto with gtl.
   - inv H5. apply OLC2. assumption.
     intro. destruct H2.
-    eauto using g.(left_assoc_trans), g.(left_assoc_sym).
+    eauto with gtl.
   - inv H5. apply OLC2. assumption.
     intro. destruct H2.
-    eauto using g.(left_assoc_trans), g.(left_assoc_sym).
+    eauto with gtl.
   - inv H6. apply OLC2. assumption.
     intro. destruct H2.
-    eauto using g.(left_assoc_trans), g.(left_assoc_sym).
+    eauto with gtl.
 Qed.
 
 Lemma gtlc_gtl_gtlc g o t u v :
@@ -122,23 +124,8 @@ Lemma gtlc_gtl_gtlc g o t u v :
 Proof.
   intro. revert v. induction H; intros.
   - inv H0.
-  - remember (INode t'1 o' t'2) as u.
-    remember (INode t1 o0 t2) as t.
-    eauto using olc2_gtl_gtlc, g.(left_assoc_trans), g.(left_assoc_sym).
-  - rename o' into p.
-    rename o0 into o'.
-    rename t'1 into u1. rename t'2 into u2.
-    inv H2.
-    + rename t'1 into v1. rename t'2 into v2. rename o'0 into q.
-      apply OLC3. assumption.
-      eauto using g.(left_assoc_trans), g.(left_assoc_sym).
-      inv H8. contradiction.
-      eauto using gtlc_trans, g.(left_assoc_trans), g.(left_assoc_sym).
-    + auto using OLC3.
-    + rename t2' into u2'.
-      eauto using OLC3, gtlc_trans, g.(left_assoc_trans), g.(left_assoc_sym).
-    + rename t2' into u2'.
-      eauto using OLC3, gtlc_trans, g.(left_assoc_trans), g.(left_assoc_sym).
+  - eauto using olc2_gtl_gtlc with gtl.
+  - inv H2; eauto with gtl.
 Qed.
 
 Lemma gtl_gtlc_gtlc g oc t u v :
@@ -147,14 +134,14 @@ Proof.
   intro. revert v. induction H; intros.
   - inv H0. contradiction.
     inv H1.
-    + apply OLC1. eauto using g.(left_assoc_trans), g.(left_assoc_sym).
-    + apply OLC2. eauto using g.(left_assoc_trans), g.(left_assoc_sym).
-      intro. destruct H7. eauto using g.(left_assoc_trans), g.(left_assoc_sym).
-    + apply OLC3; eauto using g.(left_assoc_trans), g.(left_assoc_sym).
-      eauto 10 using gtlc_trans, g.(left_assoc_trans), g.(left_assoc_sym).
-  - inv H0; auto using OLC1, OLC2, OLC3.
-  - inv H0; auto using OLC1, OLC2, OLC3.
-  - inv H1; auto using OLC1, OLC2, OLC3.
+    + eauto with gtl.
+    + apply OLC2. eauto with gtl.
+      intro. destruct H7. eauto with gtl.
+    + apply OLC3; eauto with gtl.
+      eauto 10 with gtl.
+  - inv H0; eauto with gtl.
+  - inv H0; eauto with gtl.
+  - inv H1; eauto with gtl.
 Qed.
 
 Lemma glt_trans g t t' t'' :
@@ -162,37 +149,16 @@ Lemma glt_trans g t t' t'' :
 Proof.
   intro. revert t''. induction H; intros.
   - inv H1.
-    + apply OL1. 
-      * eauto using g.(left_assoc_trans).
-      * eapply gtlc_trans; try eassumption.
-        apply g.(left_assoc_sym). assumption.
-    + apply OL1. 
-      * eauto using g.(left_assoc_trans).
-      * inv H0. contradiction.
-        apply OLC3; assumption.
-    + apply OL1. assumption.
-      inv H0. contradiction.
-      apply OLC3; try assumption.
-      eauto using gtlc_gtl_gtlc.
-    + inv H0. contradiction.
-      eapply OL1. assumption.
-      apply OLC3; try assumption.
-      eauto using gtlc_gtl_gtlc.
-
-  - inv H0; auto using OL2, OL4.
-    inv H6. contradiction.
-    apply OL1. assumption.
-    apply OLC3; assumption.
-
-  - inv H0; auto using OL3, OL4.
-    apply OL1. assumption.
-    inv H6. contradiction.
-    apply OLC3; eauto using gtl_gtlc_gtlc.
-
-  - inv H1; auto using OL2, OL3, OL4.
-    apply OL1. assumption.
-    inv H7. contradiction.
-    apply OLC3; eauto using gtl_gtlc_gtlc.
+    + eauto with gtl.
+    + inv H0; eauto with gtl.
+    + inv H0; eauto using gtlc_gtl_gtlc with gtl.
+    + inv H0; eauto using gtlc_gtl_gtlc with gtl.
+  - inv H0; eauto with gtl.
+    inv H6; eauto with gtl.
+  - inv H0; eauto with gtl.
+    inv H6; eauto using gtl_gtlc_gtlc with gtl.
+  - inv H1; eauto with gtl.
+    inv H7; eauto using gtl_gtlc_gtlc with gtl.
 Qed.
 
 Lemma gtlc_irreflexive g oc t t' :

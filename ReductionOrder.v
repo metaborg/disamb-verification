@@ -79,6 +79,17 @@ Inductive gtl g : parse_tree → parse_tree → Prop :=
       gtl g t2 t2' →
       gtl g (INode t1 o t2) (INode t1' o t2').
 
+Create HintDb gtl.
+Hint Resolve OLC1 : gtl.
+Hint Resolve OLC2 : gtl.
+Hint Resolve OLC3 : gtl.
+Hint Resolve OL1 : gtl.
+Hint Resolve OL2 : gtl.
+Hint Resolve OL3 : gtl.
+Hint Resolve OL4 : gtl.
+Hint Resolve left_assoc_sym : gtl.
+Hint Resolve left_assoc_trans : gtl.
+
 Definition r_gtl g t t' := yield t = yield t' ∧ gtl g t t'.
 
 Inductive gtrc g oc : parse_tree → parse_tree → Prop :=
