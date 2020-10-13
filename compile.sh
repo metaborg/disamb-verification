@@ -7,4 +7,5 @@ coqc PosTreeTheorems.v
 coqc ReorderingTheorems.v
 coqc Lib/StrongInduction.v
 coqc GloballyFiniteReorderings.v
+coqc ReductionOrder.v
 read -p FINISHED

@@ -94,9 +94,15 @@ Inductive DRelation :=
 Record dgrammar := mkDgrammar {
   rel : O -> O -> option DRelation;
 
-  (* Associativity is symmetric. *)
+  (* Associativity is symmetric and transitive. *)
   left_assoc_sym o1 o2 : rel o1 o2 = Some Left_assoc -> rel o2 o1 = Some Left_assoc;
   right_assoc_sym o1 o2 : rel o1 o2 = Some Right_assoc -> rel o2 o1 = Some Right_assoc;
+  left_assoc_trans o1 o2 o3 : rel o1 o2 = Some Left_assoc →
+                              rel o2 o3 = Some Left_assoc →
+                              rel o1 o3 = Some Left_assoc;
+  right_assoc_trans o1 o2 o3 : rel o1 o2 = Some Right_assoc →
+                               rel o2 o3 = Some Right_assoc →
+                               rel o1 o3 = Some Right_assoc;
   (* Priority is irreflexive and transitive. *)
   priority_irefl o : rel o o <> Some Priority;
   priority_trans o1 o2 o3 : rel o1 o2 = Some Priority ->
