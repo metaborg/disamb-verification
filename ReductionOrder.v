@@ -79,17 +79,6 @@ Inductive gtl g : parse_tree → parse_tree → Prop :=
       gtl g t2 t2' →
       gtl g (INode t1 o t2) (INode t1' o t2').
 
-Create HintDb gtl.
-Hint Resolve OLC1 : gtl.
-Hint Resolve OLC2 : gtl.
-Hint Resolve OLC3 : gtl.
-Hint Resolve OL1 : gtl.
-Hint Resolve OL2 : gtl.
-Hint Resolve OL3 : gtl.
-Hint Resolve OL4 : gtl.
-Hint Resolve left_assoc_sym : gtl.
-Hint Resolve left_assoc_trans : gtl.
-
 Definition r_gtl g t t' := yield t = yield t' ∧ gtl g t t'.
 
 Inductive gtrc g oc : parse_tree → parse_tree → Prop :=
@@ -135,5 +124,29 @@ Inductive gtr g : parse_tree → parse_tree → Prop :=
       gtr g (INode t1 o t2) (INode t1' o t2').
 
 Definition r_gtr g t t' := yield t = yield t' ∧ gtr g t t'.
+
+Inductive gtpr g : parse_tree → parse_tree → Prop :=
+  | GTPR_Priority o p t1 t2 u1 u2 :
+      g.(rel) o p = Some Priority →
+      gtpr g (INode t1 o t2) (INode u1 p u2)
+  | GTPR_LAssoc o p t1 t2 u1 u2 :
+      g.(rel) o p = Some Left_assoc →
+      gtlc g o (INode t1 o t2) (INode u1 p u2) →
+      gtpr g (INode t1 o t2) (INode u1 p u2)
+  | GTPR_RAssoc o p t1 t2 u1 u2 :
+      g.(rel) o p = Some Right_assoc →
+      gtrc g o (INode t1 o t2) (INode u1 p u2) →
+      gtpr g (INode t1 o t2) (INode u1 p u2)
+  | GTPR_Left o t1 t2 t1' :
+      gtpr g t1 t1' →
+      gtpr g (INode t1 o t2) (INode t1' o t2)
+  | GTPR_Right o t1 t2 t2' :
+      gtpr g t2 t2' →
+      gtpr g (INode t1 o t2) (INode t1 o t2')
+  | GTPR_Both o t1 t2 t1' t2' :
+      gtpr g t1 t1' →
+      gtpr g t2 t2' →
+      gtpr g (INode t1 o t2) (INode t1 o t2').
+
 
 End ReductionOrder.

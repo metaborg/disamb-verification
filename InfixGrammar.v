@@ -103,11 +103,27 @@ Record dgrammar := mkDgrammar {
   right_assoc_trans o1 o2 o3 : rel o1 o2 = Some Right_assoc →
                                rel o2 o3 = Some Right_assoc →
                                rel o1 o3 = Some Right_assoc;
+  (* A production is in at most one associativity relation. *)
+  left_assoc_group o1 o2 o3 : rel o1 o2 = Some Left_assoc → rel o1 o3 ≠ Some Right_assoc;
+  right_assoc_group o1 o2 o3 : rel o1 o2 = Some Right_assoc → rel o1 o3 ≠ Some Left_assoc;
   (* Priority is irreflexive and transitive. *)
   priority_irefl o : rel o o <> Some Priority;
   priority_trans o1 o2 o3 : rel o1 o2 = Some Priority ->
                             rel o2 o3 = Some Priority ->
-                            rel o1 o3 = Some Priority
+                            rel o1 o3 = Some Priority;
+
+  priority_group_left_1 o1 o2 o3 : rel o1 o2 = Some Priority → 
+                                   rel o2 o3 = Some Left_assoc →
+                                   rel o1 o3 = Some Priority;
+  priority_group_left_2 o1 o2 o3 : rel o1 o2 = Some Priority → 
+                                   rel o1 o3 = Some Left_assoc →
+                                   rel o3 o2 = Some Priority;
+  priority_group_right_1 o1 o2 o3 : rel o1 o2 = Some Priority → 
+                                    rel o2 o3 = Some Right_assoc →
+                                    rel o1 o3 = Some Priority;
+  priority_group_right_2 o1 o2 o3 : rel o1 o2 = Some Priority → 
+                                    rel o1 o3 = Some Right_assoc →
+                                    rel o3 o2 = Some Priority
 }.
 
 Implicit Types g : dgrammar.
