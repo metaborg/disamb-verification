@@ -157,4 +157,13 @@ Inductive linsert {L O} (pr : drules O):
       linsert pr t1 o1 t' t'' ->
       linsert pr (INode t1 o1 t2) o2 t t''.
 
+Inductive fix_tree {L O} (pr : drules O) :
+      parse_tree L O -> parse_tree L O -> Prop :=
+  | ANode_fix l :
+      fix_tree pr (ANode l) (ANode l)
+  | INode_fix t1 o t2 t2' t' :
+      fix_tree pr t2 t2' ->
+      linsert pr t1 o t2' t' ->
+      fix_tree pr (INode t1 o t2) t'.
+
 End IGrammar.

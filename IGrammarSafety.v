@@ -13,6 +13,8 @@ Arguments prio {_} _ _ _.
 Arguments left_a {_} _ _ _.
 Arguments right_a {_} _ _ _.
 
+(* Existential Lemmas *)
+
 Lemma dec_conflict_pattern {O} (pr : drules O) `{drules_dec pr} (q : tree_pattern O) :
   Decision (conflict_pattern pr q).
 Proof.
@@ -40,6 +42,82 @@ Proof.
     + right. intro. inv H.
 Qed.
 
+Lemma linsert_one_exists {L O} (pr : drules O) `{drules_dec pr}
+    (l : L) (o : O) (t : parse_tree L O) :
+  exists t', linsert_one pr l o t t'.
+Proof.
+  induction t.
+  - eexists. apply ANode_LInsert_One.
+  - assert (Decision (conflict_pattern pr (CR o o0))). {
+      auto using dec_conflict_pattern.
+    }
+    destruct IHt1, IHt2.
+    destruct H.
+    + eexists. eauto using INode_LInsert_One_2.
+    + eexists. eauto using INode_LInsert_One_1.
+Qed.
+
+Lemma linsert_exists {L O} (pr : drules O) `{drules_dec pr}
+    (o : O) (t1 t2 : parse_tree L O) :
+  exists t', linsert pr t1 o t2 t'.
+Proof.
+  revert o t2. induction t1; intros.
+  - assert (exists t', linsert_one pr l o t2 t'). {
+      auto using linsert_one_exists.
+    }
+    destruct H. eauto using ANode_LInsert.
+  - specialize IHt1_2 with o0 t2. destruct IHt1_2.
+    specialize IHt1_1 with o x. destruct IHt1_1.
+    eauto using INode_LInsert.
+Qed.
+
+Lemma fix_tree_exists {L O} (pr : drules O) `{drules_dec pr} (t : parse_tree L O) :
+  exists t', fix_tree pr t t'.
+Proof.
+  induction t.
+  - eauto using ANode_fix.
+  - destruct IHt2 as [t2'].
+    assert (exists t', linsert pr t1 o t2' t'). {
+      auto using linsert_exists.
+    }
+    destruct H0 as [t'].
+    eauto using INode_fix.
+Qed.
+
+(* Yield Lemmas *)
+
+Lemma linsert_one_yield {L O} (pr : drules O)
+    (l1 : L) (o1 : O) (t t' : parse_tree L O) :
+  linsert_one pr l1 o1 t t' ->
+  yield t' = inl l1 :: inr o1 :: yield t .
+Proof.
+  intros. induction H; simpl; auto.
+  rewrite IHlinsert_one. reflexivity.
+Qed.
+
+Lemma linsert_yield {L O} (pr : drules O)
+    (o : O) (t1 t2 t' : parse_tree L O) :
+  linsert pr t1 o t2 t' ->
+  yield t' = yield t1 ++ inr o :: yield t2.
+Proof.
+  intro. induction H; simpl; eauto using linsert_one_yield.
+  - rewrite IHlinsert2. rewrite IHlinsert1.
+    simplify_list_eq. reflexivity.
+Qed.
+
+Lemma fix_tree_yield {L O} (pr : drules O) (t t' : parse_tree L O) :
+  fix_tree pr t t' ->
+  yield t' = yield t.
+Proof.
+  intro. induction H; simpl.
+  - reflexivity.
+  - rewrite <- IHfix_tree.
+    apply linsert_yield in H0. rewrite H0.
+    reflexivity.
+Qed.
+
+(* Safe PR Lemmas *)
+
 Lemma safe_cl_cr {O} (o1 o2 : O) (pr : drules O) `{safety_props pr} :
   (conflict_pattern pr (CL o1 o2) /\ conflict_pattern pr (CR o2 o1)) -> False.
 Proof.
@@ -54,6 +132,8 @@ Proof.
   - apply right_a_sym in H0.
     apply left_a_one in H1. destruct H1. contradiction.
 Qed.
+
+(* Conflict-Free Lemmas *)
 
 Lemma linsert_one_match {L O} (pr : drules O) (l : L) (o1 : O) (t t' : parse_tree L O) :
   linsert_one pr l o1 t t' ->
@@ -102,40 +182,6 @@ Proof.
       unfold CR. auto using HMatch, IMatch.
 Qed.
 
-Lemma linsert_one_yield {L O} (pr : drules O)
-    (l1 : L) (o1 : O) (t t' : parse_tree L O) :
-  linsert_one pr l1 o1 t t' ->
-  yield t' = inl l1 :: inr o1 :: yield t .
-Proof.
-  intros. induction H; simpl; auto.
-  rewrite IHlinsert_one. reflexivity.
-Qed.
-
-Lemma linsert_one_exists {L O} (pr : drules O) `{drules_dec pr}
-    (l : L) (o : O) (t : parse_tree L O) :
-  exists t', linsert_one pr l o t t'.
-Proof.
-  induction t.
-  - eexists. apply ANode_LInsert_One.
-  - assert (Decision (conflict_pattern pr (CR o o0))). {
-      auto using dec_conflict_pattern.
-    }
-    destruct IHt1, IHt2.
-    destruct H.
-    + eexists. eauto using INode_LInsert_One_2.
-    + eexists. eauto using INode_LInsert_One_1.
-Qed.
-
-Lemma linsert_yield {L O} (pr : drules O)
-    (o : O) (t1 t2 t' : parse_tree L O) :
-  linsert pr t1 o t2 t' ->
-  yield t' = yield t1 ++ inr o :: yield t2.
-Proof.
-  intro. induction H; simpl; eauto using linsert_one_yield.
-  - rewrite IHlinsert2. rewrite IHlinsert1.
-    simplify_list_eq. reflexivity.
-Qed.
-
 Lemma linsert_safe {L O} (pr : drules O) `{safety_props pr}
     (o : O) (t1 t2 t' : parse_tree L O) :
   conflict_free (conflict_pattern pr) t2 ->
@@ -145,36 +191,30 @@ Proof.
   intros. induction H0; eauto using linsert_one_safe.
 Qed.
 
-Lemma linsert_exists {L O} (pr : drules O) `{drules_dec pr}
-    (o : O) (t1 t2 : parse_tree L O) :
-  exists t', linsert pr t1 o t2 t'.
+Lemma fix_tree_safe {L O} (pr : drules O) `{safety_props pr} (t t' : parse_tree L O) :
+  fix_tree pr t t' ->
+  conflict_free (conflict_pattern pr) t'.
 Proof.
-  revert o t2. induction t1; intros.
-  - assert (exists t', linsert_one pr l o t2 t'). {
-      auto using linsert_one_exists.
-    }
-    destruct H. eauto using ANode_LInsert.
-  - specialize IHt1_2 with o0 t2. destruct IHt1_2.
-    specialize IHt1_1 with o x. destruct IHt1_1.
-    eauto using INode_LInsert.
+  intro. induction H.
+  - apply ANode_cfree.
+  - eauto using linsert_safe.
 Qed.
+
+(* Safety *)
 
 Theorem safety {L O} (pr : drules O) `{safety_props pr} `{drules_dec pr} (w : list (L + O)) :
   language w -> dlanguage pr w.
 Proof.
   unfold language, dlanguage. intro. destruct H as [t].
-  revert H. revert w. induction t; intros; simpl in *.
-  - exists (ANode l); simpl in *. split.
-    + assumption.
-    + apply ANode_cfree.
-  - specialize IHt2 with (yield t2). destruct IHt2 as [t2']. reflexivity. destruct H0.
-    assert (exists t', linsert pr t1 o t2' t'). {
-      auto using linsert_exists.
-    }
-    destruct H2 as [t']. exists t'. split.
-    + rewrite <- H. rewrite <- H0.
-      eauto using linsert_yield.
-    + eauto using linsert_safe.
+  rewrite <- H.
+  assert (exists t', fix_tree pr t t'). {
+    auto using fix_tree_exists.
+  }
+  destruct H0 as [t'].
+  exists t'.
+  split.
+  - eauto using fix_tree_yield.
+  - eauto using fix_tree_safe.
 Qed.
 
 End IGrammarSafety.
