@@ -1,7 +1,7 @@
 Require Import MyUtils.
-Load IPPGrammar.
+Require Export IPGrammar.
 
-Section IPPGrammarTheorems.
+Section IPGrammarSafety.
 
 Arguments InfixProd {_} _.
 Arguments PrefixProd {_} _.
@@ -26,9 +26,9 @@ Proof.
     + right. intro. inv H.
     + destruct q2_1. destruct q2_2.
       * replace (InfixPatt HPatt o (InfixPatt HPatt o0 HPatt)) with (CR_infix_infix o o0); try reflexivity.
-        specialize dec_prio0 with (p1 := InfixProd o) (p2 := InfixProd o0).
-        specialize dec_left_a0 with (p1 := InfixProd o) (p2 := InfixProd o0).
-        destruct dec_prio0, dec_left_a0; auto using CPrio_infix_infix_2, CLeft.
+        specialize dec_prio with (p1 := InfixProd o) (p2 := InfixProd o0).
+        specialize dec_left_a with (p1 := InfixProd o) (p2 := InfixProd o0).
+        destruct dec_prio, dec_left_a; auto using CPrio_infix_infix_2, CLeft.
         right. intro. inv H; contradiction.
       * right. intro. inv H.
       * right. intro. inv H.
@@ -37,9 +37,9 @@ Proof.
     + right. intro. inv H.
     + destruct q1_1. destruct q1_2.
       * replace (InfixPatt (InfixPatt HPatt o0 HPatt) o HPatt) with (CL_infix_infix o o0); try reflexivity.
-        specialize dec_prio0 with (p1 := InfixProd o) (p2 := InfixProd o0).
-        specialize dec_right_a0 with (p1 := InfixProd o) (p2 := InfixProd o0).
-        destruct dec_prio0, dec_right_a0; auto using CPrio_infix_infix_1, CRight.
+        specialize dec_prio with (p1 := InfixProd o) (p2 := InfixProd o0).
+        specialize dec_right_a with (p1 := InfixProd o) (p2 := InfixProd o0).
+        destruct dec_prio, dec_right_a; auto using CPrio_infix_infix_1, CRight.
         right. intro. inv H; contradiction.
       * right. intro. inv H.
       * right. intro. inv H.
@@ -54,8 +54,8 @@ Proof.
     + right. intro. inv H.
     + destruct q1, q2.
       * replace (PrefixPatt o (InfixPatt HPatt o0 HPatt)) with (CR_prefix_infix o o0); try reflexivity.
-        specialize dec_prio0 with (p1 := PrefixProd o) (p2 := InfixProd o0).
-        destruct dec_prio0; auto using CPrio_prefix_infix.
+        specialize dec_prio with (p1 := PrefixProd o) (p2 := InfixProd o0).
+        destruct dec_prio; auto using CPrio_prefix_infix.
         right. intro. inv H. contradiction.
       * right. intro. inv H.
       * right. intro. inv H.
@@ -492,4 +492,4 @@ Proof.
   - eauto using fix_tree_drmcfree.
 Qed.
 
-End IPPGrammarTheorems.
+End IPGrammarSafety.

@@ -1,15 +1,13 @@
 From stdpp Require Export list.
 
-Section IPPGrammar.
+Section IPGrammar.
 
 Inductive prod OP :=
   | InfixProd : OP -> prod OP
   | PrefixProd : OP -> prod OP.
-  (* | PostfixProd : OP -> prod OP. *)
 
 Arguments InfixProd {_} _.
 Arguments PrefixProd {_} _.
-(* Arguments PostfixProd {_} _. *)
 
 Record ippg := mkIppgrammar {
   LEX : Type;
@@ -17,18 +15,16 @@ Record ippg := mkIppgrammar {
   prods: prod OP -> Prop
 }.
 
-Definition word (g : ippg) := list (LEX g + OP g).
+Definition word g := list (LEX g + OP g).
 
 Inductive parse_tree (g : ippg) :=
   | AtomicNode : LEX g -> parse_tree g
   | InfixNode : parse_tree g -> OP g -> parse_tree g -> parse_tree g
   | PrefixNode : OP g -> parse_tree g -> parse_tree g.
-  (* | PostfixNode : parse_tree g -> OP g -> parse_tree g. *)
 
 Arguments AtomicNode {_} _.
 Arguments InfixNode {_} _ _ _.
 Arguments PrefixNode {_} _ _.
-(* Arguments PostfixNode {_} _ _. *)
 
 Inductive wf_parse_tree g : parse_tree g -> Prop :=
   | Atomic_wf l :
@@ -42,17 +38,12 @@ Inductive wf_parse_tree g : parse_tree g -> Prop :=
       g.(prods) (PrefixProd o) ->
       wf_parse_tree g t ->
       wf_parse_tree g (PrefixNode o t).
-  (* | PostfixNode_wf t o :
-      g.(prods) (PostfixProd o) ->
-      wf_parse_tree g t ->
-      wf_parse_tree g (PostfixNode t o). *)
 
 Fixpoint yield {g} t : word g :=
   match t with
   | AtomicNode l => [inl l]
   | InfixNode t1 o t2 => yield t1 ++ inr o :: yield t2
   | PrefixNode o t => inr o :: yield t
-  (* | PostfixNode t o => yield t ++ [inr o] *)
   end.
 
 Definition language {g} w : Prop :=
@@ -62,12 +53,10 @@ Inductive tree_pattern g :=
   | HPatt : tree_pattern g
   | InfixPatt : tree_pattern g -> OP g -> tree_pattern g -> tree_pattern g
   | PrefixPatt : OP g -> tree_pattern g -> tree_pattern g.
-  (* | PostfixPatt : tree_pattern g -> OP g -> tree_pattern g. *)
 
 Arguments HPatt {_}.
 Arguments InfixPatt {_} _ _ _.
 Arguments PrefixPatt {_} _ _.
-(* Arguments PostfixPatt {_} _ _. *)
 
 Inductive matches {g} : parse_tree g -> tree_pattern g -> Prop :=
   | HMatch t :
@@ -79,9 +68,6 @@ Inductive matches {g} : parse_tree g -> tree_pattern g -> Prop :=
   | PrefixMatch t q o :
       matches t q ->
       matches (PrefixNode o t) (PrefixPatt o q).
-  (* | PostfixMatch t q o :
-      matches t q ->
-      matches (PostfixNode t o) (PostfixPatt q o). *)
 
 Definition matches_set {g} t (Q : tree_pattern g -> Prop) : Prop :=
   exists q, Q q /\ matches t q.
@@ -98,10 +84,6 @@ Inductive i_conflict_free {g} (Q : tree_pattern g -> Prop) : parse_tree g -> Pro
       ~ matches_set (PrefixNode o t) Q ->
       i_conflict_free Q t ->
       i_conflict_free Q (PrefixNode o t).
-  (* | PostfixNode_cf t o :
-      ~ matches_set (PostfixNode t o) Q ->
-      conflict_free Q t ->
-      conflict_free Q (PostfixNode t o). *)
 
 Inductive matches_rm {g} : parse_tree g -> tree_pattern g -> Prop :=
   | Match_rm t q :
@@ -264,4 +246,4 @@ Inductive fix_tree {g} (pr : drules g) : parse_tree g -> parse_tree g -> Prop :=
       linsert_op pr o t1' t' ->
       fix_tree pr (PrefixNode o t1) t'.
 
-End IPPGrammar.
+End IPGrammar.

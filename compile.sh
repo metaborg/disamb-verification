@@ -1,11 +1,11 @@
-echo COMPILING COQ FILES
-coqc InfixGrammar.v
-coqc PosTree.v
-coqc Reordering.v
+echo compiling MyUtils.v
 coqc MyUtils.v
-coqc PosTreeTheorems.v
-coqc ReorderingTheorems.v
-coqc Lib/StrongInduction.v
-coqc GloballyFiniteReorderings.v
-coqc ReductionOrder.v
-read -p FINISHED
+echo compiling IGrammar.v
+coqc IGrammar.v
+echo compiling IGrammarSafety.v
+coqc IGrammarSafety.v
+echo compiling IPGrammar.v
+coqc IPGrammar.v
+echo compiling IPGrammarSafety.v
+coqc IPGrammarSafety.v
+read -p "FINISHED, press enter to continue"
