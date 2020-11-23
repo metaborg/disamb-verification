@@ -1,4 +1,5 @@
 From stdpp Require Export list.
+From stdpp Require Export relations.
 
 Section IGrammar.
 
@@ -26,10 +27,8 @@ Inductive parse_tree L O :=
   (* Infix Nodes for infix expressions. *)
   | INode : parse_tree L O -> O -> parse_tree L O -> parse_tree L O.
 
-(* Implicit Types t : parse_tree. *)
-
-Arguments ANode {_ _} _.
-Arguments INode {_ _} _ _ _.
+Global Arguments ANode {_ _} _.
+Global Arguments INode {_ _} _ _ _.
 
 (* yield pt gives the left-to-right concatenation of all the leaves of pt. *)
 Fixpoint yield {L O} t : word L O :=
@@ -48,11 +47,8 @@ Inductive tree_pattern O :=
   (* Infix pattern node. *)
   | IPatt : tree_pattern O -> O -> tree_pattern O -> tree_pattern O.
 
-Arguments HPatt {_}.
-Arguments IPatt {_} _ _ _.
-
-(* Implicit Types q : tree_pattern.
-Implicit Types qs : tree_pattern -> Prop. *)
+Global Arguments HPatt {_}.
+Global Arguments IPatt {_} _ _ _.
 
 (* matches t q states that parse tree t matches the tree pattern q. *)
 Inductive matches {L O} : parse_tree L O -> tree_pattern O -> Prop :=
@@ -81,29 +77,28 @@ Inductive conflict_free {L O} (Q : tree_pattern O -> Prop) : parse_tree L O -> P
       conflict_free Q t2 ->
       conflict_free Q (INode t1 o t2).
 
-Record drules O := mkDrules {
+Record drules (O : Type) := mkDrules {
   prio : O -> O -> Prop;
   left_a : O -> O -> Prop;
   right_a : O -> O -> Prop;
-}.
 
-Arguments prio {_} _ _ _.
-Arguments left_a {_} _ _ _.
-Arguments right_a {_} _ _ _.
-
-Record drules_dec {O} (pr : drules O) := mkDrules_dec {
-  dec_prio : forall (o1 : O) (o2 : O), Decision (pr.(prio) o1 o2);
-  dec_left_a : forall (o1 : O) (o2 : O), Decision (pr.(left_a) o1 o2);
-  dec_right_a : forall (o1 : O) (o2 : O), Decision (pr.(right_a) o1 o2)
+  prio_dec : RelDecision prio;
+  left_a_dec : RelDecision left_a;
+  right_a_dec : RelDecision right_a;
 }.
+Global Existing Instances prio_dec left_a_dec right_a_dec.
+
+Global Arguments prio {_} _ _ _.
+Global Arguments left_a {_} _ _ _.
+Global Arguments right_a {_} _ _ _.
 
 Definition CL {O} (o1 o2 : O) : tree_pattern O :=
   IPatt (IPatt HPatt o2 HPatt) o1 HPatt.
 Definition CR {O} (o1 o2 : O) : tree_pattern O :=
-    IPatt HPatt o1 (IPatt HPatt o2 HPatt).
+  IPatt HPatt o1 (IPatt HPatt o2 HPatt).
 
 Inductive conflict_pattern {O} (pr : drules O) : tree_pattern O -> Prop :=
-  | CPrio1 o1 o2 :
+  | CPrio1 (o1 o2 : O) :
       pr.(prio) o1 o2 ->
       conflict_pattern pr (CL o1 o2)
   | CPrio2 o1 o2 :
@@ -122,48 +117,54 @@ Definition dlanguage {L O} (pr : drules O) (w : list (L + O)) : Prop :=
 Definition safe {L O} (pr : drules O) : Prop :=
   forall w : list (L + O), language w -> dlanguage pr w.
 
-Record safety_props {O} (pr : drules O) := mkSafety_props {
-  prio_antisym o1 o2 : pr.(prio) o1 o2 -> ~ pr.(prio) o2 o1;
+Definition safe_pr {O} (pr : drules O) : Prop :=
+  forall o1 o2,
+    (pr.(prio) o1 o2 \/ pr.(left_a) o1 o2) ->
+    (pr.(prio) o2 o1 \/ pr.(right_a) o2 o1) ->
+    False.
 
-  left_a_sym o1 o2 : pr.(left_a) o1 o2 -> pr.(left_a) o2 o1;
-  right_a_sym o1 o2 : pr.(right_a) o1 o2 -> pr.(right_a) o2 o1;
-
-  prio_one o1 o2 : pr.(prio) o1 o2 -> ~ pr.(left_a) o1 o2 /\ ~ pr.(right_a) o1 o2;
-  left_a_one o1 o2 : pr.(left_a) o1 o2 -> ~ pr.(prio) o1 o2 /\ ~ pr.(right_a) o1 o2;
-  right_a_one o1 o2 : pr.(right_a) o1 o2 -> ~ pr.(prio) o1 o2 /\ ~ pr.(left_a) o1 o2
-}.
-
-Inductive linsert_one {L O} (pr : drules O) (l1 : L) (o1 : O) : 
-      parse_tree L O -> parse_tree L O -> Prop :=
-  | ANode_LInsert_One l2 :
-      linsert_one pr l1 o1 (ANode l2) (INode (ANode l1) o1 (ANode l2))
-  | INode_LInsert_One_1 t1 o2 t2 :
-      ~ conflict_pattern pr (CR o1 o2) ->
-      linsert_one pr l1 o1 (INode t1 o2 t2)
-        (INode (ANode l1) o1 (INode t1 o2 t2))
-  | INode_LInsert_One_2 t1 o2 t2 t1' :
-      conflict_pattern pr (CR o1 o2) ->
-      linsert_one pr l1 o1 t1 t1' ->
-      linsert_one pr l1 o1 (INode t1 o2 t2)
-        (INode t1' o2 t2).
-
-Inductive linsert {L O} (pr : drules O):
-      parse_tree L O -> O -> parse_tree L O -> parse_tree L O -> Prop :=
-  | ANode_LInsert l o t t' :
-      linsert_one pr l o t t' ->
-      linsert pr (ANode l) o t t'
-  | INode_LInsert t1 o1 t2 o2 t t' t'' :
-      linsert pr t2 o2 t t' ->
-      linsert pr t1 o1 t' t'' ->
-      linsert pr (INode t1 o1 t2) o2 t t''.
-
-Inductive fix_tree {L O} (pr : drules O) :
-      parse_tree L O -> parse_tree L O -> Prop :=
-  | ANode_fix l :
-      fix_tree pr (ANode l) (ANode l)
-  | INode_fix t1 o t2 t2' t' :
-      fix_tree pr t2 t2' ->
-      linsert pr t1 o t2' t' ->
-      fix_tree pr (INode t1 o t2) t'.
+Definition complete_pr {O} (pr : drules O) : Prop :=
+  forall o1 o2,
+    pr.(prio) o1 o2 \/ pr.(left_a) o1 o2 \/
+    pr.(prio) o2 o1 \/ pr.(right_a) o2 o1.
 
 End IGrammar.
+
+
+Section IGrammarFix.
+
+Definition is_conflict_pattern {O} (pr : drules O) (q : tree_pattern O) :=
+  match q with
+  | IPatt (IPatt HPatt o2 HPatt) o1 HPatt =>
+      if decide (pr.(prio) o1 o2) then true
+      else if decide (pr.(right_a) o1 o2) then true
+      else false
+  | IPatt HPatt o1 (IPatt HPatt o2 HPatt) =>
+      if decide (pr.(prio) o1 o2) then true
+      else if decide (pr.(left_a) o1 o2) then true
+      else false
+  | _ => false
+  end.
+
+Fixpoint linsert_one {L O} (pr : drules O) l1 o1 t : parse_tree L O :=
+  match t with
+  | ANode l2 => INode (ANode l1) o1 (ANode l2)
+  | INode t1 o2 t2 =>
+      if is_conflict_pattern pr (CR o1 o2)
+      then INode (linsert_one pr l1 o1 t1) o2 t2
+      else INode (ANode l1) o1 (INode t1 o2 t2)
+  end.
+
+Fixpoint linsert {L O} (pr : drules O) t1 o t2 : parse_tree L O :=
+  match t1 with
+  | ANode l => linsert_one pr l o t2
+  | INode t11 o1 t12 => linsert pr t11 o1 (linsert pr t12 o t2)
+  end.
+
+Fixpoint fix_tree {L O} (pr : drules O) t : parse_tree L O :=
+  match t with
+  | ANode l => ANode l
+  | INode t1 o t2 => linsert pr t1 o (fix_tree pr t2)
+  end.
+
+End IGrammarFix.
