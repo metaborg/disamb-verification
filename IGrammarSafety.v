@@ -1,4 +1,5 @@
 Require Export IGrammar.
+From stdpp Require Export relations.
 Require Import MyUtils.
 
 Section IGrammarSafety.
@@ -49,7 +50,7 @@ Qed.
    where [CR o1 o2] is a conflict pattern and one where it is not a
    conflict pattern. *)
 Ltac linsert_one_inode_destruct pr o1 o2 :=
-    cbn [linsert_one];
+    cbn [linsert_one] in *;
      destruct (is_conflict_pattern pr (CR o1 o2)) eqn:E;
      [apply is_conflict_pattern_true in E | apply is_conflict_pattern_false in E].
 
@@ -93,6 +94,23 @@ Lemma safe_cl_cr {O} (o1 o2 : O) (pr : drules O) :
 Proof.
   intros. destruct H0.
   inv H0; inv H1; eapply H; eauto.
+Qed.
+
+Lemma complete_cl_cr {O} (o1 o2 : O) (pr : drules O) :
+  complete_pr pr ->
+  (conflict_pattern pr (CL o1 o2) \/ conflict_pattern pr (CR o2 o1)).
+Proof.
+  intro. unfold complete_pr in H. specialize H with o2 o1.
+  decompose [or] H; eauto with IGrammar.
+Qed.
+
+Lemma complete_neg_cl_cr {O} (o1 o2 : O) (pr : drules O) :
+  complete_pr pr ->
+  ~ conflict_pattern pr (CL o1 o2) ->
+  conflict_pattern pr (CR o2 o1).
+Proof.
+  intros. apply complete_cl_cr with o1 o2 pr in H.
+  destruct H; [contradiction|assumption].
 Qed.
 
 (* Conflict-Free Lemmas *)
@@ -167,7 +185,7 @@ Proof.
   induction t1; eauto using linsert_one_safe.
 Qed.
 
-Lemma fix_tree_safe {L O} (pr : drules O) (t t' : parse_tree L O) :
+Lemma fix_tree_safe {L O} (pr : drules O) (t : parse_tree L O) :
   safe_pr pr ->
   conflict_free (conflict_pattern pr) (fix_tree pr t).
 Proof.
@@ -188,5 +206,323 @@ Proof.
   exists (fix_tree pr t).
   eauto using fix_tree_yield_preserve, fix_tree_safe.
 Qed.
+
+
+
+(* Shit for completeness *)
+
+Lemma complete_pr_conflict_free_complete_tree {L O} (pr : drules O) (t : parse_tree L O) :
+  complete_pr pr ->
+  conflict_free (conflict_pattern pr) t ->
+  complete_tree (conflict_pattern pr) t.
+Proof.
+  intros. induction H0; unfold complete_tree in *.
+  - apply ANode_cfree.
+  - apply INode_cfree; auto.
+    intro. destruct H1 as [q]. inv H1.
+    inv H2.
+    + cp_cases H1.
+      * inv H3. inv H5.
+        destruct H0. eexists. eauto with IGrammar.
+      * inv H3. inv H10.
+        destruct H0. eexists. eauto with IGrammar.
+    + apply complete_cl_cr with o2 o1 pr in H.
+      destruct H; [|contradiction].
+      inv H3. inv H5.
+      destruct H0. eexists. eauto with IGrammar.
+    + apply complete_cl_cr with o1 o2 pr in H.
+      destruct H; [contradiction|].
+      inv H3. inv H10.
+      destruct H0. eexists. eauto with IGrammar.
+Qed.
+
+Hint Resolve QSelf : IGrammar.
+Hint Resolve CL_CR : IGrammar.
+Hint Resolve CR_CL : IGrammar.
+
+Inductive lsplit {L O} : parse_tree L O -> parse_tree L O -> O -> parse_tree L O -> Prop :=
+  | BaseLsplit t1 o t2 :
+      lsplit (INode t1 o t2) t1 o t2
+  | RecLsplit t1 t11 o1 t12 o t2 :
+      lsplit t1 t11 o1 t12 ->
+      lsplit (INode t1 o t2) t11 o1 (INode t12 o t2).
+
+Example lsplit_depth_3 {L O} (o11 o1 o : O) (t111 t112 t12 t2 : parse_tree L O) :
+  lsplit (INode (INode (INode t111 o11 t112) o1 t12) o t2)
+    t111 o11 (INode (INode t112 o1 t12) o t2).
+Proof.
+  apply RecLsplit. apply RecLsplit. apply BaseLsplit.
+Qed.
+
+Lemma linsert_one_identity {L O} (pr : drules O) (l1 : L) o1 t :
+  complete_tree (conflict_pattern pr) (INode (ANode l1) o1 t) ->
+  linsert_one pr l1 o1 t = INode (ANode l1) o1 t.
+Proof.
+  intro. destruct t.
+  - reflexivity.
+  - linsert_one_inode_destruct pr o1 o.
+    + exfalso. inv H. destruct H3.
+      eexists. eauto with IGrammar.
+    + reflexivity.
+Qed.
+
+Lemma complete_pr_cl_cr_trans {O} (pr : drules O) o1 o2 o3 :
+  complete_pr pr ->
+  conflict_pattern pr (CL o1 o2) ->
+  conflict_pattern pr (CR o2 o3) ->
+  conflict_pattern pr (CL o1 o3).
+Admitted.
+
+Lemma complete_pr_cl_cl_trans {O} (pr : drules O) o1 o2 o3 :
+  complete_pr pr ->
+  conflict_pattern pr (CL o1 o2) ->
+  conflict_pattern pr (CL o2 o3) ->
+  conflict_pattern pr (CL o1 o3).
+Admitted.
+
+Lemma complete_conflict_cases {O} (pr : drules O) (q : tree_pattern O) :
+  complete_pr pr ->
+  complete_conflicts (conflict_pattern pr) q ->
+  conflict_pattern pr q.
+Proof.
+  intros. inv H0.
+  - assumption.
+  - apply complete_cl_cr with o2 o1 pr in H.
+    destruct H; [assumption|contradiction].
+  - apply complete_cl_cr with o1 o2 pr in H.
+    destruct H; [contradiction|assumption].
+Qed.
+
+Lemma complete_reorder {L O} (pr : drules O) o o1 (t11 t12 t2 : parse_tree L O) :
+  complete_pr pr ->
+  complete_tree (conflict_pattern pr) (INode (INode t11 o1 t12) o t2) ->
+  complete_tree (conflict_pattern pr) (INode t12 o t2).
+Proof.
+  intros. inv H0. inv H5.
+  apply INode_cfree; auto.
+  intro. destruct H0 as [q]. inv H0.
+  apply complete_conflict_cases in H1; [|assumption].
+  cp_cases H1.
+  - inv H2. rename o0 into o.
+    inv H9. rename t1 into t121, t0 into t122, o2 into o12. clear H14 H10 H12.
+    destruct H3. exists (CR o1 o12). split; [|eauto with IGrammar].
+    apply CL_CR. intro.
+    destruct H4. exists (CL o o1). split; [|eauto with IGrammar].
+    apply QSelf. eauto using complete_pr_cl_cl_trans.
+  - inv H2. inv H14.
+    destruct H4.
+    eexists. eauto with IGrammar.
+Qed.
+
+
+(* Lemma aoginawogin {L O} (pr : drules O) o o1 (t11 t12 t2 : parse_tree L O) :
+  complete_pr pr ->
+  (forall i (x y : parse_tree L O),
+    tree_size x <= tree_size t11 ->
+    complete_tree (conflict_pattern pr) (INode x i y) ->
+    linsert pr x i y = INode x i y
+  ) ->
+  complete_tree (conflict_pattern pr) (INode (INode t11 o1 t12) o t2) ->
+  linsert pr t11 o1 (INode t12 o t2) = INode (linsert pr t11 o1 t12) o t2.
+Proof.
+  intros Hcomplete Hidentity.
+  revert o1 t12 o t2. induction t11; intros.
+  - cbn [linsert].
+    linsert_one_inode_destruct pr o1 o.
+    + reflexivity.
+    + exfalso.
+      inv H. destruct H3.
+      eexists. eauto with IGrammar.
+  - simpl. rename t11_1 into t111, o into o11, t11_2 into t112, o0 into o.
+    rewrite IHt11_2.
+    + specialize Hidentity with o1 t112 t12 as ?.
+      rewrite H0.
+      * rewrite IHt11_1.
+        **reflexivity.
+        **intros.
+          rewrite Hidentity; auto.
+          simpl. lia.
+        ** *)
+            
+
+Lemma lsplit_conflict {L O} (pr : drules O) l1 o o1 (t1 t12 t2 : parse_tree L O) :
+  complete_pr pr ->
+  conflict_pattern pr (CL o o1) ->
+  complete_tree (conflict_pattern pr) (INode t1 o t2) ->
+  lsplit t1 (ANode l1) o1 t12 ->
+  False.
+Proof.
+  intro. revert o o1 t12. induction t1; intros.
+  - inv H2.
+  - inv H2.
+    + inv H1.
+      destruct H5.
+      eexists. eauto with IGrammar.
+    + eapply IHt1_1.
+      * eassumption.
+      * inv H1. inv H6.
+        apply INode_cfree; auto.
+        intro. destruct H1 as [q]. inv H1.
+        apply complete_conflict_cases in H2; [|assumption].
+        cp_cases H2.
+        **inv H3. inv H11.
+          destruct H5.
+          exists (CL o2 o). split; [|eauto with IGrammar].
+          apply QSelf.
+          apply complete_pr_cl_cr_trans with o3; auto.
+          apply complete_cl_cr with o o3 pr in H.
+          destruct H; [|assumption]. exfalso.
+          destruct H4. eexists. eauto with IGrammar.
+        **inv H3. inv H16.
+          destruct H5. eexists. eauto with IGrammar.
+      * eassumption.
+Qed.
+
+
+
+Lemma linsert_one_split_identity {L O} (pr : drules O) o l1 (t t2 : parse_tree L O) :
+  complete_pr pr ->
+  complete_tree (conflict_pattern pr) t ->
+  lsplit t (ANode l1) o t2 ->
+  linsert_one pr l1 o t2 = t.
+Proof.
+  intro. revert t. induction t2; intros.
+  - inv H1. reflexivity.
+  - rename t2_1 into t21, o0 into o2, t2_2 into t22.
+    linsert_one_inode_destruct pr o o2.
+    + inv H1.
+      * exfalso.
+        inv H0. destruct H4.
+        eexists. eauto with IGrammar.
+      * rewrite IHt2_1 with t1; auto.
+        inv H0. assumption.   
+    + inv H1. auto.
+      exfalso.
+      apply complete_cl_cr with o2 o pr in H as ?.
+      destruct H1; [|contradiction].
+      eauto using lsplit_conflict.
+Qed.
+
+Lemma linsert_one_simpleton_linsert_anode {L O} (pr : drules O) l1 o (t2 : parse_tree L O) :
+  linsert_one pr l1 o t2 = simpleton_linsert pr (ANode l1) o t2.
+Proof.
+  induction t2; auto.
+  simpl. rewrite IHt2_1. reflexivity.
+Qed.
+
+Lemma complete_pr_cr_trans {O} (pr : drules O) o1 o2 o3 :
+  complete_pr pr ->
+  conflict_pattern pr (CR o1 o2) ->
+  conflict_pattern pr (CR o2 o3) ->
+  conflict_pattern pr (CR o1 o3).
+Admitted.
+
+Ltac simpleton_linsert_inode_destruct pr o1 o2 :=
+    cbn [simpleton_linsert] in *;
+     destruct (is_conflict_pattern pr (CR o1 o2)) eqn:E;
+     [apply is_conflict_pattern_true in E | apply is_conflict_pattern_false in E].
+
+Lemma simpleton_linsert_assoc {L O} (pr : drules O) o o1 (t11 t12 t2 : parse_tree L O) :
+  complete_pr pr ->
+  complete_tree (conflict_pattern pr) (INode t11 o1 t12) ->
+  ~ conflict_pattern pr (CL o o1) ->
+  simpleton_linsert pr (INode t11 o1 t12) o t2 = simpleton_linsert pr t11 o1 (simpleton_linsert pr t12 o t2).
+Proof.
+  intros. induction t2.
+  - simpleton_linsert_inode_destruct pr o1 o.
+    + destruct t12 as [?|t121 o12 t122]; auto.
+      rename E into E'.
+      simpleton_linsert_inode_destruct pr o1 o12; auto.
+      exfalso. inv H0. destruct H5.
+      eexists. eauto with IGrammar.
+    + apply complete_cl_cr with o o1 pr in H.
+      destruct H; contradiction.
+  - rename t2_1 into t21, o0 into o2, t2_2 into t22.
+    simpleton_linsert_inode_destruct pr o o2.
+    + rewrite IHt2_1.
+      rename E into E'.
+      simpleton_linsert_inode_destruct pr o1 o2; auto.
+      exfalso. destruct E.
+      eapply complete_pr_cr_trans; eauto.
+      apply complete_cl_cr with o o1 pr in H.
+      destruct H; [contradiction|assumption].
+    + rename E into E'.
+      simpleton_linsert_inode_destruct pr o1 o.
+      * destruct t12 as [?|t121 o12 t122]; auto.
+        rename E into E''.
+        simpleton_linsert_inode_destruct pr o1 o12; auto.
+        exfalso. inv H0. destruct H5.
+        eexists. eauto with IGrammar.
+      * exfalso. destruct E.
+        apply complete_cl_cr with o o1 pr in H.
+        destruct H; [contradiction|assumption].
+Qed.
+
+Lemma complete_pr_cr_cl_cr {O} (pr : drules O) o1 o2 o3 :
+  complete_pr pr ->
+  conflict_pattern pr (CR o1 o2) ->
+  conflict_pattern pr (CL o2 o3) ->
+  conflict_pattern pr (CR o1 o3).
+Admitted.
+
+Lemma linsert_simpleton_linsert {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
+  complete_pr pr ->
+  complete_tree (conflict_pattern pr) t1 ->
+  (forall x1, matches t1 (IPatt HPatt x1 HPatt) -> ~ conflict_pattern pr (CL o x1)) ->
+  linsert pr t1 o t2 = simpleton_linsert pr t1 o t2.
+Proof.
+  intro. intro. revert o t2.
+  induction t1; intros; simpl; eauto using linsert_one_simpleton_linsert_anode.
+  rename t1_1 into t11, o into o1, t1_2 into t12, o0 into o.
+  rewrite IHt1_2.
+    - rewrite IHt1_1.
+      + symmetry. eauto using simpleton_linsert_assoc with IGrammar.
+      + inv H0. assumption.
+      + intros. intro. inv H2. inv H0. destruct H6.
+        eexists. eauto with IGrammar.
+    - inv H0. assumption.
+    - intros. intro. inv H2. inv H0.
+      destruct H6. exists (CR o1 x1). split; eauto with IGrammar.
+      apply QSelf. eapply complete_pr_cr_cl_cr; eauto.
+      apply complete_cl_cr with o o1 pr in H.
+      destruct H; eauto.
+      exfalso. apply H1 with o1; eauto with IGrammar.
+Qed.
+
+Lemma simpleton_linsert_identity {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
+  complete_tree (conflict_pattern pr) (INode t1 o t2) ->
+  simpleton_linsert pr t1 o t2 = INode t1 o t2.
+Proof.
+  intros. inv H.
+  destruct t2; auto.
+  simpleton_linsert_inode_destruct pr o o0; auto.
+  exfalso. destruct H3.
+  eexists. eauto with IGrammar.
+Qed.
+
+Lemma linsert_identity {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
+  complete_pr pr ->
+  complete_tree (conflict_pattern pr) (INode t1 o t2) ->
+  linsert pr t1 o t2 = INode t1 o t2.
+Proof.
+  intros.
+  rewrite linsert_simpleton_linsert; auto using simpleton_linsert_identity.
+  - inv H0. assumption.
+  - intros. intro. inv H1. inv H0. destruct H5.
+    eexists. eauto with IGrammar.
+Qed.
+
+Lemma fix_tree_identity {L O} (pr : drules O) (t : parse_tree L O) :
+  complete_pr pr ->
+  conflict_free (conflict_pattern pr) t ->
+  fix_tree pr t = t.
+Proof.
+  intros. induction t; simpl; auto.
+  rewrite IHt2.
+  - rewrite linsert_identity; auto.
+    apply complete_pr_conflict_free_complete_tree; auto.
+  - inv H0. assumption.
+Qed.
+
 
 End IGrammarSafety.
