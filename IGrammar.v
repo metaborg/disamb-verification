@@ -176,24 +176,4 @@ Fixpoint simpleton_linsert {L O} (pr : drules O) t1 o t2 : parse_tree L O :=
       else INode t1 o (INode t21 o2 t22)
   end.
 
-Inductive complete_conflicts {O} (Q : tree_pattern O -> Prop) : tree_pattern O -> Prop :=
-  | QSelf q :
-      Q q ->
-      complete_conflicts Q q
-  | CR_CL o1 o2 :
-      ~ Q (CR o1 o2) ->
-      complete_conflicts Q (CL o2 o1)
-  | CL_CR o1 o2 :
-      ~ Q (CL o1 o2) ->
-      complete_conflicts Q (CR o2 o1).
-
-Definition complete_tree {L O} (Q : tree_pattern O -> Prop) (t : parse_tree L O) : Prop :=
-  conflict_free (complete_conflicts Q) t.
-
-Fixpoint tree_size {L O} (t : parse_tree L O) : nat :=
-  match t with
-  | ANode l => 0
-  | INode t1 o t2 => S (tree_size t1 + tree_size t2)
-  end.
-
 End IGrammarFix.
