@@ -161,10 +161,10 @@ Fixpoint linsert {L O} (pr : drules O) t1 o t2 : parse_tree L O :=
   | INode t11 o1 t12 => linsert pr t11 o1 (linsert pr t12 o t2)
   end.
 
-Fixpoint fix_tree {L O} (pr : drules O) t : parse_tree L O :=
+Fixpoint repair {L O} (pr : drules O) t : parse_tree L O :=
   match t with
   | ANode l => ANode l
-  | INode t1 o t2 => linsert pr t1 o (fix_tree pr t2)
+  | INode t1 o t2 => linsert pr t1 o (repair pr t2)
   end.
 
 Fixpoint simpleton_linsert {L O} (pr : drules O) t1 o t2 : parse_tree L O :=

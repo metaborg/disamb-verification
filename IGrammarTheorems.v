@@ -77,8 +77,8 @@ Qed.
 Hint Resolve linsert_yield_preserve : IGrammar.
 
 (* Fixing a parse tree preserves its yield. *)
-Lemma fix_tree_yield_preserve {L O} (pr : drules O) (t : parse_tree L O) :
-  yield (fix_tree pr t) = yield t.
+Lemma repair_yield_preserve {L O} (pr : drules O) (t : parse_tree L O) :
+  yield (repair pr t) = yield t.
 Proof.
   induction t; simpl.
   - reflexivity.
@@ -184,9 +184,9 @@ Proof.
   induction t1; eauto using linsert_one_safe.
 Qed.
 
-Lemma fix_tree_safe {L O} (pr : drules O) (t : parse_tree L O) :
+Lemma repair_safe {L O} (pr : drules O) (t : parse_tree L O) :
   safe_pr pr ->
-  conflict_free (conflict_pattern pr) (fix_tree pr t).
+  conflict_free (conflict_pattern pr) (repair pr t).
 Proof.
   intro. induction t.
   - apply ANode_cfree.
@@ -202,8 +202,8 @@ Proof.
   intro Hsafe.
   unfold language, dlanguage. intro. destruct H as [t].
   rewrite <- H.
-  exists (fix_tree pr t).
-  eauto using fix_tree_yield_preserve, fix_tree_safe.
+  exists (repair pr t).
+  eauto using repair_yield_preserve, repair_safe.
 Qed.
 
 
@@ -318,10 +318,10 @@ Proof.
     eexists. eauto with IGrammar.
 Qed.
 
-Lemma fix_tree_identity {L O} (pr : drules O) (t : parse_tree L O) :
+Lemma repair_identity {L O} (pr : drules O) (t : parse_tree L O) :
   complete_pr pr ->
   conflict_free (conflict_pattern pr) t ->
-  fix_tree pr t = t.
+  repair pr t = t.
 Proof.
   intros. induction t; simpl; auto.
   rewrite IHt2.
