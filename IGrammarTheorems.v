@@ -207,9 +207,7 @@ Proof.
 Qed.
 
 
-
-(* Shit for completeness *)
-
+(* STUFF FOR COMPLETENESS HERE *)
 
 Lemma linsert_one_simpleton_linsert_anode {L O} (pr : drules O) l1 o (t2 : parse_tree L O) :
   linsert_one pr l1 o t2 = simpleton_linsert pr (ANode l1) o t2.
