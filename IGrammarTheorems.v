@@ -329,4 +329,78 @@ Proof.
   - inv H0. assumption.
 Qed.
 
+Lemma yield_struct_app {L O} (w1 : word L O) o w2 :
+  yield_struct w1 →
+  yield_struct w2 →
+  yield_struct (w1 ++ inr o :: w2).
+Proof.
+  intro. induction H; intros; simpl; auto using LOYield.
+Qed.
+
+Lemma yield_is_yield_struct {L O} (t : parse_tree L O) :
+  yield_struct (yield t).
+Proof.
+  induction t; simpl.
+  - apply LYield.
+  - auto using yield_struct_app.
+Qed.
+
+Lemma build_yield_struct_some {L O} (pr : drules O) (w : word L O) :
+  yield_struct w ->
+  exists t, build pr w = Some t.
+Proof.
+  intros. induction H; eauto.
+  destruct IHyield_struct.
+  eexists. simpl. rewrite H0. reflexivity.
+Qed.
+
+Lemma build_yield_some {L O} (pr : drules O) (t : parse_tree L O) :
+  exists t', build pr (yield t) = Some t'.
+Proof.
+  auto using yield_is_yield_struct, build_yield_struct_some.
+Qed.
+
+Lemma build_app {L O} (pr : drules O) (t1 t2 t2' : parse_tree L O) o :
+  build pr (yield t2) = Some t2' ->
+  build pr (yield t1 ++ inr o :: yield t2) = Some (linsert pr t1 o t2').
+Proof.
+  revert t2 t2' o. induction t1; intros; simpl.
+  - rewrite H. reflexivity.
+  - simplify_list_eq. rename o into o1, o0 into o.
+    destruct (build_yield_some pr t1_2).
+    erewrite IHt1_1 with (t2 := (INode t1_2 o t2)); auto.
+    simpl. erewrite IHt1_2; auto.
+Qed.
+
+Lemma repair_build {L O} (pr : drules O) (t : parse_tree L O) :
+  build pr (yield t) = Some (repair pr t).
+Proof.
+  induction t; simpl; auto.
+  erewrite build_app; eauto.
+Qed.
+
+Lemma repair_is_fully_yield_dependent {L O} (pr : drules O) (t1 t2 : parse_tree L O) :
+  yield t1 = yield t2 ->
+  repair pr t1 = repair pr t2.
+Proof.
+  intro.
+  assert (Some (repair pr t1) = Some (repair pr t2)). {
+    rewrite <- repair_build.
+    rewrite H.
+    rewrite repair_build.
+    reflexivity.
+  }
+  inv H0. reflexivity.
+Qed.
+
+Theorem completeness {L O} (pr : drules O) :
+  complete_pr pr ->
+  complete L pr.
+Proof.
+  intro. unfold complete. intros.
+  apply repair_is_fully_yield_dependent with pr t1 t2 in H0.
+  rewrite repair_identity in H0; auto.
+  rewrite repair_identity in H0; auto.
+Qed.
+
 End IGrammarTheorems.

@@ -114,8 +114,15 @@ Inductive conflict_pattern {O} (pr : drules O) : tree_pattern O -> Prop :=
 Definition dlanguage {L O} (pr : drules O) (w : list (L + O)) : Prop :=
   exists t : parse_tree L O, yield t = w /\ conflict_free (conflict_pattern pr) t.
 
-Definition safe {L O} (pr : drules O) : Prop :=
+Definition safe L {O} (pr : drules O) : Prop :=
   forall w : list (L + O), language w -> dlanguage pr w.
+
+Definition complete L {O} (pr : drules O) : Prop :=
+  forall t1 t2 : parse_tree L O,
+    yield t1 = yield t2 ->
+    conflict_free (conflict_pattern pr) t1 ->
+    conflict_free (conflict_pattern pr) t2 ->
+    t1 = t2.
 
 Definition safe_pr {O} (pr : drules O) : Prop :=
   forall o1 o2,
@@ -175,5 +182,24 @@ Fixpoint simpleton_linsert {L O} (pr : drules O) t1 o t2 : parse_tree L O :=
       then INode (simpleton_linsert pr t1 o t21) o2 t22
       else INode t1 o (INode t21 o2 t22)
   end.
+
+Inductive yield_struct {L O} : list (L + O) -> Prop :=
+  | LYield l :
+      yield_struct [inl l]
+  | LOYield l o w :
+      yield_struct w ->
+      yield_struct (inl l :: inr o :: w).
+
+Fixpoint build {L O} (pr : drules O) (w : list (L + O)) : option (parse_tree L O) :=
+  match w with
+  | [inl l] => Some (ANode l)
+  | inl l :: inr o :: w =>
+      match (build pr w) with
+      | None => None
+      | Some t => Some (linsert_one pr l o t)
+      end
+  | _ => None
+  end.
+
 
 End IGrammarFix.
