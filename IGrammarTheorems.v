@@ -95,12 +95,12 @@ Proof.
   inv H0; inv H1; eapply H; eauto.
 Qed.
 
-Lemma complete_cl_cr {O} (o1 o2 : O) (pr : drules O) :
+Lemma complete_cl_or_cr {O} (o1 o2 : O) (pr : drules O) :
   complete_pr pr ->
   (conflict_pattern pr (CL o1 o2) \/ conflict_pattern pr (CR o2 o1)).
 Proof.
-  intro. unfold complete_pr in H. specialize H with o2 o1.
-  decompose [or] H; eauto with IGrammar.
+  intro. destruct H. specialize complete_1 with o2 o1.
+  decompose [or] complete_1; eauto with IGrammar.
 Qed.
 
 Lemma complete_neg_cl_cr {O} (o1 o2 : O) (pr : drules O) :
@@ -108,7 +108,7 @@ Lemma complete_neg_cl_cr {O} (o1 o2 : O) (pr : drules O) :
   ~ conflict_pattern pr (CL o1 o2) ->
   conflict_pattern pr (CR o2 o1).
 Proof.
-  intros. apply complete_cl_cr with o1 o2 pr in H.
+  intros. apply complete_cl_or_cr with o1 o2 pr in H.
   destruct H; [contradiction|assumption].
 Qed.
 
@@ -221,7 +221,10 @@ Lemma complete_pr_cr_trans {O} (pr : drules O) o1 o2 o3 :
   conflict_pattern pr (CR o1 o2) ->
   conflict_pattern pr (CR o2 o3) ->
   conflict_pattern pr (CR o1 o3).
-Admitted.
+Proof.
+  intros. destruct H.
+  inv H0; inv H1; eauto with IGrammar.
+Qed.
 
 Ltac simpleton_linsert_inode_destruct pr o1 o2 :=
     cbn [simpleton_linsert] in *;
@@ -241,8 +244,8 @@ Proof.
       simpleton_linsert_inode_destruct pr o1 o12; auto.
       exfalso. inv H0. destruct H5.
       eexists. eauto with IGrammar.
-    + apply complete_cl_cr with o o1 pr in H.
-      destruct H; contradiction.
+    + apply complete_neg_cl_cr in H1; auto.
+      contradiction.
   - rename t2_1 into t21, o0 into o2, t2_2 into t22.
     simpleton_linsert_inode_destruct pr o o2.
     + rewrite IHt2_1.
@@ -250,8 +253,7 @@ Proof.
       simpleton_linsert_inode_destruct pr o1 o2; auto.
       exfalso. destruct E.
       eapply complete_pr_cr_trans; eauto.
-      apply complete_cl_cr with o o1 pr in H.
-      destruct H; [contradiction|assumption].
+      apply complete_neg_cl_cr in H1; auto.
     + rename E into E'.
       simpleton_linsert_inode_destruct pr o1 o.
       * destruct t12 as [?|t121 o12 t122]; auto.
@@ -260,8 +262,7 @@ Proof.
         exfalso. inv H0. destruct H5.
         eexists. eauto with IGrammar.
       * exfalso. destruct E.
-        apply complete_cl_cr with o o1 pr in H.
-        destruct H; [contradiction|assumption].
+        apply complete_neg_cl_cr in H1; auto.
 Qed.
 
 Lemma complete_pr_cr_cl_cr {O} (pr : drules O) o1 o2 o3 :
@@ -269,7 +270,11 @@ Lemma complete_pr_cr_cl_cr {O} (pr : drules O) o1 o2 o3 :
   conflict_pattern pr (CR o1 o2) ->
   conflict_pattern pr (CL o2 o3) ->
   conflict_pattern pr (CR o1 o3).
-Admitted.
+Proof.
+  intros. destruct H.
+  inv H0; inv H1; eauto with IGrammar.
+  exfalso. eauto.
+Qed.
 
 Lemma linsert_simpleton_linsert {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
   complete_pr pr ->
@@ -290,7 +295,7 @@ Proof.
     - intros. intro. inv H2. inv H0.
       destruct H6. exists (CR o1 x1). split; eauto with IGrammar.
       eapply complete_pr_cr_cl_cr; eauto.
-      apply complete_cl_cr with o o1 pr in H.
+      apply complete_cl_or_cr with o o1 pr in H.
       destruct H; eauto.
       exfalso. apply H1 with o1; eauto with IGrammar.
 Qed.

@@ -130,10 +130,29 @@ Definition safe_pr {O} (pr : drules O) : Prop :=
     (pr.(prio) o2 o1 \/ pr.(right_a) o2 o1) ->
     False.
 
-Definition complete_pr {O} (pr : drules O) : Prop :=
-  forall o1 o2,
+Record complete_pr {O} (pr : drules O) := mkComplete_pr {
+  complete_1 : forall o1 o2,
     pr.(prio) o1 o2 \/ pr.(left_a) o1 o2 \/
-    pr.(prio) o2 o1 \/ pr.(right_a) o2 o1.
+    pr.(prio) o2 o1 \/ pr.(right_a) o2 o1;
+
+  complete_2 : forall o1 o2 o3,
+    pr.(prio) o1 o2 -> pr.(prio) o2 o3 -> pr.(prio) o1 o3;
+
+  complete_3 : forall o1 o2 o3,
+    pr.(prio) o1 o2 -> pr.(prio) o2 o3 -> pr.(prio) o1 o3;
+  complete_4 : forall o1 o2 o3,
+    pr.(prio) o1 o2 -> pr.(left_a) o2 o3 -> pr.(prio) o1 o3;
+  complete_5 : forall o1 o2 o3,
+    pr.(prio) o1 o2 -> pr.(right_a) o2 o3 -> pr.(prio) o1 o3;
+  complete_6 : forall o1 o2 o3,
+    pr.(left_a) o1 o2 -> pr.(prio) o2 o3 -> pr.(prio) o1 o3;
+
+  complete_7 : forall o1 o2 o3,
+    pr.(left_a) o1 o2 -> pr.(left_a) o2 o3 -> pr.(left_a) o1 o3;
+
+  complete_8 : forall o1 o2 o3,
+    pr.(left_a) o1 o2 -> pr.(right_a) o2 o3 -> False;
+}.
 
 End IGrammar.
 
