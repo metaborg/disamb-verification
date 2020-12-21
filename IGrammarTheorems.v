@@ -3,8 +3,6 @@ Require Import MyUtils.
 
 Section IGrammarTheorems.
 
-(* Search Decision. *)
-
 Create HintDb IGrammar.
 Hint Resolve CPrio1 : IGrammar.
 Hint Resolve CPrio2 : IGrammar.
@@ -12,6 +10,14 @@ Hint Resolve CLeft : IGrammar.
 Hint Resolve CRight : IGrammar.
 Hint Resolve HMatch : IGrammar.
 Hint Resolve IMatch : IGrammar.
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* The following two lemmas prove the correctness of the [is_conflict_pattern] function. *)
 
 Lemma is_conflict_pattern_true {O} (pr : drules O) q :
   conflict_pattern pr q <-> is_conflict_pattern pr q = true.
@@ -44,7 +50,7 @@ Proof.
     rewrite H in H0. inv H0.
 Qed.
 
-(* This tactic can be used to rewrite to simplify a goal with a term
+(* This tactic can be used to simplify a goal with a term
    [linsert_one pr l1 o1 (INode t1 o2 t2))], creating two cases: one
    where [CR o1 o2] is a conflict pattern and one where it is not a
    conflict pattern. *)
@@ -53,40 +59,26 @@ Ltac linsert_one_inode_destruct pr o1 o2 :=
      destruct (is_conflict_pattern pr (CR o1 o2)) eqn:E;
      [apply is_conflict_pattern_true in E | apply is_conflict_pattern_false in E].
 
-(* Yield Preservation Lemmas *)
+(* This tactic can be used to simplify a goal with a term
+   [simpleton_linsert pr l1 o1 (INode t1 o2 t2))], creating two cases: one
+   where [CR o1 o2] is a conflict pattern and one where it is not a
+   conflict pattern. *)
+Ltac simpleton_linsert_inode_destruct pr o1 o2 :=
+    cbn [simpleton_linsert] in *;
+     destruct (is_conflict_pattern pr (CR o1 o2)) eqn:E;
+     [apply is_conflict_pattern_true in E | apply is_conflict_pattern_false in E].
 
-Lemma linsert_one_yield_preserve {L O} (pr : drules O) (l1 : L) o1 t :
-  yield (linsert_one pr l1 o1 t) = inl l1 :: inr o1 :: yield t.
-Proof.
-  induction t.
-  - reflexivity.
-  - linsert_one_inode_destruct pr o1 o; simpl; auto.
-    rewrite IHt1. reflexivity.
-Qed.
-Hint Resolve linsert_one_yield_preserve : IGrammar.
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
 
-Lemma linsert_yield_preserve {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
-  yield (linsert pr t1 o t2) = yield t1 ++ inr o :: yield t2.
-Proof.
-  revert o t2.
-  induction t1; intros; simpl.
-  - auto with IGrammar.
-  - simplify_list_eq. rewrite <- IHt1_2. rewrite <- IHt1_1.
-    reflexivity.
-Qed.
-Hint Resolve linsert_yield_preserve : IGrammar.
+(* The following lemmas prove useful properties regardering the safety and completeness of [pr].
+   In the definitions [safe_pr] and [complete_pr] we imposed restrictions on [pr] in terms of
+   priority, left-associativity, and right-associativity. Here we prove properties that represent
+   restrictions in terms of the conflict patterns [CL] and [CR]. *)
 
-(* Fixing a parse tree preserves its yield. *)
-Lemma repair_yield_preserve {L O} (pr : drules O) (t : parse_tree L O) :
-  yield (repair pr t) = yield t.
-Proof.
-  induction t; simpl.
-  - reflexivity.
-  - rewrite <- IHt2. auto with IGrammar.
-Qed.
-
-(* For a safe disambiguation rules, it connot hold that both [CL o1 o2]
-   and [CR o2 o1] conflict patterns. *)
 Lemma safe_cl_cr {O} (o1 o2 : O) (pr : drules O) :
   safe_pr pr ->
   (conflict_pattern pr (CL o1 o2) /\ conflict_pattern pr (CR o2 o1)) -> False.
@@ -112,16 +104,83 @@ Proof.
   destruct H; [contradiction|assumption].
 Qed.
 
-(* Conflict-Free Lemmas *)
-
-(* The top operator of [linsert_one l o t] either is [o] or remains the same as [t] *)
-Lemma linsert_one_top_operator_match {L O} (pr : drules O) (l : L) (o1 : O) (t : parse_tree L O) :
-  matches (linsert_one pr l o1 t) (IPatt HPatt o1 HPatt) \/
-  (exists o2, matches t (IPatt HPatt o2 HPatt) /\ matches (linsert_one pr l o1 t) (IPatt HPatt o2 HPatt)).
+Lemma complete_pr_cr_trans {O} (pr : drules O) o1 o2 o3 :
+  complete_pr pr ->
+  conflict_pattern pr (CR o1 o2) ->
+  conflict_pattern pr (CR o2 o3) ->
+  conflict_pattern pr (CR o1 o3).
 Proof.
-  destruct t.
+  intros. destruct H.
+  inv H0; inv H1; eauto with IGrammar.
+Qed.
+
+Lemma complete_pr_cr_cl_cr {O} (pr : drules O) o1 o2 o3 :
+  complete_pr pr ->
+  conflict_pattern pr (CR o1 o2) ->
+  conflict_pattern pr (CL o2 o3) ->
+  conflict_pattern pr (CR o1 o3).
+Proof.
+  intros. destruct H.
+  inv H0; inv H1; eauto with IGrammar.
+  exfalso. eauto.
+Qed.
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* The following lemmas aim to prove that [repair] preserves the yield of the tree
+   being repaired. This will be useful later when proving safety. *)
+
+Lemma linsert_one_yield_preserve {L O} (pr : drules O) (l1 : L) o1 t :
+  yield (linsert_one pr l1 o1 t) = inl l1 :: inr o1 :: yield t.
+Proof.
+  induction t.
+  - reflexivity.
+  - linsert_one_inode_destruct pr o1 o; simpl; auto.
+    rewrite IHt1. reflexivity.
+Qed.
+Hint Resolve linsert_one_yield_preserve : IGrammar.
+
+Lemma linsert_yield_preserve {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
+  yield (linsert pr t1 o t2) = yield t1 ++ inr o :: yield t2.
+Proof.
+  revert o t2.
+  induction t1; intros; simpl.
+  - auto with IGrammar.
+  - simplify_list_eq. rewrite <- IHt1_2. rewrite <- IHt1_1.
+    reflexivity.
+Qed.
+Hint Resolve linsert_yield_preserve : IGrammar.
+
+Lemma repair_yield_preserve {L O} (pr : drules O) (t : parse_tree L O) :
+  yield (repair pr t) = yield t.
+Proof.
+  induction t; simpl.
+  - reflexivity.
+  - rewrite <- IHt2. auto with IGrammar.
+Qed.
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* The following lemmas aim to prove that [repair] ensures that the repaired tree
+   is conflict-free, assuming the disambiguation rules are safe. *)
+
+
+(* The top operator of [linsert_one l1 o t2] either is [o] or remains the same as [t2] *)
+Lemma linsert_one_top_operator_match {L O} (pr : drules O) (l1 : L) (o : O) (t2 : parse_tree L O) :
+  matches (linsert_one pr l1 o t2) (IPatt HPatt o HPatt) \/
+  (exists o2, matches t2 (IPatt HPatt o2 HPatt) /\ matches (linsert_one pr l1 o t2) (IPatt HPatt o2 HPatt)).
+Proof.
+  destruct t2.
   - simpl. auto with IGrammar.
-  - linsert_one_inode_destruct pr o1 o; eauto 6 with IGrammar.
+  - linsert_one_inode_destruct pr o o0; eauto 6 with IGrammar.
 Qed.
 
 (* Simple Lemma that states that proving something holds for all conflict patterns [q],
@@ -147,34 +206,51 @@ Proof.
   - inv H1. inv H8.
 Qed.
 
-(* Assuming the set of disambiguation rules is safe, one-left-inserting in a
-   conflict-free tree gives back also a conflict-free tree. *)
-Lemma linsert_one_safe {L O} (pr : drules O) (l1 : L) (o1 : O) (t : parse_tree L O) :
+(* One-Left-Insertion is safe. *)
+Lemma linsert_one_safe {L O} (pr : drules O) (l1 : L) (o : O) (t2 : parse_tree L O) :
   safe_pr pr ->
-  conflict_free (conflict_pattern pr) t ->
-  conflict_free (conflict_pattern pr) (linsert_one pr l1 o1 t).
+  conflict_free (conflict_pattern pr) t2 ->
+  conflict_free (conflict_pattern pr) (linsert_one pr l1 o t2).
 Proof.
-  intros Hsafe Hcfree. induction t. apply inode_single_cfree.
-  linsert_one_inode_destruct pr o1 o.
-  - inv Hcfree. apply INode_cfree; auto. clear H3 H4.
+  (* By induction over [t2] *)
+  intros Hsafe Hcfree. induction t2 as [l2|t21 ? o2 t22].
+  (* Base case *)
+  apply inode_single_cfree.
+  (* Inductive case *)
+  linsert_one_inode_destruct pr o o2.
+  - (* Case: [CR o o2] is a conflict pattern *)
+    inv Hcfree. apply INode_cfree; auto. clear H3 H4.
     intro. destruct H as [q]. inv H.
     cp_cases H0.
-    + inv H1. inv H4. clear H9 H5 H7.
-      destruct (linsert_one_top_operator_match pr l1 o1 t1).
-      * rewrite <- H in H1. inv H1.
+    + (* Proving that our tree does not match arbitrary conflict pattern [CL x1 x2] *)
+      rename o1 into x1, o0 into x2.
+      inv H1. rename x1 into o2. clear H9. inv H4. clear H5 H7.
+      (* Case analysis over the top operator of [linsert_one pr l1 o t21]. *)
+      destruct (linsert_one_top_operator_match pr l1 o t21).
+      * (* Case: top operator is [o] *)
+        rewrite <- H in H1. inv H1.
+        (* Contradiction: Both [CR o o2] and [CL o2 o] are conflict patterns. *)
         eauto using safe_cl_cr.
-      * rewrite <- H in H1.
-        inv H1. inv H3. inv H1. inv H4. clear H7 H9 H5 H12.
+      * (* Case: top operator is [o21] *)
+        destruct H1 as [o21].
+        rewrite <- H in H1.
+        inv H1. inv H3. inv H4. clear H H7 H9 H5 H12.
+        (* Contradiction: It cannot conflict because our original tree has no conflicts. *)
         destruct H2. eexists. eauto with IGrammar.
-    + inv H1. inv H9. clear H4 H5 H7.
+    + (* Proving that our tree does not match arbitrary conflict pattern [CR x1 x2] *)
+      rename o1 into x1, o0 into x2.
+      inv H1. rename x1 into o2. inv H9. clear H4 H5 H7.
+      (* Contradiction: It cannot conflict because our original tree has no conflicts. *)
       destruct H2. eexists. eauto with IGrammar.
-  - apply INode_cfree; auto using ANode_cfree.
+  - (* Case: [CR o o2] is NOT a conflict pattern *)
+    apply INode_cfree; auto using ANode_cfree.
     intro. destruct H as [q]. inv H.
     cp_cases H0.
     + inv H1. inv H3.
     + inv H1. inv H8. contradiction.
 Qed.
 
+(* Left-Insertion is safe. *)
 Lemma linsert_safe {L O} (pr : drules O) (o : O) (t1 t2 : parse_tree L O) :
   safe_pr pr ->
   conflict_free (conflict_pattern pr) t2 ->
@@ -184,6 +260,7 @@ Proof.
   induction t1; eauto using linsert_one_safe.
 Qed.
 
+(* Repair is safe. *)
 Lemma repair_safe {L O} (pr : drules O) (t : parse_tree L O) :
   safe_pr pr ->
   conflict_free (conflict_pattern pr) (repair pr t).
@@ -193,21 +270,33 @@ Proof.
   - eauto using linsert_safe.
 Qed.
 
-(* Safety *)
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
 
-Theorem safety {L O} (pr : drules O) (w : list (L + O)) :
+(* Safety proof *)
+
+Theorem safety {L O} (pr : drules O) :
   safe_pr pr ->
-  language w -> dlanguage pr w.
+  safe L pr.
 Proof.
   intro Hsafe.
-  unfold language, dlanguage. intro. destruct H as [t].
+  unfold safe, language, dlanguage. intros. destruct H as [t].
   rewrite <- H.
   exists (repair pr t).
   eauto using repair_yield_preserve, repair_safe.
 Qed.
 
 
-(* STUFF FOR COMPLETENESS HERE *)
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* STUFF FOR COMPLETENESS HERE, cleanup TODO *)
 
 Lemma linsert_one_simpleton_linsert_anode {L O} (pr : drules O) l1 o (t2 : parse_tree L O) :
   linsert_one pr l1 o t2 = simpleton_linsert pr (ANode l1) o t2.
@@ -215,21 +304,6 @@ Proof.
   induction t2; auto.
   simpl. rewrite IHt2_1. reflexivity.
 Qed.
-
-Lemma complete_pr_cr_trans {O} (pr : drules O) o1 o2 o3 :
-  complete_pr pr ->
-  conflict_pattern pr (CR o1 o2) ->
-  conflict_pattern pr (CR o2 o3) ->
-  conflict_pattern pr (CR o1 o3).
-Proof.
-  intros. destruct H.
-  inv H0; inv H1; eauto with IGrammar.
-Qed.
-
-Ltac simpleton_linsert_inode_destruct pr o1 o2 :=
-    cbn [simpleton_linsert] in *;
-     destruct (is_conflict_pattern pr (CR o1 o2)) eqn:E;
-     [apply is_conflict_pattern_true in E | apply is_conflict_pattern_false in E].
 
 Lemma simpleton_linsert_assoc {L O} (pr : drules O) o o1 (t11 t12 t2 : parse_tree L O) :
   complete_pr pr ->
@@ -263,17 +337,6 @@ Proof.
         eexists. eauto with IGrammar.
       * exfalso. destruct E.
         apply complete_neg_cl_cr in H1; auto.
-Qed.
-
-Lemma complete_pr_cr_cl_cr {O} (pr : drules O) o1 o2 o3 :
-  complete_pr pr ->
-  conflict_pattern pr (CR o1 o2) ->
-  conflict_pattern pr (CL o2 o3) ->
-  conflict_pattern pr (CR o1 o3).
-Proof.
-  intros. destruct H.
-  inv H0; inv H1; eauto with IGrammar.
-  exfalso. eauto.
 Qed.
 
 Lemma linsert_simpleton_linsert {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
