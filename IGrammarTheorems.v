@@ -289,113 +289,16 @@ Proof.
   eauto using repair_yield_preserve, repair_safe.
 Qed.
 
-
 (*
   ############################################## 
   ##############################################
   ##############################################
 *)
 
-(* STUFF FOR COMPLETENESS HERE, cleanup TODO *)
-
-Lemma linsert_one_simpleton_linsert_anode {L O} (pr : drules O) l1 o (t2 : parse_tree L O) :
-  linsert_one pr l1 o t2 = simpleton_linsert pr (ANode l1) o t2.
-Proof.
-  induction t2; auto.
-  simpl. rewrite IHt2_1. reflexivity.
-Qed.
-
-Lemma simpleton_linsert_assoc {L O} (pr : drules O) o o1 (t11 t12 t2 : parse_tree L O) :
-  complete_pr pr ->
-  conflict_free (conflict_pattern pr) (INode t11 o1 t12) ->
-  ~ conflict_pattern pr (CL o o1) ->
-  simpleton_linsert pr (INode t11 o1 t12) o t2 = simpleton_linsert pr t11 o1 (simpleton_linsert pr t12 o t2).
-Proof.
-  intros. induction t2.
-  - simpleton_linsert_inode_destruct pr o1 o.
-    + destruct t12 as [?|t121 o12 t122]; auto.
-      rename E into E'.
-      simpleton_linsert_inode_destruct pr o1 o12; auto.
-      exfalso. inv H0. destruct H5.
-      eexists. eauto with IGrammar.
-    + apply complete_neg_cl_cr in H1; auto.
-      contradiction.
-  - rename t2_1 into t21, o0 into o2, t2_2 into t22.
-    simpleton_linsert_inode_destruct pr o o2.
-    + rewrite IHt2_1.
-      rename E into E'.
-      simpleton_linsert_inode_destruct pr o1 o2; auto.
-      exfalso. destruct E.
-      eapply complete_pr_cr_trans; eauto.
-      apply complete_neg_cl_cr in H1; auto.
-    + rename E into E'.
-      simpleton_linsert_inode_destruct pr o1 o.
-      * destruct t12 as [?|t121 o12 t122]; auto.
-        rename E into E''.
-        simpleton_linsert_inode_destruct pr o1 o12; auto.
-        exfalso. inv H0. destruct H5.
-        eexists. eauto with IGrammar.
-      * exfalso. destruct E.
-        apply complete_neg_cl_cr in H1; auto.
-Qed.
-
-Lemma linsert_simpleton_linsert {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
-  complete_pr pr ->
-  conflict_free (conflict_pattern pr) t1 ->
-  (forall x1, matches t1 (IPatt HPatt x1 HPatt) -> ~ conflict_pattern pr (CL o x1)) ->
-  linsert pr t1 o t2 = simpleton_linsert pr t1 o t2.
-Proof.
-  intro. intro. revert o t2.
-  induction t1; intros; simpl; eauto using linsert_one_simpleton_linsert_anode.
-  rename t1_1 into t11, o into o1, t1_2 into t12, o0 into o.
-  rewrite IHt1_2.
-    - rewrite IHt1_1.
-      + symmetry. eauto using simpleton_linsert_assoc with IGrammar.
-      + inv H0. assumption.
-      + intros. intro. inv H2. inv H0. destruct H6.
-        eexists. eauto with IGrammar.
-    - inv H0. assumption.
-    - intros. intro. inv H2. inv H0.
-      destruct H6. exists (CR o1 x1). split; eauto with IGrammar.
-      eapply complete_pr_cr_cl_cr; eauto.
-      apply complete_cl_or_cr with o o1 pr in H.
-      destruct H; eauto.
-      exfalso. apply H1 with o1; eauto with IGrammar.
-Qed.
-
-Lemma simpleton_linsert_identity {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
-  conflict_free (conflict_pattern pr) (INode t1 o t2) ->
-  simpleton_linsert pr t1 o t2 = INode t1 o t2.
-Proof.
-  intros. inv H.
-  destruct t2; auto.
-  simpleton_linsert_inode_destruct pr o o0; auto.
-  exfalso. destruct H3.
-  eexists. eauto with IGrammar.
-Qed.
-
-Lemma linsert_identity {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
-  complete_pr pr ->
-  conflict_free (conflict_pattern pr) (INode t1 o t2) ->
-  linsert pr t1 o t2 = INode t1 o t2.
-Proof.
-  intros.
-  rewrite linsert_simpleton_linsert; auto using simpleton_linsert_identity.
-  - inv H0. assumption.
-  - intros. intro. inv H1. inv H0. destruct H5.
-    eexists. eauto with IGrammar.
-Qed.
-
-Lemma repair_identity {L O} (pr : drules O) (t : parse_tree L O) :
-  complete_pr pr ->
-  conflict_free (conflict_pattern pr) t ->
-  repair pr t = t.
-Proof.
-  intros. induction t; simpl; auto.
-  rewrite IHt2.
-  - rewrite linsert_identity; auto.
-  - inv H0. assumption.
-Qed.
+(* The following lemmas aim to prove that [repair] is fully yield-dependent.
+   Meaning that of two trees have equal yields, then they repair to the same
+   tree. This will be useful for proving completeness later on.
+   We prove this by showing that [repair] is the same as the [build] function. *)
 
 Lemma yield_struct_app {L O} (w1 : word L O) o w2 :
   yield_struct w1 →
@@ -460,6 +363,131 @@ Proof.
   }
   inv H0. reflexivity.
 Qed.
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* The following lemmas aim to prove that [repair] preserves conflict-free trees
+   (i.e. [repair t = t], if [t] is conflict-free), assuming the disambiguation rules are complete.
+
+   This is done as follows: [repair] expands to [linsert]. Proving that [linsert]
+   preserves conflict-free trees is difficult. Instead we show that [linsert] is the same
+   as [simpleton_linsert] for conflict-free trees. Showing that [simpleton_linsert] preserves
+   conflict-free trees follows almost directly from the definition. *)
+
+Lemma linsert_one_simpleton_linsert_anode {L O} (pr : drules O) l1 o (t2 : parse_tree L O) :
+  linsert_one pr l1 o t2 = simpleton_linsert pr (ANode l1) o t2.
+Proof.
+  induction t2; auto.
+  simpl. rewrite IHt2_1. reflexivity.
+Qed.
+
+(* The usefulness of this lemma will become clear when we show that [linsert] equals
+   [simpleton_linsert] for conflict-free trees. *)
+Lemma simpleton_linsert_assoc {L O} (pr : drules O) o o1 (t11 t12 t2 : parse_tree L O) :
+  complete_pr pr ->
+  conflict_free (conflict_pattern pr) (INode t11 o1 t12) ->
+  ~ conflict_pattern pr (CL o o1) ->
+  simpleton_linsert pr (INode t11 o1 t12) o t2 = simpleton_linsert pr t11 o1 (simpleton_linsert pr t12 o t2).
+Proof.
+  intros. induction t2.
+  - simpleton_linsert_inode_destruct pr o1 o.
+    + destruct t12 as [?|t121 o12 t122]; auto.
+      rename E into E'.
+      simpleton_linsert_inode_destruct pr o1 o12; auto.
+      exfalso. inv H0. destruct H5.
+      eexists. eauto with IGrammar.
+    + apply complete_neg_cl_cr in H1; auto.
+      contradiction.
+  - rename t2_1 into t21, o0 into o2, t2_2 into t22.
+    simpleton_linsert_inode_destruct pr o o2.
+    + rewrite IHt2_1.
+      rename E into E'.
+      simpleton_linsert_inode_destruct pr o1 o2; auto.
+      exfalso. destruct E.
+      eapply complete_pr_cr_trans; eauto.
+      apply complete_neg_cl_cr in H1; auto.
+    + rename E into E'.
+      simpleton_linsert_inode_destruct pr o1 o.
+      * destruct t12 as [?|t121 o12 t122]; auto.
+        rename E into E''.
+        simpleton_linsert_inode_destruct pr o1 o12; auto.
+        exfalso. inv H0. destruct H5.
+        eexists. eauto with IGrammar.
+      * exfalso. destruct E.
+        apply complete_neg_cl_cr in H1; auto.
+Qed.
+
+(* [linsert] equals [simpleton_linsert]. Note the premise of this lemma:
+   We do not require the tree [INode t1 o t2] to be conflict-free. Instead
+   we just require that [t1] is conflict-free, and that [o] does not conflict
+   with the top operator of [t1]. *)
+Lemma linsert_simpleton_linsert {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
+  complete_pr pr ->
+  conflict_free (conflict_pattern pr) t1 ->
+  (forall x1, matches t1 (IPatt HPatt x1 HPatt) -> ~ conflict_pattern pr (CL o x1)) ->
+  linsert pr t1 o t2 = simpleton_linsert pr t1 o t2.
+Proof.
+  intro. intro. revert o t2.
+  induction t1; intros; simpl; eauto using linsert_one_simpleton_linsert_anode.
+  rename t1_1 into t11, o into o1, t1_2 into t12, o0 into o.
+  rewrite IHt1_2.
+    - rewrite IHt1_1.
+      + symmetry. eauto using simpleton_linsert_assoc with IGrammar.
+      + inv H0. assumption.
+      + intros. intro. inv H2. inv H0. destruct H6.
+        eexists. eauto with IGrammar.
+    - inv H0. assumption.
+    - intros. intro. inv H2. inv H0.
+      destruct H6. exists (CR o1 x1). split; eauto with IGrammar.
+      eapply complete_pr_cr_cl_cr; eauto.
+      apply complete_cl_or_cr with o o1 pr in H.
+      destruct H; eauto.
+      exfalso. apply H1 with o1; eauto with IGrammar.
+Qed.
+
+Lemma simpleton_linsert_identity {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
+  conflict_free (conflict_pattern pr) (INode t1 o t2) ->
+  simpleton_linsert pr t1 o t2 = INode t1 o t2.
+Proof.
+  intros. inv H.
+  destruct t2; auto.
+  simpleton_linsert_inode_destruct pr o o0; auto.
+  exfalso. destruct H3.
+  eexists. eauto with IGrammar.
+Qed.
+
+Lemma linsert_identity {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
+  complete_pr pr ->
+  conflict_free (conflict_pattern pr) (INode t1 o t2) ->
+  linsert pr t1 o t2 = INode t1 o t2.
+Proof.
+  intros.
+  rewrite linsert_simpleton_linsert; auto using simpleton_linsert_identity.
+  - inv H0. assumption.
+  - intros. intro. inv H1. inv H0. destruct H5.
+    eexists. eauto with IGrammar.
+Qed.
+
+Lemma repair_identity {L O} (pr : drules O) (t : parse_tree L O) :
+  complete_pr pr ->
+  conflict_free (conflict_pattern pr) t ->
+  repair pr t = t.
+Proof.
+  intros. induction t; simpl; auto.
+  rewrite IHt2.
+  - rewrite linsert_identity; auto.
+  - inv H0. assumption.
+Qed.
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
 
 Theorem completeness {L O} (pr : drules O) :
   complete_pr pr ->
