@@ -6,10 +6,10 @@ Inductive prod OP :=
   | InfixProd : OP -> prod OP
   | PrefixProd : OP -> prod OP.
 
-Arguments InfixProd {_} _.
-Arguments PrefixProd {_} _.
+Global Arguments InfixProd {_} _.
+Global Arguments PrefixProd {_} _.
 
-Record ippg := mkIppgrammar {
+Record ipg := mkIpgrammar {
   LEX : Type;
   OP : Type;
   prods: prod OP -> Prop
@@ -17,14 +17,14 @@ Record ippg := mkIppgrammar {
 
 Definition word g := list (LEX g + OP g).
 
-Inductive parse_tree (g : ippg) :=
+Inductive parse_tree (g : ipg) :=
   | AtomicNode : LEX g -> parse_tree g
   | InfixNode : parse_tree g -> OP g -> parse_tree g -> parse_tree g
   | PrefixNode : OP g -> parse_tree g -> parse_tree g.
 
-Arguments AtomicNode {_} _.
-Arguments InfixNode {_} _ _ _.
-Arguments PrefixNode {_} _ _.
+Global Arguments AtomicNode {_} _.
+Global Arguments InfixNode {_} _ _ _.
+Global Arguments PrefixNode {_} _ _.
 
 Inductive wf_parse_tree g : parse_tree g -> Prop :=
   | Atomic_wf l :
@@ -54,9 +54,9 @@ Inductive tree_pattern g :=
   | InfixPatt : tree_pattern g -> OP g -> tree_pattern g -> tree_pattern g
   | PrefixPatt : OP g -> tree_pattern g -> tree_pattern g.
 
-Arguments HPatt {_}.
-Arguments InfixPatt {_} _ _ _.
-Arguments PrefixPatt {_} _ _.
+Global Arguments HPatt {_}.
+Global Arguments InfixPatt {_} _ _ _.
+Global Arguments PrefixPatt {_} _ _.
 
 Inductive matches {g} : parse_tree g -> tree_pattern g -> Prop :=
   | HMatch t :
@@ -127,18 +127,17 @@ Definition conflict_free {g} (Qi Qrm : tree_pattern g -> Prop) t :=
 Record drules g := mkDrules {
   prio : prod g.(OP) -> prod g.(OP) -> Prop;
   left_a : prod g.(OP) -> prod g.(OP) -> Prop;
-  right_a : prod g.(OP) -> prod g.(OP) -> Prop
-}.
+  right_a : prod g.(OP) -> prod g.(OP) -> Prop;
 
-Arguments prio {_} _ _ _.
-Arguments left_a {_} _ _ _.
-Arguments right_a {_} _ _ _.
-
-Record drules_dec {g} (pr : drules g) := mkDrules_dec {
-  dec_prio : forall p1 p2, Decision (pr.(prio) p1 p2);
-  dec_left_a : forall p1 p2, Decision (pr.(left_a) p1 p2);
-  dec_right_a : forall p1 p2, Decision (pr.(right_a) p1 p2)
+  prio_dec : RelDecision prio;
+  left_a_dec : RelDecision left_a;
+  right_a_dec : RelDecision right_a;
 }.
+Global Existing Instances prio_dec left_a_dec right_a_dec.
+
+Global Arguments prio {_} _ _ _.
+Global Arguments left_a {_} _ _ _.
+Global Arguments right_a {_} _ _ _.
 
 Definition CL_infix_infix {g} o1 o2 : tree_pattern g :=
   InfixPatt (InfixPatt HPatt o2 HPatt) o1 HPatt.
@@ -184,66 +183,60 @@ Definition safe_pr {g} (pr : drules g) : Prop :=
     (pr.(prio) p2 p1 \/ (pr.(right_a)) p2 p1) ->
     False.
 
-Inductive linsert_one {g} (pr : drules g) (l1 : LEX g) (o1 : OP g) : 
-      parse_tree g -> parse_tree g -> Prop :=
-  | Atomic_LInsert_One l2 :
-      linsert_one pr l1 o1 (AtomicNode l2)
-        (InfixNode (AtomicNode l1) o1 (AtomicNode l2))
-  | Infix_LInsert_One_1 t1 o2 t2 :
-      ~ i_conflict_pattern pr (CR_infix_infix o1 o2) ->
-      linsert_one pr l1 o1 (InfixNode t1 o2 t2)
-        (InfixNode (AtomicNode l1) o1 (InfixNode t1 o2 t2))
-  | Infix_LInsert_One_2 t1 o2 t2 t1' :
-      i_conflict_pattern pr (CR_infix_infix o1 o2) ->
-      linsert_one pr l1 o1 t1 t1' ->
-      linsert_one pr l1 o1 (InfixNode t1 o2 t2)
-        (InfixNode t1' o2 t2)
-  | Prefix_LInsert_One o2 t :
-      linsert_one pr l1 o1 (PrefixNode o2 t)
-        (InfixNode (AtomicNode l1) o1 (PrefixNode o2 t)).
+Definition is_i_conflict_pattern {g} (pr : drules g) (q : tree_pattern g) :=
+  match q with
+  | InfixPatt (InfixPatt HPatt o2 HPatt) o1 HPatt =>
+      if decide (pr.(prio) (InfixProd o1) (InfixProd o2)) then true
+      else if decide (pr.(right_a) (InfixProd o1) (InfixProd o2)) then true
+      else false
+  | InfixPatt HPatt o1 (InfixPatt HPatt o2 HPatt) =>
+      if decide (pr.(prio) (InfixProd o1) (InfixProd o2)) then true
+      else if decide (pr.(left_a) (InfixProd o1) (InfixProd o2)) then true
+      else false
+  | PrefixPatt o1 (InfixPatt HPatt o2 HPatt) =>
+      if decide (pr.(prio) (PrefixProd o1) (InfixProd o2)) then true
+      else false
+  | _ => false
+  end.
 
-Inductive linsert_op {g} (pr : drules g) o1 :
-      parse_tree g -> parse_tree g -> Prop :=
-  | Atomic_LInsert_Op l :
-      linsert_op pr o1 (AtomicNode l)
-        (PrefixNode o1 (AtomicNode l))
-  | Infix_LInsert_Op_1 t1 o2 t2 :
-      ~ i_conflict_pattern pr (CR_prefix_infix o1 o2) ->
-      linsert_op pr o1 (InfixNode t1 o2 t2)
-        (PrefixNode o1 (InfixNode t1 o2 t2))
-  | Infix_LInsert_Op_2 t1 o2 t2 t1' :
-      i_conflict_pattern pr (CR_prefix_infix o1 o2) ->
-      linsert_op pr o1 t1 t1' ->
-      linsert_op pr o1 (InfixNode t1 o2 t2)
-        (InfixNode t1' o2 t2)
-  | Prefix_LInsert_Op o2 t :
-      linsert_op pr o1 (PrefixNode o2 t)
-        (PrefixNode o1 (PrefixNode o2 t)).
+Definition is_rm_conflict_pattern {g} (pr : drules g) (q : tree_pattern g) :=
+  match q with
+  | InfixPatt (PrefixPatt o2 HPatt) o1 HPatt =>
+      if decide (pr.(prio) (InfixProd o1) (PrefixProd o2)) then true
+      else false
+  | _ => false
+  end.
 
-Inductive linsert {g} (pr : drules g) :
-      parse_tree g -> OP g -> parse_tree g -> parse_tree g -> Prop :=
-  | Atomic_LInsert l o t t' :
-      linsert_one pr l o t t' ->
-      linsert pr (AtomicNode l) o t t'
-  | Infix_LInsert t1 o1 t2 o2 t t' t'' :
-      linsert pr t2 o2 t t' ->
-      linsert pr t1 o1 t' t'' ->
-      linsert pr (InfixNode t1 o1 t2) o2 t t''
-  | Prefix_LInsert o1 t1 o2 t t' t'':
-      linsert pr t1 o2 t t' ->
-      linsert_op pr o1 t' t'' ->
-      linsert pr (PrefixNode o1 t1) o2 t t''.
+Fixpoint linsert_lo {g} (pr : drules g) l1 o t2 : parse_tree g :=
+  match t2 with
+  | InfixNode t21 o2 t22 =>
+      if is_i_conflict_pattern pr (CR_infix_infix o o2)
+      then InfixNode (linsert_lo pr l1 o t21) o2 t22
+      else InfixNode (AtomicNode l1) o t2
+  | _ => InfixNode (AtomicNode l1) o t2
+  end.
 
-Inductive fix_tree {g} (pr : drules g) : parse_tree g -> parse_tree g -> Prop :=
-  | Atomic_fix l :
-      fix_tree pr (AtomicNode l) (AtomicNode l)
-  | Infix_fix t1 o t2 t2' t' :
-      fix_tree pr t2 t2' ->
-      linsert pr t1 o t2' t' ->
-      fix_tree pr (InfixNode t1 o t2) t'
-  | Prefix_fix o t1 t1' t' :
-      fix_tree pr t1 t1' ->
-      linsert_op pr o t1' t' ->
-      fix_tree pr (PrefixNode o t1) t'.
+Fixpoint linsert_o {g} (pr : drules g) o t2 : parse_tree g :=
+  match t2 with
+  | InfixNode t21 o2 t22 =>
+      if is_i_conflict_pattern pr (CR_prefix_infix o o2)
+      then InfixNode (linsert_o pr o t21) o2 t22
+      else PrefixNode o t2
+  | _ => PrefixNode o t2
+  end.
+
+Fixpoint linsert_to {g} (pr : drules g) t1 o t2 : parse_tree g :=
+  match t1 with
+  | AtomicNode l1 => linsert_lo pr l1 o t2
+  | InfixNode t11 o1 t12 => linsert_to pr t11 o1 (linsert_to pr t12 o t2)
+  | PrefixNode o1 t12 => linsert_o pr o1 (linsert_to pr t12 o t2)
+  end.
+
+Fixpoint repair {g} (pr : drules g) t : parse_tree g :=
+  match t with
+  | AtomicNode l => AtomicNode l
+  | InfixNode t1 o t2 => linsert_to pr t1 o (repair pr t2)
+  | PrefixNode o t2 => linsert_o pr o (repair pr t2)
+  end.
 
 End IPGrammar.
