@@ -239,4 +239,13 @@ Fixpoint repair {g} (pr : drules g) t : parse_tree g :=
   | PrefixNode o t2 => linsert_o pr o (repair pr t2)
   end.
 
+Fixpoint slinsert_to {g} (pr : drules g) t1 o t2 : parse_tree g :=
+  match t2 with
+  | InfixNode t21 o2 t22 =>
+      if is_i_conflict_pattern pr (CR_infix_infix o o2)
+      then InfixNode (slinsert_to pr t1 o t21) o2 t22
+      else InfixNode t1 o t2
+  | _ => InfixNode t1 o t2
+  end.
+
 End IPGrammar.
