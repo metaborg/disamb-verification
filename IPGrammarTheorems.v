@@ -622,4 +622,83 @@ Proof.
     + inv H. inv H0. inv H1. split; assumption.
 Qed.
 
+Lemma yield_struct_app {g} (w1 : word g) o w2 :
+  yield_struct w1 →
+  yield_struct w2 →
+  yield_struct (w1 ++ inr o :: w2).
+Proof.
+  intro. induction H; intros; simpl; auto using LOYield, OYield.
+Qed.
+
+Lemma yield_is_yield_struct {g} (t : parse_tree g) :
+  yield_struct (yield t).
+Proof.
+  induction t; simpl.
+  - apply LYield.
+  - auto using yield_struct_app.
+  - auto using OYield.
+Qed.
+
+Lemma parse_yield_struct_some {g} (pr : drules g) (w : word g) :
+  yield_struct w ->
+  exists t, parse pr w = Some t.
+Proof.
+  intros. induction H; eauto.
+  - destruct IHyield_struct.
+    eexists. simpl. rewrite H0. reflexivity.
+  - destruct IHyield_struct.
+    eexists. simpl. rewrite H0. reflexivity.
+Qed.
+
+Lemma parse_yield_some {g} (pr : drules g) t :
+  exists t', parse pr (yield t) = Some t'.
+Proof.
+  auto using yield_is_yield_struct, parse_yield_struct_some.
+Qed.
+
+Lemma parse_app {g} (pr : drules g) t1 t2 t2' o :
+  parse pr (yield t2) = Some t2' ->
+  parse pr (yield t1 ++ inr o :: yield t2) = Some (linsert_to pr t1 o t2').
+Proof.
+  revert t2 t2' o. induction t1; intros; simpl.
+  - rewrite H. reflexivity.
+  - simplify_list_eq. rename o into o1, o0 into o.
+    destruct (parse_yield_some pr t1_2).
+    erewrite IHt1_1 with (t2 := (InfixNode t1_2 o t2)); auto.
+    simpl. erewrite IHt1_2; auto.
+  - destruct (parse_yield_some pr t1).
+    erewrite IHt1; auto.
+Qed.
+
+Lemma repair_parse {g} (pr : drules g) t :
+  parse pr (yield t) = Some (repair pr t).
+Proof.
+  induction t; simpl; auto.
+  - erewrite parse_app; eauto.
+  - rewrite IHt. reflexivity.
+Qed.
+
+Lemma repair_is_fully_yield_dependent {g} (pr : drules g) t1 t2 :
+  yield t1 = yield t2 ->
+  repair pr t1 = repair pr t2.
+Proof.
+  intro.
+  assert (Some (repair pr t1) = Some (repair pr t2)). {
+    rewrite <- repair_parse.
+    rewrite H.
+    rewrite repair_parse.
+    reflexivity.
+  }
+  inv H0. reflexivity.
+Qed.
+
+Theorem completeness {g} (pr : drules g) :
+  complete pr.
+Proof.
+  intro. unfold complete. intros.
+  apply repair_is_fully_yield_dependent with pr t1 t2 in H.
+  rewrite repair_complete in H; auto.
+  rewrite repair_complete in H; auto.
+Qed.
+
 End IPGrammarTheorems.

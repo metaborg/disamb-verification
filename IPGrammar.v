@@ -177,6 +177,13 @@ Definition dlanguage {g} (pr : drules g) w : Prop :=
 Definition safe {g} (pr : drules g) : Prop :=
   forall w, language w -> dlanguage pr w.
 
+Definition complete {g} (pr : drules g) : Prop :=
+  forall t1 t2,
+    yield t1 = yield t2 ->
+    conflict_free (i_conflict_pattern pr) (rm_conflict_pattern pr) t1 ->
+    conflict_free (i_conflict_pattern pr) (rm_conflict_pattern pr) t2 ->
+    t1 = t2.
+
 Definition safe_pr {g} (pr : drules g) : Prop :=
   forall p1 p2,
     (pr.(prio) p1 p2 \/ (pr.(left_a)) p1 p2) ->
@@ -247,5 +254,31 @@ Fixpoint slinsert_to {g} (pr : drules g) t1 o t2 : parse_tree g :=
       else InfixNode t1 o t2
   | _ => InfixNode t1 o t2
   end.
+
+Fixpoint parse {g} (pr : drules g) (w : word g) : option (parse_tree g) :=
+  match w with
+  | [inl l] => Some (AtomicNode l)
+  | inl l :: inr o :: w =>
+      match (parse pr w) with
+      | None => None
+      | Some t => Some (linsert_lo pr l o t)
+      end
+  | inr o :: w =>
+      match (parse pr w) with
+      | None => None
+      | Some t => Some (linsert_o pr o t)
+      end
+  | _ => None
+  end.
+
+Inductive yield_struct {g} : word g -> Prop :=
+  | LYield l :
+      yield_struct [inl l]
+  | LOYield l o w :
+      yield_struct w ->
+      yield_struct (inl l :: inr o :: w)
+  | OYield o w :
+      yield_struct w ->
+      yield_struct (inr o :: w).
 
 End IPGrammar.
