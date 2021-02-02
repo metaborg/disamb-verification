@@ -163,11 +163,17 @@ Inductive i_conflict_pattern {g} (pr : drules g) : tree_pattern g -> Prop :=
       i_conflict_pattern pr (CR_infix_infix o1 o2)
   | CPrio_prefix_infix o1 o2 :
       pr.(prio) (PrefixProd o1) (InfixProd o2) ->
+      i_conflict_pattern pr (CR_prefix_infix o1 o2)
+  | CRight_prefix_infix o1 o2 :
+      pr.(right_a) (PrefixProd o1) (InfixProd o2) ->
       i_conflict_pattern pr (CR_prefix_infix o1 o2).
 
 Inductive rm_conflict_pattern {g} (pr : drules g) : tree_pattern g -> Prop :=
   | CPrio_infix_prefix o1 o2 :
       pr.(prio) (InfixProd o1) (PrefixProd o2) ->
+      rm_conflict_pattern pr (CL_infix_prefix o1 o2)
+  | CLeft_infix_prefix o1 o2 :
+      pr.(left_a) (InfixProd o1) (PrefixProd o2) ->
       rm_conflict_pattern pr (CL_infix_prefix o1 o2).
 
 Definition dlanguage {g} (pr : drules g) w : Prop :=
@@ -190,6 +196,40 @@ Definition safe_pr {g} (pr : drules g) : Prop :=
     (pr.(prio) p2 p1 \/ (pr.(right_a)) p2 p1) ->
     False.
 
+Record complete_pr {g} (pr : drules g) := mkComplete_pr {
+  complete_1 : forall o1 o2,
+    pr.(prio) o1 o2 \/ pr.(left_a) o1 o2 \/
+    pr.(prio) o2 o1 \/ pr.(right_a) o2 o1;
+
+  complete_2 : forall o1 o2 o3,
+    pr.(prio) o1 o2 -> pr.(prio) o2 o3 -> pr.(prio) o1 o3;
+
+  complete_3 : forall o1 o2 o3,
+    pr.(prio) o1 o2 -> pr.(prio) o2 o3 -> pr.(prio) o1 o3;
+  complete_4 : forall o1 o2 o3,
+    pr.(prio) o1 o2 -> pr.(left_a) o2 o3 -> pr.(prio) o1 o3;
+  complete_5 : forall o1 o2 o3,
+    pr.(prio) o1 o2 -> pr.(right_a) o2 o3 -> pr.(prio) o1 o3;
+  complete_6 : forall o1 o2 o3,
+    pr.(left_a) o1 o2 -> pr.(prio) o2 o3 -> pr.(prio) o1 o3;
+  complete_7 : forall o1 o2 o3,
+    pr.(right_a) o1 o2 -> pr.(prio) o2 o3 -> pr.(prio) o1 o3;
+
+  complete_8 : forall o1 o2 o3,
+    pr.(left_a) o1 o2 -> pr.(left_a) o2 o3 -> pr.(left_a) o1 o3;
+  complete_9 : forall o1 o2 o3,
+    pr.(right_a) o1 o2 -> pr.(right_a) o2 o3 -> pr.(right_a) o1 o3;
+
+  complete_10 : forall o1 o2 o3,
+    pr.(left_a) o1 o2 -> pr.(right_a) o2 o3 -> False;
+  complete_11 : forall o1 o2 o3,
+    pr.(right_a) o1 o2 -> pr.(left_a) o2 o3 -> False;
+}.
+
+End IPGrammar.
+
+Section IPGrammarRepair.
+
 Definition is_i_conflict_pattern {g} (pr : drules g) (q : tree_pattern g) :=
   match q with
   | InfixPatt (InfixPatt HPatt o2 HPatt) o1 HPatt =>
@@ -202,6 +242,7 @@ Definition is_i_conflict_pattern {g} (pr : drules g) (q : tree_pattern g) :=
       else false
   | PrefixPatt o1 (InfixPatt HPatt o2 HPatt) =>
       if decide (pr.(prio) (PrefixProd o1) (InfixProd o2)) then true
+      else if decide (pr.(right_a) (PrefixProd o1) (InfixProd o2)) then true
       else false
   | _ => false
   end.
@@ -281,4 +322,4 @@ Inductive yield_struct {g} : word g -> Prop :=
       yield_struct w ->
       yield_struct (inr o :: w).
 
-End IPGrammar.
+End IPGrammarRepair.

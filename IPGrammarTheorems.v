@@ -7,6 +7,9 @@ Create HintDb IPGrammar.
 Hint Resolve CPrio_infix_infix_1 : IPGrammar.
 Hint Resolve CPrio_infix_infix_2 : IPGrammar.
 Hint Resolve CPrio_prefix_infix : IPGrammar.
+Hint Resolve CPrio_infix_prefix : IPGrammar.
+Hint Resolve CRight_prefix_infix : IPGrammar.
+Hint Resolve CLeft_infix_prefix : IPGrammar.
 Hint Resolve CLeft : IPGrammar.
 Hint Resolve CRight : IPGrammar.
 Hint Resolve HMatch : IPGrammar.
@@ -30,6 +33,7 @@ Proof.
   - inv H; simpl; auto using decide_True, decide_False.
     + destruct (decide (prio pr (InfixProd o1) (InfixProd o2))); auto using decide_True, decide_False.
     + destruct (decide (prio pr (InfixProd o1) (InfixProd o2))); auto using decide_True, decide_False.
+    + destruct (decide (prio pr (PrefixProd o1) (InfixProd o2))); auto using decide_True, decide_False.
   - destruct q; inv H.
     + destruct q1, q2; inv H1.
       * destruct q2_1, q2_2; inv H0.
@@ -45,6 +49,7 @@ Proof.
     + destruct q; inv H1.
       destruct q1, q2; inv H0.
       destruct (decide (prio pr (PrefixProd o) (InfixProd o0))); eauto with IPGrammar.
+      destruct (decide (right_a pr (PrefixProd o) (InfixProd o0))); eauto with IPGrammar.
       inv H1.
 Qed.
 
@@ -175,9 +180,20 @@ Proof.
   intros. inv H; eauto.
 Qed.
 
+Lemma rm_conflict_pattern_cases {g} (pr : drules g) q :
+  rm_conflict_pattern pr q -> exists o1 o2,
+  q = CL_infix_prefix o1 o2.
+Proof.
+  intros. inv H; eauto.
+Qed.
+
 Ltac icp_cases H :=
   apply i_conflict_pattern_cases in H as T; destruct T as [? T1]; destruct T1 as [? T2];
   destruct T2 as [T4|T3]; [|destruct T3 as [T4|T4]]; rewrite T4 in *; clear T4.
+
+Ltac rmcp_cases H :=
+  apply rm_conflict_pattern_cases in H as T; destruct T as [? T1]; destruct T1 as [? T2];
+  rewrite T2 in *; clear T2.
 
 Lemma inode_single_icfree {g} (pr : drules g) l1 o l2 :
   i_conflict_free (i_conflict_pattern pr)
@@ -291,8 +307,8 @@ Lemma inode_single_drmcfree {g} (pr : drules g) l1 o l2 :
     (InfixNode (AtomicNode l1) o (AtomicNode l2)).
 Proof.
   apply Infix_drmcf; auto using Atomic_drmcf.
-  intro. destruct H as [q]. inv H. inv H0.
-  inv H1. inv H3. inv H0.
+  intro. destruct H as [q]. inv H. rmcp_cases H0.
+  inv H1. inv H3. inv H.
 Qed.
 
 Lemma matches_rm_hpatt {g} (t : parse_tree g) :
@@ -324,14 +340,14 @@ Proof.
     + inv H0. apply Infix_drmcf; auto.
       intro. destruct H0 as [q]. inv H0.
       destruct H4. exists q. split; try assumption.
-      inv H1. inv H2.
+      rmcp_cases H1. inv H2.
       apply InfixMatch_drm; eauto using matches_rm_hpatt, linsert_lo_matches_rm.
     + apply Infix_drmcf; auto with IPGrammar.
       intro. destruct H1 as [q]. inv H1.
-      inv H2. inv H3. inv H5. inv H2.
+      rmcp_cases H2. inv H3. inv H5. inv H1.
   - apply Infix_drmcf; auto with IPGrammar.
     intro. destruct H1 as [q]. inv H1.
-    inv H2. inv H3. inv H5. inv H2.
+    rmcp_cases H2. inv H3. inv H5. inv H1.
 Qed.
 
 Lemma prefixnode_single_drmcfree {g} (pr : drules g) o l2 :
@@ -339,7 +355,7 @@ Lemma prefixnode_single_drmcfree {g} (pr : drules g) o l2 :
     (PrefixNode o (AtomicNode l2)).
 Proof.
   apply Prefix_drmcf; auto using Atomic_drmcf.
-  intro. destruct H as [q]. inv H. inv H0.
+  intro. destruct H as [q]. inv H. rmcp_cases H0.
   inv H1.
 Qed.
 
@@ -370,16 +386,16 @@ Proof.
   - linsert_o_inode_destruct pr o o2.
     + inv H0. apply Infix_drmcf; auto.
       intro. destruct H0 as [q]. inv H0.
-      inv H1. inv H2. rename o1 into o2.
+      rmcp_cases H1. inv H2. rename x into o2, x0 into x.
       apply linsert_o_matches_rm in H7.
       inv H7.
       * destruct H4. eexists. split. eauto using CPrio_infix_prefix.
         unfold CL_infix_prefix. apply InfixMatch_drm; auto using Match_rm, HMatch.
       * eapply safe_infix_prefix; eauto using CPrio_infix_prefix.
     + apply Prefix_drmcf; auto. intro.
-      inv H1. inv H2. inv H1. inv H3.
+      inv H1. inv H2. rmcp_cases H1. inv H3.
   - apply Prefix_drmcf; auto. intro.
-      inv H1. inv H2. inv H1. inv H3.
+      inv H1. inv H2. rmcp_cases H1. inv H3.
 Qed.
 
 Lemma linsert_to_drmcfree {g} (pr : drules g) t1 o t2 :
@@ -424,43 +440,81 @@ Proof.
 Qed.
 
 Lemma complete_trans_1 {g} (pr : drules g) o1 o2 o3 :
+  complete_pr pr ->
   i_conflict_pattern pr (CL_infix_infix o1 o2) ->
   i_conflict_pattern pr (CL_infix_infix o2 o3) ->
   i_conflict_pattern pr (CL_infix_infix o1 o3).
-Admitted.
+Proof.
+  intros. destruct H.
+  inv H0; inv H1; eauto with IPGrammar.
+Qed.
 
 Lemma complete_trans_2 {g} (pr : drules g) o1 o2 o3 :
+  complete_pr pr ->
   i_conflict_pattern pr (CR_prefix_infix o1 o2) ->
   i_conflict_pattern pr (CL_infix_infix o2 o3) ->
   i_conflict_pattern pr (CR_prefix_infix o1 o3).
-Admitted.
+Proof.
+  intros. destruct H.
+  inv H0; inv H1; eauto with IPGrammar.
+Qed.
 
 Lemma complete_trans_3 {g} (pr : drules g) o1 o2 o3 :
+  complete_pr pr ->
   i_conflict_pattern pr (CR_prefix_infix o1 o2) ->
   i_conflict_pattern pr (CR_infix_infix o2 o3) ->
   i_conflict_pattern pr (CR_prefix_infix o1 o3).
-Admitted.
+Proof.
+  intros. destruct H.
+  inv H0; inv H1; eauto with IPGrammar.
+  exfalso. eauto.
+Qed.
 
 Lemma complete_trans_4 {g} (pr : drules g) o1 o2 o3 :
+  complete_pr pr ->
   i_conflict_pattern pr (CR_infix_infix o1 o2) ->
   i_conflict_pattern pr (CR_infix_infix o2 o3) ->
   i_conflict_pattern pr (CR_infix_infix o1 o3).
-Admitted.
+Proof.
+  intros. destruct H.
+  inv H0; inv H1; eauto with IPGrammar.
+Qed.
 
 Lemma complete_neg_1 {g} (pr : drules g) o1 o2 :
+  complete_pr pr ->
   ~ i_conflict_pattern pr (CR_infix_infix o1 o2) ->
   i_conflict_pattern pr (CL_infix_infix o2 o1).
-Admitted.
+Proof.
+  intros. destruct H.
+  specialize complete_1 with (InfixProd o1) (InfixProd o2).
+  decompose [or] complete_1; auto with IPGrammar.
+  - destruct H0. auto with IPGrammar.
+  - destruct H0. auto with IPGrammar.
+Qed.
 
 Lemma complete_neg_2 {g} (pr : drules g) o1 o2 :
+  complete_pr pr ->
   ~ rm_conflict_pattern pr (CL_infix_prefix o1 o2) ->
   i_conflict_pattern pr (CR_prefix_infix o2 o1).
-Admitted.
+Proof.
+  intros. destruct H.
+  specialize complete_1 with (InfixProd o1) (PrefixProd o2).
+  decompose [or] complete_1; auto with IPGrammar.
+  - destruct H0. auto with IPGrammar.
+  - destruct H0. auto with IPGrammar.
+Qed.
 
 Lemma complete_neg_3 {g} (pr : drules g) o1 o2 :
+  complete_pr pr ->
   ~ i_conflict_pattern pr (CL_infix_infix o1 o2) ->
   i_conflict_pattern pr (CR_infix_infix o2 o1).
-Admitted.
+Proof.
+  intros. destruct H.
+  specialize complete_1 with (InfixProd o2) (InfixProd o1).
+  decompose [or] complete_1; auto with IPGrammar.
+  - destruct H0. auto with IPGrammar.
+  - destruct H0. auto with IPGrammar.
+Qed.
 
 Lemma linsert_o_complete {g} (pr : drules g) o t2 :
   i_conflict_free (i_conflict_pattern pr) (PrefixNode o t2) ->
@@ -474,11 +528,12 @@ Proof.
 Qed.
 
 Lemma slinsert_to_prefix {g} (pr : drules g) o1 t12 o t2 :
+  complete_pr pr ->
   conflict_free (i_conflict_pattern pr) (rm_conflict_pattern pr) (PrefixNode o1 t12) ->
   ~ rm_conflict_pattern pr (CL_infix_prefix o o1) ->
   slinsert_to pr (PrefixNode o1 t12) o t2 = linsert_o pr o1 (slinsert_to pr t12 o t2).
 Proof.
-  intros. inv H.
+  intros. inv H0.
   induction t2.
   - cbn [slinsert_to]. linsert_o_inode_destruct pr o1 o.
     + rewrite linsert_o_complete; auto.
@@ -491,7 +546,7 @@ Proof.
       linsert_o_inode_destruct pr o1 o2; auto.
       destruct E.
       apply complete_trans_3 with o; auto.
-      apply complete_neg_2. assumption.
+      auto using complete_neg_2.
     + rename E into E1. linsert_o_inode_destruct pr o1 o.
       * rewrite linsert_o_complete; auto.
       * destruct E.
@@ -515,6 +570,7 @@ Proof.
 Qed.
 
 Lemma slinsert_to_assoc {g} (pr : drules g) t11 o1 t12 o t2 :
+  complete_pr pr ->
   conflict_free (i_conflict_pattern pr) (rm_conflict_pattern pr) (InfixNode t11 o1 t12) ->
   ~ i_conflict_pattern pr (CL_infix_infix o o1) ->
   slinsert_to pr (InfixNode t11 o1 t12) o t2 = slinsert_to pr t11 o1 (slinsert_to pr t12 o t2).
@@ -522,7 +578,7 @@ Proof.
   intros. induction t2.
   - slinsert_to_inode_destruct pr o1 o.
     + rewrite slinsert_to_complete; auto.
-    + destruct H0. auto using complete_neg_1.
+    + destruct H1. auto using complete_neg_1.
   - rename t2_1 into t21, o0 into o2, t2_2 into t22.
     slinsert_to_inode_destruct pr o o2.
     + rewrite IHt2_1.
@@ -534,15 +590,16 @@ Proof.
     + rename E into E'.
       slinsert_to_inode_destruct pr o1 o.
       * rewrite slinsert_to_complete; auto.
-      * destruct H0.
+      * destruct H1.
         auto using complete_neg_1.
   - rename o0 into o2, t2 into t22.
     slinsert_to_inode_destruct pr o1 o.
     + rewrite slinsert_to_complete; auto.
-    + destruct H0. auto using complete_neg_1.
+    + destruct H1. auto using complete_neg_1.
 Qed.
 
 Lemma linsert_to_slinsert_to {g} (pr : drules g) t1 o t2 :
+  complete_pr pr ->
   conflict_free (i_conflict_pattern pr) (rm_conflict_pattern pr) t1 ->
   (forall x1, matches t1 (InfixPatt HPatt x1 HPatt) -> ~ i_conflict_pattern pr (CL_infix_infix o x1)) ->
   (forall x1, matches_rm t1 (PrefixPatt x1 HPatt) -> ~ rm_conflict_pattern pr (CL_infix_prefix o x1)) ->
@@ -555,71 +612,73 @@ Proof.
     rewrite IHt1_2.
     + rewrite IHt1_1.
       * rewrite slinsert_to_assoc; auto with IPGrammar.
-      * inv H. inv H2. inv H3. split; assumption.
-      * intros. inv H2.
+      * inv H0. inv H3. inv H4. split; assumption.
+      * intros. inv H3.
         rename t1 into t111, t0 into t112, x1 into o11.
         intro.
-        inv H. inv H3. destruct H9.
+        inv H0. inv H4. destruct H10.
         eexists. eauto with IPGrammar.
       * intros.
         intro.
-        inv H. inv H5. destruct H8.
+        inv H0. inv H6. destruct H9.
         eexists. eauto with IPGrammar.
-    + inv H. inv H2. inv H3. split; assumption.
-    + intros. inv H2.
-      rename t1 into t121, t0 into t122, x1 into o12. clear H6 H8.
+    + inv H0. inv H3. inv H4. split; assumption.
+    + intros. inv H3.
+      rename t1 into t121, t0 into t122, x1 into o12. clear H7 H9.
       intro.
-      specialize H0 with o1. apply H0; auto with IPGrammar.
+      specialize H1 with o1. apply H1; auto with IPGrammar.
       apply complete_trans_1 with o12; auto.
-      apply complete_neg_1. intro.
-      inv H. inv H4. destruct H8.
+      apply complete_neg_1; auto. intro.
+      inv H0. inv H5. destruct H9.
       eexists. eauto with IPGrammar.
     + intros. 
-      apply H1.
+      apply H2.
       auto with IPGrammar.
   - rename o into o1, t1 into t12, o0 into o.
     rewrite IHt1.
     + rewrite slinsert_to_prefix; auto with IPGrammar.
-    + inv H. inv H2. inv H3. split; assumption.
-    + intros. inv H2.
-      rename t1 into t121, t0 into t122, x1 into o12. clear H6 H8.
+    + inv H0. inv H3. inv H4. split; assumption.
+    + intros. inv H3.
+      rename t1 into t121, t0 into t122, x1 into o12. clear H7 H9.
       intro.
-      inv H. inv H3. destruct H6.
+      inv H0. inv H4. destruct H7.
       exists (CR_prefix_infix o1 o12).
       split; [|unfold CR_prefix_infix; auto with IPGrammar].
       apply complete_trans_2 with o; auto.
-      specialize H0 with o1.
-      apply complete_neg_2.
-      apply H1. auto with IPGrammar.
+      specialize H1 with o1.
+      apply complete_neg_2; auto.
+      apply H2. auto with IPGrammar.
     + intros. 
-      apply H1.
+      apply H2.
       auto with IPGrammar.
 Qed.
 
 Lemma linsert_to_complete {g} (pr : drules g) t1 o t2 :
+  complete_pr pr ->
   conflict_free (i_conflict_pattern pr) (rm_conflict_pattern pr) (InfixNode t1 o t2) ->
   linsert_to pr t1 o t2 = InfixNode t1 o t2.
 Proof.
-  intros. assert (H' := H). inv H. inv H0. inv H1.
-  rewrite linsert_to_slinsert_to.
+  intros. assert (H0' := H0). inv H0. inv H1. inv H2.
+  rewrite linsert_to_slinsert_to; auto.
   - rewrite slinsert_to_complete; auto.
   - split; assumption.
-  - intros. inv H. intro. destruct H4. eexists. eauto with IPGrammar.
-  - intros. intro. destruct H3. eexists. eauto with IPGrammar.
+  - intros. inv H0. intro. destruct H5. eexists. eauto with IPGrammar.
+  - intros. intro. destruct H4. eexists. eauto with IPGrammar.
 Qed.
 
 Lemma repair_complete {g} (pr : drules g) t :
+  complete_pr pr ->
   conflict_free (i_conflict_pattern pr) (rm_conflict_pattern pr) t ->
   repair pr t = t.
 Proof.
   intros. induction t; simpl; auto.
   - rewrite IHt2.
     + rewrite linsert_to_complete; auto.
-    + inv H. inv H0. inv H1. split; assumption.
+    + inv H0. inv H1. inv H2. split; assumption.
   - rewrite IHt.
     + rewrite linsert_o_complete; auto.
-      inv H. assumption.
-    + inv H. inv H0. inv H1. split; assumption.
+      inv H0. assumption.
+    + inv H0. inv H1. inv H2. split; assumption.
 Qed.
 
 Lemma yield_struct_app {g} (w1 : word g) o w2 :
@@ -693,12 +752,13 @@ Proof.
 Qed.
 
 Theorem completeness {g} (pr : drules g) :
+  complete_pr pr ->
   complete pr.
 Proof.
-  intro. unfold complete. intros.
-  apply repair_is_fully_yield_dependent with pr t1 t2 in H.
-  rewrite repair_complete in H; auto.
-  rewrite repair_complete in H; auto.
+  intro. intro. unfold complete. intros.
+  apply repair_is_fully_yield_dependent with pr t1 t2 in H0.
+  rewrite repair_complete in H0; auto.
+  rewrite repair_complete in H0; auto.
 Qed.
 
 End IPGrammarTheorems.
