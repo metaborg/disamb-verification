@@ -164,16 +164,16 @@ Inductive i_conflict_pattern {g} (pr : drules g) : tree_pattern g -> Prop :=
   | CPrio_prefix_infix o1 o2 :
       pr.(prio) (PrefixProd o1) (InfixProd o2) ->
       i_conflict_pattern pr (CR_prefix_infix o1 o2)
-  | CRight_prefix_infix o1 o2 :
-      pr.(right_a) (PrefixProd o1) (InfixProd o2) ->
+  | CLeft_prefix_infix o1 o2 :
+      pr.(left_a) (PrefixProd o1) (InfixProd o2) ->
       i_conflict_pattern pr (CR_prefix_infix o1 o2).
 
 Inductive rm_conflict_pattern {g} (pr : drules g) : tree_pattern g -> Prop :=
   | CPrio_infix_prefix o1 o2 :
       pr.(prio) (InfixProd o1) (PrefixProd o2) ->
       rm_conflict_pattern pr (CL_infix_prefix o1 o2)
-  | CLeft_infix_prefix o1 o2 :
-      pr.(left_a) (InfixProd o1) (PrefixProd o2) ->
+  | CRight_infix_prefix o1 o2 :
+      pr.(right_a) (InfixProd o1) (PrefixProd o2) ->
       rm_conflict_pattern pr (CL_infix_prefix o1 o2).
 
 Definition dlanguage {g} (pr : drules g) w : Prop :=
@@ -242,18 +242,18 @@ Definition is_i_conflict_pattern {g} (pr : drules g) (q : tree_pattern g) :=
       else false
   | PrefixPatt o1 (InfixPatt HPatt o2 HPatt) =>
       if decide (pr.(prio) (PrefixProd o1) (InfixProd o2)) then true
-      else if decide (pr.(right_a) (PrefixProd o1) (InfixProd o2)) then true
+      else if decide (pr.(left_a) (PrefixProd o1) (InfixProd o2)) then true
       else false
   | _ => false
   end.
-
+(* 
 Definition is_rm_conflict_pattern {g} (pr : drules g) (q : tree_pattern g) :=
   match q with
   | InfixPatt (PrefixPatt o2 HPatt) o1 HPatt =>
       if decide (pr.(prio) (InfixProd o1) (PrefixProd o2)) then true
       else false
   | _ => false
-  end.
+  end. *)
 
 Fixpoint linsert_lo {g} (pr : drules g) l1 o t2 : parse_tree g :=
   match t2 with

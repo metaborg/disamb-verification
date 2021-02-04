@@ -8,8 +8,8 @@ Hint Resolve CPrio_infix_infix_1 : IPGrammar.
 Hint Resolve CPrio_infix_infix_2 : IPGrammar.
 Hint Resolve CPrio_prefix_infix : IPGrammar.
 Hint Resolve CPrio_infix_prefix : IPGrammar.
-Hint Resolve CRight_prefix_infix : IPGrammar.
-Hint Resolve CLeft_infix_prefix : IPGrammar.
+Hint Resolve CLeft_prefix_infix : IPGrammar.
+Hint Resolve CRight_infix_prefix : IPGrammar.
 Hint Resolve CLeft : IPGrammar.
 Hint Resolve CRight : IPGrammar.
 Hint Resolve HMatch : IPGrammar.
@@ -49,7 +49,7 @@ Proof.
     + destruct q; inv H1.
       destruct q1, q2; inv H0.
       destruct (decide (prio pr (PrefixProd o) (InfixProd o0))); eauto with IPGrammar.
-      destruct (decide (right_a pr (PrefixProd o) (InfixProd o0))); eauto with IPGrammar.
+      destruct (decide (left_a pr (PrefixProd o) (InfixProd o0))); eauto with IPGrammar.
       inv H1.
 Qed.
 
@@ -457,6 +457,7 @@ Lemma complete_trans_2 {g} (pr : drules g) o1 o2 o3 :
 Proof.
   intros. destruct H.
   inv H0; inv H1; eauto with IPGrammar.
+  edestruct complete_10; eauto.
 Qed.
 
 Lemma complete_trans_3 {g} (pr : drules g) o1 o2 o3 :
@@ -467,7 +468,6 @@ Lemma complete_trans_3 {g} (pr : drules g) o1 o2 o3 :
 Proof.
   intros. destruct H.
   inv H0; inv H1; eauto with IPGrammar.
-  exfalso. eauto.
 Qed.
 
 Lemma complete_trans_4 {g} (pr : drules g) o1 o2 o3 :
@@ -498,7 +498,7 @@ Lemma complete_neg_2 {g} (pr : drules g) o1 o2 :
   i_conflict_pattern pr (CR_prefix_infix o2 o1).
 Proof.
   intros. destruct H.
-  specialize complete_1 with (InfixProd o1) (PrefixProd o2).
+  specialize complete_1 with (PrefixProd o2) (InfixProd o1) .
   decompose [or] complete_1; auto with IPGrammar.
   - destruct H0. auto with IPGrammar.
   - destruct H0. auto with IPGrammar.
