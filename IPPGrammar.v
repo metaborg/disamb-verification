@@ -476,7 +476,20 @@ Fixpoint linsert_to {g} (pr : drules g)
         end
       | PostfixNode t11 o1 =>
         match (linsert_to pr t11 o1 None fuel) with
-        | Some t1' => Some (PostfixNode t1' o)
+        | Some t1 =>
+          match t1 with
+          | InfixNode t11 o1 t12 =>
+            match (linsert_to pr t12 o None fuel) with
+            | Some t2' => linsert_to pr t11 o1 (Some t2') fuel
+            | None => None
+            end
+          | PrefixNode o1 t12 =>
+            match (linsert_to pr t12 o None fuel) with
+            | Some t2' => Some (linsert_o pr o1 t2')
+            | None => None
+            end
+          | _ => Some (PostfixNode t1 o)
+          end
         | None => None
         end
       end
