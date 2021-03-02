@@ -262,7 +262,7 @@ Inductive rm_conflict_pattern {g} (pr : drules g) : tree_pattern g -> Prop :=
       pr.(prio) (PostfixProd o1) (PrefixProd o2) ->
       rm_conflict_pattern pr (CL_postfix_prefix o1 o2)
   | CRight_postfix_prefix o1 o2 :
-      pr.(prio) (PostfixProd o1) (PrefixProd o2) ->
+      pr.(right_a) (PostfixProd o1) (PrefixProd o2) ->
       rm_conflict_pattern pr (CL_postfix_prefix o1 o2).
 
 Inductive lm_conflict_pattern {g} (pr : drules g) : tree_pattern g -> Prop :=
