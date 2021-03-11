@@ -550,41 +550,50 @@ Qed.
 
 Lemma linsert_lo_wf {g} (pr : drules g) l1 o t2 :
   wf_parse_tree g t2 ->
-  g.(prods) (InfixProd o) ->
-  wf_parse_tree g (linsert_lo pr l1 o t2).
+  g.(prods) (InfixProd (inl o)) ->
+  wf_parse_tree g (linsert_lo pr l1 (inl o) t2).
 Proof.
   intros. induction H; eauto with IPPGrammar.
-  - linsert_lo_inode_destruct pr o t1 o0 t2; auto with IPPGrammar.
-  - linsert_lo_pnode_destruct pr o t o0; auto with IPPGrammar.
+  - linsert_lo_inode_destruct pr
+      (@inl (OPinpre g) (OPpost g) o) t1 (@inl (OPinpre g) (OPpost g) o0) t2; auto with IPPGrammar.
+  - linsert_lo_pnode_destruct pr
+      (@inl (OPinpre g) (OPpost g) o) t (@inr (OPinpre g) (OPpost g) o0); auto with IPPGrammar.
 Qed.
 
 Lemma linsert_o_wf {g} (pr : drules g) o t2 :
   wf_parse_tree g t2 ->
-  g.(prods) (PrefixProd o) ->
-  wf_parse_tree g (linsert_o pr o t2).
+  g.(prods) (PrefixProd (inl o)) ->
+  wf_parse_tree g (linsert_o pr (inl o) t2).
 Proof.
   intros. induction H; eauto with IPPGrammar.
-  - linsert_o_inode_destruct pr o t1 o0 t2; auto with IPPGrammar.
-  - linsert_o_pnode_destruct pr o t o0; auto with IPPGrammar.
+  - linsert_o_inode_destruct pr
+      (@inl (OPinpre g) (OPpost g) o) t1 (@inl (OPinpre g) (OPpost g) o0) t2; auto with IPPGrammar.
+  - linsert_o_pnode_destruct pr
+      (@inl (OPinpre g) (OPpost g) o) t (@inr (OPinpre g) (OPpost g) o0); auto with IPPGrammar.
 Qed.
 
 Lemma slinsert_to_wf {g} (pr : drules g) t1 o t2 :
   wf_parse_tree g t1 ->
   wf_parse_tree g t2 ->
-  g.(prods) (InfixProd o) ->
-  wf_parse_tree g (slinsert_to pr t1 o t2).
+  g.(prods) (InfixProd (inl o)) ->
+  wf_parse_tree g (slinsert_to pr t1 (inl o) t2).
 Proof.
   intros. induction t2.
   - simpl. auto with IPPGrammar.
-  - inv H0. slinsert_to_inode_destruct pr o t2_1 o0 t2_2; auto with IPPGrammar.
+  - inv H0.
+    slinsert_to_inode_destruct pr
+      (@inl (OPinpre g) (OPpost g) o) t2_1 (@inl (OPinpre g) (OPpost g) o1) t2_2; auto with IPPGrammar.
   - simpl. inv H0. auto with IPPGrammar.
-  - inv H0. slinsert_to_pnode_destruct pr o t2 o0; auto with IPPGrammar.
+  - inv H0.
+    slinsert_to_pnode_destruct pr
+      (@inl (OPinpre g) (OPpost g) o) t2 (@inr (OPinpre g) (OPpost g) o1); auto with IPPGrammar.
 Qed.
 
 Lemma linsert_to_wf {g} (pr : drules g) t1 o opt_t2 t' fuel :
   wf_parse_tree g t1 ->
-  (forall t2, opt_t2 = Some t2 -> wf_parse_tree g t2 /\ g.(prods) (InfixProd o)) ->
-  (opt_t2 = None -> g.(prods) (PostfixProd o)) ->
+  (forall t2, opt_t2 = Some t2 -> wf_parse_tree g t2 /\
+    g.(prods) (InfixProd o) /\ exists o', o = inl o') ->
+  (opt_t2 = None -> g.(prods) (PostfixProd o) /\ exists o', o = inr o') ->
   linsert_to pr t1 o opt_t2 fuel = Some t' ->
   wf_parse_tree g t'.
 Proof.
@@ -593,71 +602,70 @@ Proof.
   destruct opt_t2.
   - specialize H0 with p. rename p into t2.
     assert (Some t2 = Some t2). { reflexivity. }
-    apply H0 in H3. inv H3.
+    apply H0 in H3. inv H3. inv H5. inv H6.
     destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1]; inv H2.
     + auto using linsert_lo_wf.
-    + destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H6.
+    + destruct (linsert_to pr t12 (inl x) (Some t2) fuel) eqn:E; inv H6.
       inv H.
-      apply IHfuel with t11 o1 (linsert_to pr t12 o (Some t2) fuel); intros; auto.
-      * split; auto.
-        apply IHfuel with t12 o (Some t2); intros; auto.
+      apply IHfuel with t11 (inl o) (linsert_to pr t12 (inl x) (Some t2) fuel); intros; auto.
+      * split; [|split]; eauto.
+        apply IHfuel with t12 (inl x) (Some t2); intros; auto.
         inv H2. auto.
       * rewrite E in H. inv H.
-      * rewrite E. rewrite H3. reflexivity.
+      * rewrite E. rewrite H5. reflexivity.
     + assert (Some t2 = Some t2). { reflexivity. }
       apply H0 in H2.
       inv H.
-      destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H6.
+      destruct (linsert_to pr t12 (inl x) (Some t2) fuel) eqn:E; inv H6.
       apply linsert_o_wf; auto.
       eapply IHfuel; eauto.
-      intros. inv H. split; assumption.
+      intros. inv H. split; [|split]; eauto.
     + destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H6.
       inv H.
       destruct p; simpl in *.
-      * apply IHfuel with (AtomicNode l) o (Some t2); auto with IPPGrammar.
-        intros. inv H. split; assumption.
-      * apply IHfuel with (InfixNode p1 o0 p2) o (Some t2); auto.
-        ** apply IHfuel with t11 o1 None; auto.
+      * apply IHfuel with (AtomicNode l) (inl x) (Some t2); auto with IPPGrammar.
+        intros. inv H. split; [|split]; eauto.
+      * apply IHfuel with (InfixNode p1 o0 p2) (inl x) (Some t2); auto.
+        **apply IHfuel with t11 (inr o) None; eauto.
+          intros. inv H.
+        **intros. inv H. split; [|split]; eauto.
+      * apply IHfuel with (PrefixNode o0 p) (inl x) (Some t2); auto.
+        ** apply IHfuel with t11 (inr o) None; eauto.
            intros. inv H.
-        ** intros. inv H. split; assumption.
-      * apply IHfuel with (PrefixNode o0 p) o (Some t2); auto.
-        ** apply IHfuel with t11 o1 None; auto.
-           intros. inv H.
-        ** intros. inv H. split; assumption.
-      * inv H3. apply slinsert_to_wf; auto.
-        apply IHfuel with t11 o1 None; auto.
+        ** intros. inv H. eauto.
+      * inv H5. apply slinsert_to_wf; auto.
+        apply IHfuel with t11 (inr o) None; eauto.
         intros. inv H.
-  - assert (prods g (PostfixProd o)); auto.
+  - assert (@None (parse_tree g) = None). { reflexivity. }
+    apply H1 in H3. inv H3. inv H5.
     destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1]; inv H2.
     + auto with IPPGrammar.
     + inv H.
-      destruct (linsert_to pr t12 o None fuel) eqn:E; inv H5.
-      apply IHfuel with t11 o1 (Some p); intros; auto.
-      * inv H. split; try assumption.
-        eauto using IHfuel.
+      destruct (linsert_to pr t12 (inr x) None fuel) eqn:E; inv H5.
+      apply IHfuel with t11 (inl o) (Some p); intros; auto.
+      * inv H. split; [|split]; eauto.
       * inv H.
     + inv H.
-      destruct (linsert_to pr t12 o None fuel) eqn:E; inv H5.
+      destruct (linsert_to pr t12 (inr x) None fuel) eqn:E; inv H5.
       apply linsert_o_wf; try assumption.
       eauto using IHfuel.
-    + inv H. destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H5.
-      apply IHfuel in E; auto; [|intros ? X; inv X].
+    + inv H. destruct (linsert_to pr t11 (inr o) None fuel) eqn:E; inv H5.
+      apply IHfuel in E; eauto; [|intros ? X; inv X].
       destruct p; inv H2; auto with IPPGrammar.
-      * destruct (linsert_to pr p2 o None fuel) eqn:E2; inv H4.
+      * destruct (linsert_to pr p2 (inr x) None fuel) eqn:E2; inv H3.
         inv E.
-        apply IHfuel with p1 o0 (Some p); auto; [|intro X; inv X].
-        intros. inv H. split; auto.
-        apply IHfuel with p2 o None; auto.
+        apply IHfuel with p1 (inl o1) (Some p); auto; [|intro X; inv X].
+        intros. inv H. split; [|split]; eauto.
       * inv E.
-        destruct (linsert_to pr p o None fuel) eqn:E2; inv H4; auto.
-        apply linsert_o_wf; auto.
-        apply IHfuel with p o None; auto.
+        destruct (linsert_to pr p (inr x) None fuel) eqn:E2; inv H3; auto.
+        apply linsert_o_wf; eauto.
 Qed.
 
 Lemma linsert_to_fueled_wf {g} (pr : drules g) t1 o opt_t2 t' :
   wf_parse_tree g t1 ->
-  (forall t2, opt_t2 = Some t2 -> wf_parse_tree g t2 /\ g.(prods) (InfixProd o)) ->
-  (opt_t2 = None -> g.(prods) (PostfixProd o)) ->
+  (forall t2, opt_t2 = Some t2 -> wf_parse_tree g t2 /\
+    g.(prods) (InfixProd o) /\ exists o', o = inl o') ->
+  (opt_t2 = None -> g.(prods) (PostfixProd o) /\ exists o', o = inr o') ->
   linsert_to_fueled pr t1 o opt_t2 = Some t' ->
   wf_parse_tree g t'.
 Proof.
@@ -672,11 +680,11 @@ Proof.
   intro. revert t'. induction H; simpl; intros.
   - inv H. auto with IPPGrammar.
   - destruct (repair pr t2) eqn:E; inv H2.
-    apply linsert_to_fueled_wf with pr t1 o (Some p); auto.
+    apply linsert_to_fueled_wf with pr t1 (inl o) (Some p); eauto.
     intros. inv H2.
   - destruct (repair pr t) eqn:E; inv H1.
     auto using linsert_o_wf.
-  - apply linsert_to_fueled_wf with pr t o None; auto.
+  - apply linsert_to_fueled_wf with pr t (inr o) None; eauto.
     intros. inv H2.
 Qed.
 

@@ -14,9 +14,12 @@ Global Arguments PostfixProd {_} _.
 
 Record ipg := mkIpgrammar {
   LEX : Type;
-  OP : Type;
-  prods: prod OP -> Prop
+  OPinpre : Type;
+  OPpost : Type;
+  prods: prod (OPinpre + OPpost) -> Prop
 }.
+
+Definition OP g := OPinpre g + OPpost g : Type.
 
 Definition word g := list (LEX g + OP g).
 
@@ -35,18 +38,18 @@ Inductive wf_parse_tree g : parse_tree g -> Prop :=
   | Atomic_wf l :
       wf_parse_tree g (AtomicNode l)
   | Infix_wf t1 o t2 :
-      g.(prods) (InfixProd o) ->
+      g.(prods) (InfixProd (inl o)) ->
       wf_parse_tree g t1 ->
       wf_parse_tree g t2 ->
-      wf_parse_tree g (InfixNode t1 o t2)
+      wf_parse_tree g (InfixNode t1 (inl o) t2)
   | Prefix_wf o t :
-      g.(prods) (PrefixProd o) ->
+      g.(prods) (PrefixProd (inl o)) ->
       wf_parse_tree g t ->
-      wf_parse_tree g (PrefixNode o t)
+      wf_parse_tree g (PrefixNode (inl o) t)
   | Postfix_wf o t :
-      g.(prods) (PostfixProd o) ->
+      g.(prods) (PostfixProd (inr o)) ->
       wf_parse_tree g t ->
-      wf_parse_tree g (PostfixNode t o).
+      wf_parse_tree g (PostfixNode t (inr o)).
 
 Fixpoint yield {g} t : word g :=
   match t with
@@ -194,9 +197,9 @@ Definition conflict_free {g} (Qi Qrm Qlm : tree_pattern g -> Prop) t :=
   i_conflict_free Qi t /\ drm_conflict_free Qrm t /\ dlm_conflict_free Qlm t.
 
 Record drules g := mkDrules {
-  prio : prod g.(OP) -> prod g.(OP) -> Prop;
-  left_a : prod g.(OP) -> prod g.(OP) -> Prop;
-  right_a : prod g.(OP) -> prod g.(OP) -> Prop;
+  prio : prod (OP g) -> prod (OP g) -> Prop;
+  left_a : prod (OP g) -> prod (OP g) -> Prop;
+  right_a : prod (OP g) -> prod (OP g) -> Prop;
 
   prio_dec : RelDecision prio;
   left_a_dec : RelDecision left_a;
