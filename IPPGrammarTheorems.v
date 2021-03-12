@@ -2170,6 +2170,324 @@ Proof.
   - rewrite linsert_to_fueled_complete_2; auto.
 Qed.
 
+Lemma parse_struct_app {g} (w1 : word g) o w2 :
+  (parse_none_struct w1 ->
+  parse_none_struct w2 ->
+  parse_none_struct (w1 ++ inr (inl o) :: w2))
+    /\
+  (parse_some_struct w1 ->
+  parse_none_struct w2 ->
+  parse_some_struct (w1 ++ inr (inl o) :: w2)).
+Proof.
+  induction w1; split; intros; simpl.
+  - inv H.
+  - auto using Infix_Parse.
+  - inv IHw1. inv H.
+    + auto using Lex_Parse.
+    + apply Prefix_Parse. auto.
+  - inv IHw1. inv H.
+    + apply Infix_Parse. auto.
+    + apply Postfix_Parse. auto.
+Qed.
+
+Lemma parse_struct_app_2 {g} (w : word g) o :
+  (parse_none_struct w ->
+  parse_none_struct (w ++ [inr (inr o)]))
+    /\
+  (parse_some_struct w ->
+  parse_some_struct (w ++ [inr (inr o)])).
+Proof.
+  induction w; split; intros; simpl.
+  - inv H.
+  - apply Postfix_Parse. apply Nil_Parse.
+  - inv IHw. inv H.
+    + apply Lex_Parse. auto.
+    + apply Prefix_Parse. auto.
+  - inv IHw. inv H.
+    + apply Infix_Parse. auto.
+    + apply Postfix_Parse. auto.
+Qed.
+
+Lemma yield_is_parse_struct {g} (t : parse_tree g) :
+  wf_parse_tree g t ->
+  parse_none_struct (yield t).
+Proof.
+  intro. induction H; simpl.
+  - apply Lex_Parse. apply Nil_Parse.
+  - destruct (parse_struct_app (yield t1) o (yield t2)). auto.
+  - apply Prefix_Parse. auto.
+  - destruct (parse_struct_app_2 (yield t) o). auto.
+Qed.
+
+Lemma parse_struct_some {g} (pr : drules g) opt_t (w : word g) :
+  (opt_t = None -> parse_none_struct w -> exists t', parse pr opt_t w = Some t') /\
+  ((exists t, opt_t = Some t /\ postfix_tree t) -> parse_some_struct w -> exists t', parse pr opt_t w = Some t').
+Proof.
+  revert opt_t. induction w; split; intros; subst.
+  - inv H0.
+  - destruct H as [t]. inv H. inv H0.
+    simpl. eauto.
+  - inv H0.
+    + simpl. specialize IHw with (Some (AtomicNode l)).
+      inv IHw. apply H0 in H1; eauto.
+      eexists. split; eauto. apply Atomic_Ptree.
+    + simpl. destruct (parse pr None w) eqn:E; eauto.
+      exfalso. specialize IHw with None. inv IHw.
+      clear H0. apply H in H1; auto. inv H1.
+      rewrite E in H0. inv H0.
+  - destruct H as [t]. inv H. inv H0.
+    + simpl. destruct (parse pr None w) eqn:E; eauto.
+      exfalso. specialize IHw with None. inv IHw.
+      clear H0. apply H in H1; auto. inv H1.
+      rewrite E in H0. inv H0.
+    + simpl. specialize IHw with (Some (PostfixNode t (inr o))).
+      inv IHw. clear H. apply H0 in H1; eauto.
+      eexists. split; eauto. apply Postfix_PStruct. assumption.
+Qed.
+
+Lemma parse_yield_some {g} (pr : drules g) (t : parse_tree g) :
+  wf_parse_tree g t ->
+  exists t', parse pr None (yield t) = Some t'.
+Proof.
+  intros.
+  destruct (parse_struct_some pr None (yield t)).
+  apply H0; auto.
+  auto using yield_is_parse_struct.
+Qed.
+
+Lemma linsert_to_add_fuel {g} (pr : drules g) t1 o opt_t2 t' fuel :
+  linsert_to pr t1 o opt_t2 fuel = Some t' ->
+  linsert_to pr t1 o opt_t2 (S fuel) = Some t'.
+Proof.
+  revert t1 o opt_t2 t'. simpl. induction fuel; intros.
+  - simpl in H. inv H.
+  - simpl in H.
+    destruct opt_t2.
+    + destruct t1.
+      * assumption.
+      * destruct (linsert_to pr t1_2 o (Some p) fuel) eqn:E; inv H.
+        apply IHfuel in E as E'. apply IHfuel in H1 as H1'.
+        simpl. rewrite E'. rewrite H1'. rewrite <- H1. reflexivity.
+      * destruct (linsert_to pr t1 o (Some p) fuel) eqn:E; inv H.
+        apply IHfuel in E as E'.
+        simpl. rewrite E'. reflexivity.
+      * destruct (linsert_to pr t1 o0 None fuel) eqn:E; inv H.
+        apply IHfuel in E as E'.
+        simpl. rewrite E'. rewrite H1.
+        destruct p0; try apply IHfuel in H1 as H1'; try assumption.
+    + destruct t1.
+      * assumption.
+      * destruct (linsert_to pr t1_2 o None fuel) eqn:E; inv H.
+        apply IHfuel in E as E'. apply IHfuel in H1 as H1'.
+        simpl. rewrite E'. rewrite H1'. rewrite <- H1. reflexivity.
+      * destruct (linsert_to pr t1 o None fuel) eqn:E; inv H.
+        apply IHfuel in E as E'.
+        simpl. rewrite E'. reflexivity.
+      * destruct (linsert_to pr t1 o0 None fuel) eqn:E; inv H.
+        apply IHfuel in E as E'.
+        simpl. rewrite E'. rewrite H1. simpl.
+        destruct p; auto.
+        **destruct (linsert_to pr p2 o None fuel) eqn:E2; inv H1.
+          apply IHfuel in E2 as E2'. apply IHfuel in H0 as H0'.
+          rewrite E2'. rewrite H0'. rewrite <- H0. reflexivity.
+        **destruct (linsert_to pr p o None fuel) eqn:E2; inv H1.
+          apply IHfuel in E2 as E2'.
+          rewrite E2'. reflexivity.
+Qed.
+
+Lemma linsert_to_fueled_super {g} (pr : drules g) t1 o opt_t2 :
+  linsert_to_fueled pr t1 o opt_t2 =
+    match opt_t2 with
+    | Some t2 =>
+      match t1 with
+      | AtomicNode l1 => Some (linsert_lo pr l1 o t2)
+      | InfixNode t11 o1 t12 =>
+        match (linsert_to_fueled pr t12 o (Some t2)) with
+        | Some t2' => linsert_to_fueled pr t11 o1 (Some t2')
+        | None => None
+        end
+      | PrefixNode o1 t12 =>
+        match (linsert_to_fueled pr t12 o (Some t2)) with
+        | Some t2' => Some (linsert_o pr o1 t2')
+        | None => None
+        end
+      | PostfixNode t11 o1 =>
+        match (linsert_to_fueled pr t11 o1 None) with
+        | Some t1 =>
+          match t1 with
+          | PostfixNode t11 o1 => Some (slinsert_to pr t1 o t2)
+          | _ => linsert_to_fueled pr t1 o (Some t2)
+          end
+        | None => None
+        end
+      end
+    | None =>
+      match t1 with
+      | AtomicNode l1 => Some (PostfixNode t1 o)
+      | InfixNode t11 o1 t12 =>
+        match (linsert_to_fueled pr t12 o None) with
+        | Some t2' => linsert_to_fueled pr t11 o1 (Some t2')
+        | None => None
+        end
+      | PrefixNode o1 t12 =>
+        match (linsert_to_fueled pr t12 o None) with
+        | Some t2' => Some (linsert_o pr o1 t2')
+        | None => None
+        end
+      | PostfixNode t11 o1 =>
+        match (linsert_to_fueled pr t11 o1 None) with
+        | Some t1 =>
+          match t1 with
+          | InfixNode t11 o1 t12 =>
+            match (linsert_to_fueled pr t12 o None) with
+            | Some t2' => linsert_to_fueled pr t11 o1 (Some t2')
+            | None => None
+            end
+          | PrefixNode o1 t12 =>
+            match (linsert_to_fueled pr t12 o None) with
+            | Some t2' => Some (linsert_o pr o1 t2')
+            | None => None
+            end
+          | _ => Some (PostfixNode t1 o)
+          end
+        | None => None
+        end
+      end
+    end.
+Proof.
+  assert (exists t', linsert_to_fueled pr t1 o opt_t2 = Some t'). { apply linsert_to_fueled_some. }
+  destruct H as [t'].
+  unfold linsert_to_fueled in *. Admitted.
+
+Fixpoint something {g} (pr : drules g) (w1 : word g) (o : OPpost g) (w2 : word g) fuel : option (parse_tree g) :=
+  match w2 with
+  | [] =>
+    match (parse pr None w1) with
+    | None => None
+    | Some t1 => linsert_to pr t1 (inr o) None fuel
+    end
+  | (inr (inl o2)) :: w2 =>
+    match (parse pr None w1) with
+    | None => None
+    | Some t1 =>
+      match (parse pr None w2) with
+      | None => None
+      | Some t2 =>
+        match (linsert_to pr t1 (inr o) None fuel) with
+        | Some t1 =>
+          match t1 with
+          | PostfixNode t11 o1 => Some (slinsert_to pr t1 (inl o2) t2)
+          | _ => linsert_to pr t1 (inl o2) (Some t2) fuel
+          end
+        | None => None
+        end
+      end
+    end
+  | (inr (inr o2)) :: w2 => something pr (w1 ++ [(inr (inr o))]) o2 w2 fuel
+  | _ => None
+  end.
+
+Lemma something_out_of_fuel {g} (pr : drules g) w1 o w2 :
+  something pr w1 o w2 0 = None.
+Proof.
+  revert w1 o. induction w2; intros.
+  - simpl. destruct (parse pr None w1); auto.
+  - simpl. destruct a; auto.
+    destruct o0.
+    + destruct (parse pr None w1); auto. destruct (parse pr None w2); auto.
+    + apply IHw2.
+Qed.
+
+
+Lemma parse_app {g} (pr : drules g) t1 (w2 : word g) t' fuel :
+  wf_parse_tree g t1 ->
+  (forall t2 (o : g.(OPinpre)), parse_none_struct w2 ->
+   parse pr None w2 = Some t2 ->
+   linsert_to pr t1 (inl o) (Some t2) fuel = Some t' ->
+   parse pr None ((yield t1) ++ inr (inl o) :: w2) = Some t') /\
+  (forall o : g.(OPpost), parse_some_struct w2 ->
+   something pr (yield t1) o w2 fuel = Some t' ->
+   parse pr None ((yield t1) ++ inr (inr o) :: w2) = Some t'
+  ).
+Proof.
+  revert t1 w2 t'. induction fuel; intros; split; intros.
+  - inv H2.
+  - rewrite something_out_of_fuel in H1. inv H1.
+  - simpl in H2.
+    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1]; inv H.
+    + inv H2. simpl. rewrite H1.
+      rewrite linsert_lo_slinsert_to. reflexivity.
+    + rename o0 into o1. simpl. simplify_list_eq.
+      destruct (linsert_to pr t12 (inl o) (Some t2) fuel) eqn:E; inv H2.
+      specialize IHfuel with t11 (yield t12 ++ inr (inl o) :: w2) t' as IH'.
+      apply IH' in H7. inv H7.
+      clear IH' H2. specialize H with p o1.
+      rewrite H3. apply H; auto.
+      * destruct (parse_struct_app (yield t12) o w2). clear H4.
+        apply H2; auto using yield_is_parse_struct.
+      * specialize IHfuel with t12 w2 p.
+        apply IHfuel in H8. inv H8. clear H4.
+        eapply H2; eauto.
+    + rename o0 into o1.
+      destruct (linsert_to pr t12 (inl o) (Some t2) fuel) eqn:E; inv H2.
+      simpl.
+      specialize IHfuel with t12 w2 p. apply IHfuel in H6.
+      inv H6. clear H2.
+      erewrite H; eauto.
+    + rename o0 into o1.
+      simpl. simplify_list_eq. destruct (linsert_to pr t11 (inr o1) None fuel) eqn:E; inv H2.
+      specialize IHfuel with t11 ((inr (inl o)) :: w2) p.
+      apply IHfuel in H6. inv H6. clear H.
+      specialize H2 with o1. rename p into t1'.
+      assert (something pr (yield t11) o1 (inr (inl o) :: w2) fuel = Some p). {
+        simpl.
+        destruct (parse pr None (yield t11)) eqn:E2.
+        - rewrite H1. 
+      }
+      
+
+
+  revert t1 t2 t2' t' o. induction fuel; intros; simpl in *.
+  - inv H1.
+  - inv H.
+    + simpl. rewrite H0.
+      rewrite <- linsert_lo_slinsert_to. assumption.
+    + rename t0 into t11, o0 into o1, t3 into t12.
+      simpl. simplify_list_eq.
+      destruct (linsert_to pr t12 (inl o) (Some t2') fuel) eqn:E; inv H1.
+      erewrite IHfuel with (t2 := InfixNode t12 (inl o) t2); eauto.
+      simpl. erewrite IHfuel; eauto.
+    + rename t into t12, o0 into o1.
+      destruct (linsert_to pr t12 (inl o) (Some t2') fuel) eqn:E; inv H1.
+      simpl. erewrite IHfuel; eauto.
+    + rename t into t11, o0 into o1.
+      simpl.
+
+      erewrite IHfuel with (t1 := PostfixNode t11 (inr o1)); eauto using Postfix_wf.
+      destruct (linsert_to pr t11 (inr o1) None fuel) eqn:E; inv H1.
+      destruct p.
+      * admit.
+      * admit.
+      * admit.
+      * destruct fuel. inv E. simpl.
+
+
+
+Lemma repair_parse {g} (pr : drules g) t :
+  wf_parse_tree g t ->
+  parse pr None (yield t) = repair pr t.
+Proof.
+  assert (forall t, exists t', repair pr t = Some t'). {
+    intros. apply repair_some.
+  }
+  intros.
+  induction H0; auto.
+  - simpl. destruct (repair pr t2) eqn:E.
+    + admit.
+    + admit.
+  - simpl. rewrite IHwf_parse_tree. reflexivity.
+  - simpl.
+
 (* 
 
 
@@ -2201,41 +2519,7 @@ TODO from here
 (* ####################################### *)
 (* ####################################### *)
 
-
-Lemma yield_struct_app {g} (w1 : word g) o w2 :
-  yield_struct w1 →
-  yield_struct w2 →
-  yield_struct (w1 ++ inr o :: w2).
-Proof.
-  intro. induction H; intros; simpl; auto using LOYield, OYield.
-Qed.
-
-Lemma yield_is_yield_struct {g} (t : parse_tree g) :
-  yield_struct (yield t).
-Proof.
-  induction t; simpl.
-  - apply LYield.
-  - auto using yield_struct_app.
-  - auto using OYield.
-Qed.
-
-Lemma parse_yield_struct_some {g} (pr : drules g) (w : word g) :
-  yield_struct w ->
-  exists t, parse pr w = Some t.
-Proof.
-  intros. induction H; eauto.
-  - destruct IHyield_struct.
-    eexists. simpl. rewrite H0. reflexivity.
-  - destruct IHyield_struct.
-    eexists. simpl. rewrite H0. reflexivity.
-Qed.
-
-Lemma parse_yield_some {g} (pr : drules g) t :
-  exists t', parse pr (yield t) = Some t'.
-Proof.
-  auto using yield_is_yield_struct, parse_yield_struct_some.
-Qed.
-
+(*
 Lemma parse_app {g} (pr : drules g) t1 t2 t2' o :
   parse pr (yield t2) = Some t2' ->
   parse pr (yield t1 ++ inr o :: yield t2) = Some (linsert_to pr t1 o t2').

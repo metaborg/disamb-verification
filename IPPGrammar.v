@@ -533,30 +533,54 @@ Fixpoint repair {g} (pr : drules g) t : option (parse_tree g) :=
   | PostfixNode t1 o => linsert_to_fueled pr t1 o None
   end.
 
-(* Fixpoint parse {g} (pr : drules g) (w : word g) : option (parse_tree g) :=
-  match w with
-  | [inl l] => Some (AtomicNode l)
-  | inl l :: inr o :: w =>
-      match (parse pr w) with
+Fixpoint parse {g} (pr : drules g) (t : option (parse_tree g)) (w : word g) : option (parse_tree g) :=
+  match t with
+  | None =>
+    match w with
+    | inl l :: w => parse pr (Some (AtomicNode l)) w
+    | inr (inl o) :: w =>
+      match (parse pr None w) with
       | None => None
-      | Some t => Some (linsert_lo pr l o t)
+      | Some t => Some (linsert_o pr (inl o) t)
       end
-  | inr o :: w =>
-      match (parse pr w) with
+    | _ => None
+    end
+  | Some t =>
+    match w with
+    | [] => Some t
+    | inr (inl o) :: w =>
+      match parse pr None w with
+      | Some tw => Some (slinsert_to pr t (inl o) tw)
       | None => None
-      | Some t => Some (linsert_o pr o t)
       end
-  | _ => None
+    | inr (inr o) :: w => parse pr (Some (PostfixNode t (inr o))) w
+    | _ => None
+    end
   end.
 
-Inductive yield_struct {g} : word g -> Prop :=
-  | LYield l :
-      yield_struct [inl l]
-  | LOYield l o w :
-      yield_struct w ->
-      yield_struct (inl l :: inr o :: w)
-  | OYield o w :
-      yield_struct w ->
-      yield_struct (inr o :: w). *)
+Inductive postfix_tree {g} : parse_tree g -> Prop :=
+  | Atomic_Ptree l :
+      postfix_tree (AtomicNode l)
+  | Postfix_PStruct t o :
+      postfix_tree t ->
+      postfix_tree (PostfixNode t o).
+
+Inductive parse_none_struct {g} : word g -> Prop :=
+  | Lex_Parse l w :
+      parse_some_struct w ->
+      parse_none_struct ((inl l) :: w)
+  | Prefix_Parse o w :
+      parse_none_struct w ->
+      parse_none_struct ((inr (inl o)) :: w)
+
+with parse_some_struct {g} : word g -> Prop :=
+  | Nil_Parse :
+      parse_some_struct []
+  | Infix_Parse o w :
+      parse_none_struct w ->
+      parse_some_struct ((inr (inl o)) :: w)
+  | Postfix_Parse o w :
+      parse_some_struct w ->
+      parse_some_struct ((inr (inr o)) :: w).
 
 End IPPGrammarRepair.
