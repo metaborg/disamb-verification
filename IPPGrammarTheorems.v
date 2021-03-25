@@ -1410,3 +1410,5 @@ Proof.
   apply repair_fully_yield_dependent in H0.
   rewrite repair_complete in H0; auto. rewrite repair_complete in H0; auto.
 Admitted.
+
+End IPPGrammarTheorems.

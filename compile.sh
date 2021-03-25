@@ -20,6 +20,11 @@ echo compiling IGrammarTheorems.v
 coqc IGrammarTheorems.v
 echo compiling IPGrammar.v
 coqc IPGrammar.v
-echo compiling IPGrammarSafety.v
-coqc IPGrammarSafety.v
+echo compiling IPGrammarTheorems.v
+coqc IPGrammarTheorems.v
+echo compiling IPPGrammar.v
+coqc IPPGrammar.v
+echo compiling IPPGrammarTheorems.v
+coqc IPPGrammarTheorems.v
+
 read -p "FINISHED, press enter to continue"
