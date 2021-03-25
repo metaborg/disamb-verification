@@ -4,55 +4,24 @@ Require Export IPPGrammar.
 Section IPPGrammarTheorems.
 
 Create HintDb IPPGrammar.
-Hint Resolve CPrio_infix_infix_1 : IPPGrammar.
-Hint Resolve CPrio_infix_infix_2 : IPPGrammar.
-Hint Resolve CPrio_prefix_infix : IPPGrammar.
-Hint Resolve CPrio_infix_prefix : IPPGrammar.
-Hint Resolve CLeft_prefix_infix : IPPGrammar.
-Hint Resolve CRight_infix_prefix : IPPGrammar.
-Hint Resolve CRight_postfix_infix : IPPGrammar.
-Hint Resolve CRight_postfix_infix : IPPGrammar.
-Hint Resolve CPrio_postfix_infix : IPPGrammar.
-Hint Resolve CPrio_postfix_prefix : IPPGrammar.
-Hint Resolve CPrio_infix_postfix : IPPGrammar.
-Hint Resolve CLeft_infix_postfix : IPPGrammar.
-Hint Resolve CPrio_prefix_postfix : IPPGrammar.
-Hint Resolve CLeft_prefix_postfix : IPPGrammar.
-Hint Resolve CRight_postfix_prefix : IPPGrammar.
-Hint Resolve CLeft : IPPGrammar.
-Hint Resolve CRight : IPPGrammar.
-Hint Resolve HMatch : IPPGrammar.
-Hint Resolve InfixMatch : IPPGrammar.
-Hint Resolve PrefixMatch : IPPGrammar.
-Hint Resolve PostfixMatch : IPPGrammar.
-Hint Resolve Atomic_wf : IPPGrammar.
-Hint Resolve Infix_wf : IPPGrammar.
-Hint Resolve Prefix_wf : IPPGrammar.
-Hint Resolve Postfix_wf : IPPGrammar.
-Hint Resolve Atomic_cf : IPPGrammar.
-Hint Resolve Infix_cf : IPPGrammar.
-Hint Resolve Prefix_cf : IPPGrammar.
-Hint Resolve Postfix_cf : IPPGrammar.
-Hint Resolve Atomic_drmcf : IPPGrammar.
-Hint Resolve Infix_drmcf : IPPGrammar.
-Hint Resolve Prefix_drmcf : IPPGrammar.
-Hint Resolve Postfix_drmcf : IPPGrammar.
-Hint Resolve Match_rm : IPPGrammar.
-Hint Resolve InfixMatch_rm : IPPGrammar.
-Hint Resolve PrefixMatch_rm : IPPGrammar.
-Hint Resolve InfixMatch_drm : IPPGrammar.
-Hint Resolve PrefixMatch_drm : IPPGrammar.
-Hint Resolve PostfixMatch_drm : IPPGrammar.
-Hint Resolve Atomic_dlmcf : IPPGrammar.
-Hint Resolve Infix_dlmcf : IPPGrammar.
-Hint Resolve Prefix_dlmcf : IPPGrammar.
-Hint Resolve Postfix_dlmcf : IPPGrammar.
-Hint Resolve Match_lm : IPPGrammar.
-Hint Resolve InfixMatch_lm : IPPGrammar.
-Hint Resolve PostfixMatch_lm : IPPGrammar.
-Hint Resolve InfixMatch_dlm : IPPGrammar.
-Hint Resolve PrefixMatch_dlm : IPPGrammar.
-Hint Resolve PostfixMatch_dlm : IPPGrammar.
+Hint Resolve CPrio_infix_infix_1 CPrio_infix_infix_2 CPrio_prefix_infix CPrio_infix_prefix CLeft_prefix_infix
+  CRight_infix_prefix CRight_postfix_infix CRight_postfix_infix CPrio_postfix_infix CPrio_postfix_prefix
+  CPrio_infix_postfix CLeft_infix_postfix CPrio_prefix_postfix CLeft_prefix_postfix CRight_postfix_prefix CLeft CRight
+  HMatch InfixMatch PrefixMatch PostfixMatch Atomic_wf Infix_wf Prefix_wf Postfix_wf Atomic_cf Infix_cf Prefix_cf
+  Postfix_cf Atomic_drmcf Infix_drmcf Prefix_drmcf Postfix_drmcf Match_rm InfixMatch_rm PrefixMatch_rm InfixMatch_drm
+  PrefixMatch_drm PostfixMatch_drm Atomic_dlmcf Infix_dlmcf Prefix_dlmcf Postfix_dlmcf Match_lm InfixMatch_lm
+  PostfixMatch_lm InfixMatch_dlm PrefixMatch_dlm PostfixMatch_dlm
+    : IPPGrammar.
+
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* The following lemmas relate to the functions boolean functions that check for conflicts in trees,
+   such as [is_i_conflict_pattern]. *)
 
 Lemma is_i_conflict_pattern_true {g} (pr : drules g) q :
   i_conflict_pattern pr q <-> is_i_conflict_pattern pr q = true.
@@ -93,10 +62,8 @@ Lemma is_i_conflict_pattern_false {g} (pr : drules g) q :
 Proof.
   split; intro.
   - destruct (is_i_conflict_pattern pr q) eqn:E; auto.
-    exfalso. destruct H. apply is_i_conflict_pattern_true.
-    assumption.
-  - intro. apply is_i_conflict_pattern_true in H0.
-    rewrite H in H0. inv H0.
+    exfalso. destruct H. apply is_i_conflict_pattern_true. assumption.
+  - intro. apply is_i_conflict_pattern_true in H0. rewrite H in H0. inv H0.
 Qed.
 
 Lemma is_lm_conflict_pattern_true {g} (pr : drules g) q :
@@ -124,22 +91,18 @@ Lemma is_lm_conflict_pattern_false {g} (pr : drules g) q :
 Proof.
   split; intro.
   - destruct (is_lm_conflict_pattern pr q) eqn:E; auto.
-    exfalso. destruct H. apply is_lm_conflict_pattern_true.
-    assumption.
-  - intro. apply is_lm_conflict_pattern_true in H0.
-    rewrite H in H0. inv H0.
+    exfalso. destruct H. apply is_lm_conflict_pattern_true. assumption.
+  - intro. apply is_lm_conflict_pattern_true in H0. rewrite H in H0. inv H0.
 Qed.
 
 Lemma has_infix_lm_conflicts_true {g} (pr : drules g) o t2 :
-  has_infix_lm_conflicts pr o t2 = true
-  <-> exists x, lm_conflict_pattern pr (CR_infix_postfix o x)
-      /\ matches_lm t2 (PostfixPatt HPatt x).
+  has_infix_lm_conflicts pr o t2 = true <->
+  exists x, lm_conflict_pattern pr (CR_infix_postfix o x) /\ matches_lm t2 (PostfixPatt HPatt x).
 Proof.
   induction t2; split; intros.
   - inv H.
   - inv H. inv H0. inv H1. inv H0.
-  - apply IHt2_1 in H.
-    inv H. inv H0. eauto with IPPGrammar.
+  - apply IHt2_1 in H. inv H. inv H0. eauto with IPPGrammar.
   - simpl. inv H. inv H0.
     inv H1. 
     + inv H0.
@@ -148,43 +111,34 @@ Proof.
   - inv H. inv H0. inv H1. inv H0.
   - cbn [has_infix_lm_conflicts] in H.
     destruct (is_lm_conflict_pattern pr (CR_infix_postfix o o0)) eqn:E.
-    + apply is_lm_conflict_pattern_true in E.
-      eauto with IPPGrammar.
-    + apply IHt2 in H.
-      inv H. inv H0. eauto with IPPGrammar.
+    + apply is_lm_conflict_pattern_true in E. eauto with IPPGrammar.
+    + apply IHt2 in H. inv H. inv H0. eauto with IPPGrammar.
   - inv H. inv H0. cbn [has_infix_lm_conflicts].
     destruct (is_lm_conflict_pattern pr (CR_infix_postfix o o0)) eqn:E; auto.
     inv H1.
-    + inv H0. apply is_lm_conflict_pattern_true in H.
-      rewrite H in E. inv E.
-    + rewrite IHt2.
-      eauto with IPPGrammar.
+    + inv H0. apply is_lm_conflict_pattern_true in H. rewrite H in E. inv E.
+    + rewrite IHt2. eauto with IPPGrammar.
 Qed.
 
 Lemma has_infix_lm_conflicts_false {g} (pr : drules g) o t2 :
-  has_infix_lm_conflicts pr o t2 = false
-  <-> (forall x, matches_lm t2 (PostfixPatt HPatt x) -> ~ lm_conflict_pattern pr (CR_infix_postfix o x)).
+  has_infix_lm_conflicts pr o t2 = false <->
+  (forall x, matches_lm t2 (PostfixPatt HPatt x) -> ~ lm_conflict_pattern pr (CR_infix_postfix o x)).
 Proof.
   split; intros.
-  - intro. assert (has_infix_lm_conflicts pr o t2 = true). {
-      apply has_infix_lm_conflicts_true. eauto.
-    }
+  - intro. assert (has_infix_lm_conflicts pr o t2 = true). { apply has_infix_lm_conflicts_true. eauto. }
     rewrite H in H2. inv H2.
   - destruct (has_infix_lm_conflicts pr o t2) eqn:E; auto.
-    apply has_infix_lm_conflicts_true in E.
-    inv E. inv H0. exfalso. eapply H; eauto.
+    apply has_infix_lm_conflicts_true in E. inv E. inv H0. exfalso. eapply H; eauto.
 Qed.
 
 Lemma has_prefix_lm_conflicts_true {g} (pr : drules g) o t2 :
-  has_prefix_lm_conflicts pr o t2 = true
-  <-> exists x, lm_conflict_pattern pr (CR_prefix_postfix o x)
-      /\ matches_lm t2 (PostfixPatt HPatt x).
+  has_prefix_lm_conflicts pr o t2 = true <->
+  exists x, lm_conflict_pattern pr (CR_prefix_postfix o x) /\ matches_lm t2 (PostfixPatt HPatt x).
 Proof.
   induction t2; split; intros.
   - inv H.
   - inv H. inv H0. inv H1. inv H0.
-  - apply IHt2_1 in H.
-    inv H. inv H0. eauto with IPPGrammar.
+  - apply IHt2_1 in H. inv H. inv H0. eauto with IPPGrammar.
   - simpl. inv H. inv H0.
     inv H1. 
     + inv H0.
@@ -193,32 +147,71 @@ Proof.
   - inv H. inv H0. inv H1. inv H0.
   - cbn [has_prefix_lm_conflicts] in H.
     destruct (is_lm_conflict_pattern pr (CR_prefix_postfix o o0)) eqn:E.
-    + apply is_lm_conflict_pattern_true in E.
-      eauto with IPPGrammar.
-    + apply IHt2 in H.
-      inv H. inv H0. eauto with IPPGrammar.
+    + apply is_lm_conflict_pattern_true in E. eauto with IPPGrammar.
+    + apply IHt2 in H. inv H. inv H0. eauto with IPPGrammar.
   - inv H. inv H0. cbn [has_prefix_lm_conflicts].
     destruct (is_lm_conflict_pattern pr (CR_prefix_postfix o o0)) eqn:E; auto.
     inv H1.
-    + inv H0. apply is_lm_conflict_pattern_true in H.
-      rewrite H in E. inv E.
-    + rewrite IHt2.
-      eauto with IPPGrammar.
+    + inv H0. apply is_lm_conflict_pattern_true in H. rewrite H in E. inv E.
+    + rewrite IHt2. eauto with IPPGrammar.
 Qed.
 
 Lemma has_prefix_lm_conflicts_false {g} (pr : drules g) o t2 :
-  has_prefix_lm_conflicts pr o t2 = false
-  <-> (forall x, matches_lm t2 (PostfixPatt HPatt x) -> ~ lm_conflict_pattern pr (CR_prefix_postfix o x)).
+  has_prefix_lm_conflicts pr o t2 = false <->
+  (forall x, matches_lm t2 (PostfixPatt HPatt x) -> ~ lm_conflict_pattern pr (CR_prefix_postfix o x)).
 Proof.
   split; intros.
-  - intro. assert (has_prefix_lm_conflicts pr o t2 = true). {
-      apply has_prefix_lm_conflicts_true. eauto.
-    }
+  - intro. assert (has_prefix_lm_conflicts pr o t2 = true). { apply has_prefix_lm_conflicts_true. eauto. }
     rewrite H in H2. inv H2.
   - destruct (has_prefix_lm_conflicts pr o t2) eqn:E; auto.
-    apply has_prefix_lm_conflicts_true in E.
-    inv E. inv H0. exfalso. eapply H; eauto.
+    apply has_prefix_lm_conflicts_true in E. inv E. inv H0. exfalso. eapply H; eauto.
 Qed.
+
+Lemma has_postfix_rm_conflicts_true {g} (pr : drules g) t1 o :
+  has_postfix_rm_conflicts pr t1 o = true <->
+  exists x, rm_conflict_pattern pr (CL_postfix_prefix o x) /\ matches_rm t1 (PrefixPatt x HPatt).
+Proof.
+  induction t1; split; intros.
+  - inv H.
+  - inv H. inv H0. inv H1. inv H0.
+  - simpl in H. apply IHt1_2 in H. inv H. inv H0. eauto with IPPGrammar.
+  - simpl. inv H. inv H0.
+    inv H1.
+    + inv H0.
+    + apply IHt1_2. eauto with IPPGrammar.
+  - simpl in H. destruct (decide (prio pr (PostfixProd o) (PrefixProd o0))).
+    + eexists. eauto with IPPGrammar.
+    + destruct (decide (right_a pr (PostfixProd o) (PrefixProd o0))).
+      * eexists. eauto with IPPGrammar.
+      * apply IHt1 in H. inv H. inv H0. eexists. eauto with IPPGrammar.
+  - simpl. destruct (decide (prio pr (PostfixProd o) (PrefixProd o0))),
+             (decide (right_a pr (PostfixProd o) (PrefixProd o0))); auto.
+    inv H. inv H0.
+    inv H1.
+    + inv H0. exfalso. inv H; auto.
+    + apply IHt1. eexists. eauto.
+  - inv H.
+  - inv H. inv H0. inv H1. inv H0.
+Qed.
+
+Lemma has_postfix_rm_conflicts_false {g} (pr : drules g) t1 o :
+  has_postfix_rm_conflicts pr t1 o = false <->
+  (forall x, matches_rm t1 (PrefixPatt x HPatt) -> ~ rm_conflict_pattern pr (CL_postfix_prefix o x)).
+Proof.
+  split; intros.
+  - intro. assert (has_postfix_rm_conflicts pr t1 o = true). { apply has_postfix_rm_conflicts_true. eauto. }
+    rewrite H in H2. inv H2.
+  - destruct (has_postfix_rm_conflicts pr t1 o) eqn:E; auto.
+    apply has_postfix_rm_conflicts_true in E. inv E. inv H0. edestruct H; eauto.
+Qed.
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* The following lemmas relate safety to relations between conflict patterns. *)
 
 Lemma safe_infix_infix {g} (pr : drules g) o1 o2 :
   safe_pr pr ->
@@ -226,8 +219,7 @@ Lemma safe_infix_infix {g} (pr : drules g) o1 o2 :
   i_conflict_pattern pr (CR_infix_infix o2 o1) ->
   False.
 Proof.
-  intros H_safe H_CL H_CR. unfold safe_pr in H_safe.
-  inv H_CL; inv H_CR; eauto.
+  intros H_safe H_CL H_CR. unfold safe_pr in H_safe. inv H_CL; inv H_CR; eauto.
 Qed.
 
 Lemma safe_infix_prefix {g} (pr : drules g) o1 o2 :
@@ -236,8 +228,7 @@ Lemma safe_infix_prefix {g} (pr : drules g) o1 o2 :
   i_conflict_pattern pr (CR_prefix_infix o2 o1) ->
   False.
 Proof.
-  intros. unfold safe_pr in H.
-  inv H0; inv H1; eauto.
+  intros. unfold safe_pr in H. inv H0; inv H1; eauto.
 Qed.
 
 Lemma safe_infix_postfix {g} (pr : drules g) o1 o2 :
@@ -246,8 +237,7 @@ Lemma safe_infix_postfix {g} (pr : drules g) o1 o2 :
   i_conflict_pattern pr (CL_postfix_infix o2 o1) ->
   False.
 Proof.
-  intros. unfold safe_pr in H.
-  inv H0; inv H1; eauto.
+  intros. unfold safe_pr in H. inv H0; inv H1; eauto.
 Qed.
 
 Lemma safe_prefix_postfix {g} (pr : drules g) o1 o2 :
@@ -259,8 +249,17 @@ Proof.
   intros. unfold safe_pr in H. inv H0; inv H1; eauto.
 Qed.
 
-Ltac linsert_lo_inode_destruct pr o t21 o2 t22 :=
-    cbn [linsert_lo] in *;
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* Helper tactics for simplifying specific repair terms. *)
+
+(* Simplifies the term [repair_in_2 pr t1 o (InfixNode t21 o2 t22)] *)
+Ltac repair_in_2_inode_destruct pr o t21 o2 t22 :=
+    cbn [repair_in_2] in *;
     destruct (is_i_conflict_pattern pr (CR_infix_infix o o2)) eqn:E;
     [ apply is_i_conflict_pattern_true in E |
       apply is_i_conflict_pattern_false in E;
@@ -272,8 +271,9 @@ Ltac linsert_lo_inode_destruct pr o t21 o2 t22 :=
       ]
     ].
 
-Ltac linsert_lo_pnode_destruct pr o t21 o2 :=
-    cbn [linsert_lo] in *;
+(* Simplifies the term [repair_in_2 pr t1 o (PostfixNode t21 o2)] *)
+Ltac repair_in_2_pnode_destruct pr o t21 o2 :=
+    cbn [repair_in_2] in *;
      destruct (has_infix_lm_conflicts pr o (PostfixNode t21 o2)) eqn:E;
      [apply has_infix_lm_conflicts_true in E |
       assert (forall x, matches_lm (PostfixNode t21 o2) (PostfixPatt HPatt x) ->
@@ -281,30 +281,9 @@ Ltac linsert_lo_pnode_destruct pr o t21 o2 :=
       [apply has_infix_lm_conflicts_false; assumption|]
     ].
 
-Ltac slinsert_to_inode_destruct pr o t21 o2 t22 :=
-    cbn [slinsert_to] in *;
-    destruct (is_i_conflict_pattern pr (CR_infix_infix o o2)) eqn:E;
-    [ apply is_i_conflict_pattern_true in E |
-      apply is_i_conflict_pattern_false in E;
-      destruct (has_infix_lm_conflicts pr o (InfixNode t21 o2 t22)) eqn:E2;
-      [ apply has_infix_lm_conflicts_true in E2 |
-        assert (forall x, matches_lm (InfixNode t21 o2 t22) (PostfixPatt HPatt x) ->
-              ~ lm_conflict_pattern pr (CR_infix_postfix o x));
-        [apply has_infix_lm_conflicts_false; assumption|]
-      ]
-    ].
-
-Ltac slinsert_to_pnode_destruct pr o t21 o2 :=
-    cbn [slinsert_to] in *;
-     destruct (has_infix_lm_conflicts pr o (PostfixNode t21 o2)) eqn:E;
-     [apply has_infix_lm_conflicts_true in E |
-      assert (forall x, matches_lm (PostfixNode t21 o2) (PostfixPatt HPatt x) ->
-              ~ lm_conflict_pattern pr (CR_infix_postfix o x));
-      [apply has_infix_lm_conflicts_false; assumption|]
-    ].
-
-Ltac linsert_o_inode_destruct pr o t21 o2 t22 :=
-    cbn [linsert_o] in *;
+(* Simplifies the term [repair_pre pr o (InfixNode t21 o2 t22)] *)
+Ltac repair_pre_inode_destruct pr o t21 o2 t22 :=
+    cbn [repair_pre] in *;
     destruct (is_i_conflict_pattern pr (CR_prefix_infix o o2)) eqn:E;
     [ apply is_i_conflict_pattern_true in E |
       apply is_i_conflict_pattern_false in E;
@@ -316,8 +295,9 @@ Ltac linsert_o_inode_destruct pr o t21 o2 t22 :=
       ]
     ].
 
-Ltac linsert_o_pnode_destruct pr o t21 o2 :=
-    cbn [linsert_o] in *;
+(* Simplifies the term [repair_pre pr o (PostfixNode t21 o2)] *)
+Ltac repair_pre_pnode_destruct pr o t21 o2 :=
+    cbn [repair_pre] in *;
      destruct (has_prefix_lm_conflicts pr o (PostfixNode t21 o2)) eqn:E;
      [apply has_prefix_lm_conflicts_true in E |
       assert (forall x, matches_lm (PostfixNode t21 o2) (PostfixPatt HPatt x) ->
@@ -325,687 +305,310 @@ Ltac linsert_o_pnode_destruct pr o t21 o2 :=
       [apply has_prefix_lm_conflicts_false; assumption|]
     ].
 
-Lemma linsert_lo_size_preserve {g} (pr : drules g) l1 o t2 :
-  size (linsert_lo pr l1 o t2) = size (InfixNode (AtomicNode l1) o t2).
-Proof.
-  induction t2; auto.
-  - linsert_lo_inode_destruct pr o t2_1 o0 t2_2; auto; simpl in *; rewrite IHt2_1; auto.
-  - linsert_lo_pnode_destruct pr o t2 o0; auto.
-    simpl. rewrite IHt2. reflexivity.
-Qed.
+(* Simplifies the term [repair_post pr (InfixNode t11 o1 t12) o] *)
+Ltac repair_post_inode_destruct pr t11 o1 t12 o :=
+    cbn [repair_post] in *;
+    destruct (is_i_conflict_pattern pr (CL_postfix_infix o o1)) eqn:E;
+    [ apply is_i_conflict_pattern_true in E |
+      apply is_i_conflict_pattern_false in E;
+      destruct (has_postfix_rm_conflicts pr (InfixNode t11 o1 t12) o) eqn:E2;
+      [ apply has_postfix_rm_conflicts_true in E2 |
+        assert (forall x, matches_rm (InfixNode t11 o1 t12) (PrefixPatt x HPatt) ->
+              ~ rm_conflict_pattern pr (CL_postfix_prefix o x));
+        [apply has_postfix_rm_conflicts_false; assumption|]
+      ]
+    ].
 
-Lemma slinsert_to_size_preserve {g} (pr : drules g) t1 o t2 :
-  size (slinsert_to pr t1 o t2) = size (InfixNode t1 o t2).
-Proof.
-  induction t2; auto.
-  - slinsert_to_inode_destruct pr o t2_1 o0 t2_2; auto; simpl in *; rewrite IHt2_1; lia.
-  - slinsert_to_pnode_destruct pr o t2 o0; auto.
-    simpl in *. rewrite IHt2. lia.
-Qed.
+(* Simplifies the term [repair_post pr (PrefixNode o1 t12) o] *)
+Ltac repair_post_pnode_destruct pr o1 t12 o :=
+    cbn [repair_post] in *;
+    destruct (has_postfix_rm_conflicts pr (PrefixNode o1 t12) o) eqn:E;
+    [ apply has_postfix_rm_conflicts_true in E |
+      assert (forall x, matches_rm (PrefixNode o1 t12) (PrefixPatt x HPatt) ->
+            ~ rm_conflict_pattern pr (CL_postfix_prefix o x));
+      [apply has_postfix_rm_conflicts_false; assumption|]
+    ].
 
-Lemma linsert_o_size_preserve {g} (pr : drules g) o t2 :
-  size (linsert_o pr o t2) = size (PrefixNode o t2).
-Proof.
-  induction t2; auto.
-  - linsert_o_inode_destruct pr o t2_1 o0 t2_2; auto; simpl in *; rewrite IHt2_1; auto.
-  - linsert_o_pnode_destruct pr o t2 o0; auto.
-    simpl in *. rewrite IHt2. reflexivity.
-Qed.
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
 
-Lemma linsert_to_size_preserve {g} (pr : drules g) t1 o opt_t2 fuel t' :
-  linsert_to pr t1 o opt_t2 fuel = Some t' ->
-  (forall t2, opt_t2 = Some t2 -> size t' = size (InfixNode t1 o t2)) /\
-  (opt_t2 = None -> size t' = size (PostfixNode t1 o)).
-Proof.
-  revert t1 o opt_t2 t'. induction fuel; intros; simpl in *.
-  - split; inv H.
-  - destruct opt_t2.
-    + split; intros.
-      * inv H0.
-        destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1]; simpl in *.
-        **inv H. rewrite linsert_lo_size_preserve. reflexivity.
-        **destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H.
-          apply IHfuel in E. apply IHfuel in H1.
-          inv E. inv H1.
-          rewrite H2 with p; auto.
-          rewrite H with t2; auto.
-          lia.
-        **destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H.
-          rewrite linsert_o_size_preserve. simpl.
-          apply IHfuel in E. inv E.
-          rewrite H with t2; auto.
-        **destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H.
-          destruct p; auto.
-          ***apply IHfuel in E. apply IHfuel in H1.
-            inv E. inv H1.
-            rewrite H2 with t2; auto.
-            rewrite H0; auto.
-          ***apply IHfuel in E. apply IHfuel in H1.
-            inv E. inv H1.
-            rewrite H2 with t2; auto.
-            rewrite H0; auto.
-          ***apply IHfuel in E. apply IHfuel in H1.
-            inv E. inv H1.
-            rewrite H2 with t2; auto.
-            rewrite H0; auto.
-          ***inv H1.
-            rewrite slinsert_to_size_preserve.
-            apply IHfuel in E. inv E.
-            assert (size (PostfixNode p o0) = S (size t11)); auto.
-            simpl in *. auto.
-    * inv H0.
-  + split; intros.
-    * inv H0.
-    * destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1]; simpl in *.
-      **inv H. reflexivity.
-      **destruct (linsert_to pr t12 o None fuel) eqn:E; inv H.
-        apply IHfuel in E. apply IHfuel in H2.
-        inv E. inv H2.
-        rewrite H3 with p; auto.
-        rewrite H1; auto.
-      **destruct (linsert_to pr t12 o None fuel) eqn:E; inv H.
-        rewrite linsert_o_size_preserve. simpl.
-        apply IHfuel in E. inv E.
-        rewrite H1; auto.
-      **destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H.
-        apply IHfuel in E. inv E. assert (size p = S (size t11)); auto. clear H1.
-        destruct p; inv H2.
-        ***simpl in *. lia.
-        ***destruct (linsert_to pr p2 o None fuel) eqn:E; inv H4.
-          apply IHfuel in H2. inv H2. rewrite H1 with p; auto.
-          apply IHfuel in E. inv E. rewrite H5; auto.
-          simpl in *. lia.
-        ***destruct (linsert_to pr p o None fuel) eqn:E; inv H4.
-          rewrite linsert_o_size_preserve. simpl.
-          apply IHfuel in E. inv E. rewrite H2; auto. 
-        ***simpl in *. lia.
-Qed.
+(* Lemmas that show well-formedness of [repair] *)
 
-Lemma weird_proof (a b c : nat) (f : nat -> nat -> nat) :
-  (forall x, f b (S x) > f b x) ->
-  a > f b c ->
-  a > f b 0.
-Proof.
-  intros. induction c; auto. apply IHc.
-  specialize H with c. lia.
-Qed.
-
-Definition weird_func (b c : nat) : nat := S (b + c + (b + c) * S (b + c) + 1).
-
-Lemma linsert_to_some {g} (pr : drules g) t1 o opt_t2 fuel :
-  fuel > (size t1 * size t1) + size2 t1 ->
-  exists t', linsert_to pr t1 o opt_t2 fuel = Some t'.
-Proof.
-  revert t1 o opt_t2.
-  induction fuel; try lia.
-  intros. simpl in *.
-  destruct opt_t2.
-  - destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1]; simpl in *.
-    + eauto.
-    + destruct (linsert_to pr t12 o (Some p) fuel) eqn:E.
-      * apply IHfuel. destruct t11; simpl in *; lia.
-      * exfalso.
-        assert (exists t', linsert_to pr t12 o (Some p) fuel = Some t'). {
-          apply IHfuel. destruct t12; simpl in *; lia.
-        }
-        inv H0. rewrite E in H1. inv H1.
-    + destruct (linsert_to pr t12 o (Some p) fuel) eqn:E; eauto.
-      exfalso.
-      assert (exists t', linsert_to pr t12 o (Some p) fuel = Some t'). {
-        apply IHfuel. destruct t12; simpl in *; lia.
-      }
-      inv H0. rewrite E in H1. inv H1.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E.
-      * destruct p0; simpl in *; eauto.
-        **apply IHfuel. simpl. lia.
-        **apply IHfuel. simpl.
-          apply linsert_to_size_preserve in E. inv E.
-          simpl in H1.
-          assert (S (size p0_1 + size p0_2) = S (size t11)); auto.
-          lia.
-        **apply IHfuel. simpl.
-          apply linsert_to_size_preserve in E. inv E.
-          simpl in H1.
-          assert (S (size p0) = S (size t11)); auto.
-          lia.
-      * exfalso.
-        assert (exists t', linsert_to pr t11 o1 None fuel = Some t'). {
-          apply IHfuel. destruct t11; simpl in *; lia.
-        }
-        inv H0. rewrite E in H1. inv H1.
-  - destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1]; simpl in *.
-    + eauto.
-    + destruct (linsert_to pr t12 o None fuel) eqn:E.
-      * apply IHfuel. destruct t11; simpl in *; lia.
-      * exfalso.
-        assert (exists t', linsert_to pr t12 o None fuel = Some t'). {
-          apply IHfuel. destruct t12; simpl in *; lia.
-        }
-        inv H0. rewrite E in H1. inv H1.
-    + destruct (linsert_to pr t12 o None fuel) eqn:E; eauto.
-      exfalso.
-      assert (exists t', linsert_to pr t12 o None fuel = Some t'). {
-        apply IHfuel. destruct t12; simpl in *; lia.
-      }
-      inv H0. rewrite E in H1. inv H1.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E; eauto.
-      * destruct p; eauto.
-        **destruct (linsert_to pr p2 o None fuel) eqn:E2.
-          ***apply IHfuel. apply linsert_to_size_preserve in E.
-            inv E. assert (size (InfixNode p1 o0 p2) = size (PostfixNode t11 o1)); auto.
-            simpl in *.
-            (* [lia] should work here. But for some reason it refuses to. This is a
-               very weird looking workaround to just get it to work.
-            *)
-            inv H2. rewrite <- H4 in H.
-            assert (S fuel > weird_func (size p1) 0). {
-              apply weird_proof with (size p2); unfold weird_func; intros.
-              - lia.
-              - assumption.
-            }
-            unfold weird_func in H2.
-            destruct p1; simpl in *; lia.
-          ***exfalso.
-            assert (exists t', linsert_to pr p2 o None fuel = Some t'). {
-              apply IHfuel. apply linsert_to_size_preserve in E. inv E.
-              assert (size (InfixNode p1 o0 p2) = size (PostfixNode t11 o1)); auto.
-              simpl in *.
-              (* Again, [lia] should work here, but it doesn't. *)
-              inv H2. rewrite <- H4 in H.
-              assert (S fuel > weird_func (size p2) 0). {
-                apply weird_proof with (size p1); unfold weird_func; intros; lia.
-              }
-              unfold weird_func in H2.
-              destruct p2; simpl in *; lia.
-            }
-            inv H0. rewrite E2 in H1. inv H1.
-        **destruct (linsert_to pr p o None fuel) eqn:E2; eauto.
-          exfalso.
-          assert (exists t', linsert_to pr p o None fuel = Some t'). {
-            apply IHfuel. apply linsert_to_size_preserve in E. inv E.
-            assert (size (PrefixNode o0 p) = size (PostfixNode t11 o1)); auto.
-            simpl in *. destruct p; simpl in *; lia.
-          }
-          inv H0. rewrite E2 in H1. inv H1.
-      * exfalso.
-        assert (exists t', linsert_to pr t11 o1 None fuel = Some t'). {
-          apply IHfuel. destruct t11; simpl in *; lia.
-        }
-        inv H0. rewrite E in H1. inv H1.
-Qed.
-
-Lemma linsert_to_fueled_some {g} (pr : drules g) t1 o opt_t2 :
-  exists t', linsert_to_fueled pr t1 o opt_t2 = Some t'.
-Proof.
-  apply linsert_to_some. destruct t1; simpl; lia.
-Qed.
-
-Lemma repair_some {g} (pr : drules g) t :
-  exists t', repair pr t = Some t'.
-Proof.
-  induction t; eauto using linsert_to_fueled_some.
-  - simpl. inv IHt2. rewrite H. eauto using linsert_to_fueled_some.
-  - simpl. inv IHt. rewrite H. eauto.
-Qed.
-
-Lemma linsert_lo_wf {g} (pr : drules g) l1 o t2 :
-  wf_parse_tree g t2 ->
-  g.(prods) (InfixProd (inl o)) ->
-  wf_parse_tree g (linsert_lo pr l1 (inl o) t2).
-Proof.
-  intros. induction H; eauto with IPPGrammar.
-  - linsert_lo_inode_destruct pr
-      (@inl (OPinpre g) (OPpost g) o) t1 (@inl (OPinpre g) (OPpost g) o0) t2; auto with IPPGrammar.
-  - linsert_lo_pnode_destruct pr
-      (@inl (OPinpre g) (OPpost g) o) t (@inr (OPinpre g) (OPpost g) o0); auto with IPPGrammar.
-Qed.
-
-Lemma linsert_o_wf {g} (pr : drules g) o t2 :
-  wf_parse_tree g t2 ->
-  g.(prods) (PrefixProd (inl o)) ->
-  wf_parse_tree g (linsert_o pr (inl o) t2).
-Proof.
-  intros. induction H; eauto with IPPGrammar.
-  - linsert_o_inode_destruct pr
-      (@inl (OPinpre g) (OPpost g) o) t1 (@inl (OPinpre g) (OPpost g) o0) t2; auto with IPPGrammar.
-  - linsert_o_pnode_destruct pr
-      (@inl (OPinpre g) (OPpost g) o) t (@inr (OPinpre g) (OPpost g) o0); auto with IPPGrammar.
-Qed.
-
-Lemma slinsert_to_wf {g} (pr : drules g) t1 o t2 :
-  wf_parse_tree g t1 ->
-  wf_parse_tree g t2 ->
-  g.(prods) (InfixProd (inl o)) ->
-  wf_parse_tree g (slinsert_to pr t1 (inl o) t2).
+Lemma repair_in_2_wf {g} (pr : drules g) t1 o t2 :
+  wf_parse_tree g t1 -> wf_parse_tree g t2 -> g.(prods) (InfixProd (inl o)) ->
+  wf_parse_tree g (repair_in_2 pr t1 (inl o) t2).
 Proof.
   intros. induction t2.
   - simpl. auto with IPPGrammar.
   - inv H0.
-    slinsert_to_inode_destruct pr
-      (@inl (OPinpre g) (OPpost g) o) t2_1 (@inl (OPinpre g) (OPpost g) o1) t2_2; auto with IPPGrammar.
+    repair_in_2_inode_destruct pr (@inl (OPinpre g) (OPpost g) o) t2_1 (@inl (OPinpre g) (OPpost g) o1) t2_2;
+    auto with IPPGrammar.
   - simpl. inv H0. auto with IPPGrammar.
   - inv H0.
-    slinsert_to_pnode_destruct pr
-      (@inl (OPinpre g) (OPpost g) o) t2 (@inr (OPinpre g) (OPpost g) o1); auto with IPPGrammar.
+    repair_in_2_pnode_destruct pr (@inl (OPinpre g) (OPpost g) o) t2 (@inr (OPinpre g) (OPpost g) o1);
+    auto with IPPGrammar.
 Qed.
 
-Lemma linsert_to_wf {g} (pr : drules g) t1 o opt_t2 t' fuel :
-  wf_parse_tree g t1 ->
-  (forall t2, opt_t2 = Some t2 -> wf_parse_tree g t2 /\
-    g.(prods) (InfixProd o) /\ exists o', o = inl o') ->
-  (opt_t2 = None -> g.(prods) (PostfixProd o) /\ exists o', o = inr o') ->
-  linsert_to pr t1 o opt_t2 fuel = Some t' ->
-  wf_parse_tree g t'.
+Lemma repair_pre_wf {g} (pr : drules g) o t2 :
+  wf_parse_tree g t2 -> g.(prods) (PrefixProd (inl o)) ->
+  wf_parse_tree g (repair_pre pr (inl o) t2).
 Proof.
-  revert t1 o opt_t2 t'.
-  induction fuel; simpl; intros. inv H2.
-  destruct opt_t2.
-  - specialize H0 with p. rename p into t2.
-    assert (Some t2 = Some t2). { reflexivity. }
-    apply H0 in H3. inv H3. inv H5. inv H6.
-    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1]; inv H2.
-    + auto using linsert_lo_wf.
-    + destruct (linsert_to pr t12 (inl x) (Some t2) fuel) eqn:E; inv H6.
-      inv H.
-      apply IHfuel with t11 (inl o) (linsert_to pr t12 (inl x) (Some t2) fuel); intros; auto.
-      * split; [|split]; eauto.
-        apply IHfuel with t12 (inl x) (Some t2); intros; auto.
-        inv H2. auto.
-      * rewrite E in H. inv H.
-      * rewrite E. rewrite H5. reflexivity.
-    + assert (Some t2 = Some t2). { reflexivity. }
-      apply H0 in H2.
-      inv H.
-      destruct (linsert_to pr t12 (inl x) (Some t2) fuel) eqn:E; inv H6.
-      apply linsert_o_wf; auto.
-      eapply IHfuel; eauto.
-      intros. inv H. split; [|split]; eauto.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H6.
-      inv H.
-      destruct p; simpl in *.
-      * apply IHfuel with (AtomicNode l) (inl x) (Some t2); auto with IPPGrammar.
-        intros. inv H. split; [|split]; eauto.
-      * apply IHfuel with (InfixNode p1 o0 p2) (inl x) (Some t2); auto.
-        **apply IHfuel with t11 (inr o) None; eauto.
-          intros. inv H.
-        **intros. inv H. split; [|split]; eauto.
-      * apply IHfuel with (PrefixNode o0 p) (inl x) (Some t2); auto.
-        ** apply IHfuel with t11 (inr o) None; eauto.
-           intros. inv H.
-        ** intros. inv H. eauto.
-      * inv H5. apply slinsert_to_wf; auto.
-        apply IHfuel with t11 (inr o) None; eauto.
-        intros. inv H.
-  - assert (@None (parse_tree g) = None). { reflexivity. }
-    apply H1 in H3. inv H3. inv H5.
-    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1]; inv H2.
-    + auto with IPPGrammar.
-    + inv H.
-      destruct (linsert_to pr t12 (inr x) None fuel) eqn:E; inv H5.
-      apply IHfuel with t11 (inl o) (Some p); intros; auto.
-      * inv H. split; [|split]; eauto.
-      * inv H.
-    + inv H.
-      destruct (linsert_to pr t12 (inr x) None fuel) eqn:E; inv H5.
-      apply linsert_o_wf; try assumption.
-      eauto using IHfuel.
-    + inv H. destruct (linsert_to pr t11 (inr o) None fuel) eqn:E; inv H5.
-      apply IHfuel in E; eauto; [|intros ? X; inv X].
-      destruct p; inv H2; auto with IPPGrammar.
-      * destruct (linsert_to pr p2 (inr x) None fuel) eqn:E2; inv H3.
-        inv E.
-        apply IHfuel with p1 (inl o1) (Some p); auto; [|intro X; inv X].
-        intros. inv H. split; [|split]; eauto.
-      * inv E.
-        destruct (linsert_to pr p (inr x) None fuel) eqn:E2; inv H3; auto.
-        apply linsert_o_wf; eauto.
+  intros. induction H; eauto with IPPGrammar.
+  - repair_pre_inode_destruct pr (@inl (OPinpre g) (OPpost g) o) t1 (@inl (OPinpre g) (OPpost g) o0) t2;
+    auto with IPPGrammar.
+  - repair_pre_pnode_destruct pr (@inl (OPinpre g) (OPpost g) o) t (@inr (OPinpre g) (OPpost g) o0);
+    auto with IPPGrammar.
 Qed.
 
-Lemma linsert_to_fueled_wf {g} (pr : drules g) t1 o opt_t2 t' :
-  wf_parse_tree g t1 ->
-  (forall t2, opt_t2 = Some t2 -> wf_parse_tree g t2 /\
-    g.(prods) (InfixProd o) /\ exists o', o = inl o') ->
-  (opt_t2 = None -> g.(prods) (PostfixProd o) /\ exists o', o = inr o') ->
-  linsert_to_fueled pr t1 o opt_t2 = Some t' ->
-  wf_parse_tree g t'.
+Lemma repair_in_1_wf {g} (pr : drules g) t1 o t2 :
+  wf_parse_tree g t1 -> wf_parse_tree g t2 -> g.(prods) (InfixProd (inl o)) ->
+  wf_parse_tree g (repair_in_1 pr t1 (inl o) t2).
 Proof.
-  unfold linsert_to_fueled. eauto using linsert_to_wf.
+  intro. revert o t2. induction H; intros; simpl; auto using repair_in_2_wf, repair_pre_wf with IPPGrammar.
 Qed.
 
-Lemma repair_wf {g} (pr : drules g) t t' :
+Lemma repair_post_wf {g} (pr : drules g) t1 o :
+  wf_parse_tree g t1 -> g.(prods) (PostfixProd (inr o)) ->
+  wf_parse_tree g (repair_post pr t1 (inr o)).
+Proof.
+  intros. induction H; eauto with IPPGrammar.
+  - repair_post_inode_destruct pr t1 (@inl (OPinpre g) (OPpost g) o0) t2 (@inr (OPinpre g) (OPpost g) o);
+    auto with IPPGrammar.
+  - repair_post_pnode_destruct pr (@inl (OPinpre g) (OPpost g) o0) t (@inr (OPinpre g) (OPpost g) o);
+    auto with IPPGrammar.
+Qed.
+
+Lemma repair_wf {g} (pr : drules g) t :
   wf_parse_tree g t ->
-  repair pr t = Some t' ->
-  wf_parse_tree g t'.
+  wf_parse_tree g (repair pr t).
 Proof.
-  intro. revert t'. induction H; simpl; intros.
-  - inv H. auto with IPPGrammar.
-  - destruct (repair pr t2) eqn:E; inv H2.
-    apply linsert_to_fueled_wf with pr t1 (inl o) (Some p); eauto.
-    intros. inv H2.
-  - destruct (repair pr t) eqn:E; inv H1.
-    auto using linsert_o_wf.
-  - apply linsert_to_fueled_wf with pr t (inr o) None; eauto.
-    intros. inv H2.
+  intro. induction H; simpl; auto using repair_in_1_wf, repair_pre_wf, repair_post_wf with IPPGrammar.
 Qed.
 
-Lemma linsert_lo_yield_preserve {g} (pr : drules g) l1 o t2 :
-  yield (linsert_lo pr l1 o t2) = inl l1 :: inr o :: yield t2.
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* Lemmas that show yield-preservation of [repair] *)
+
+Lemma repair_pre_yield_preserve {g} (pr : drules g) o t2 :
+  yield (repair_pre pr o t2) = inr o :: yield t2.
 Proof.
   induction t2; try reflexivity.
-  - linsert_lo_inode_destruct pr o t2_1 o0 t2_2; auto; simpl; rewrite IHt2_1; auto.
-  - linsert_lo_pnode_destruct pr o t2 o0; simpl; auto.
-    rewrite IHt2. reflexivity.
+  - repair_pre_inode_destruct pr o t2_1 o0 t2_2; auto; simpl; rewrite IHt2_1; auto.
+  - repair_pre_pnode_destruct pr o t2 o0; simpl; auto. rewrite IHt2. reflexivity.
 Qed.
 
-Lemma linsert_o_yield_preserve {g} (pr : drules g) o t2 :
-  yield (linsert_o pr o t2) = inr o :: yield t2.
+Lemma repair_in_2_yield_preserve {g} (pr : drules g) t1 o t2 :
+  yield (repair_in_2 pr t1 o t2) = yield t1 ++ inr o :: yield t2.
 Proof.
   induction t2; try reflexivity.
-  - linsert_o_inode_destruct pr o t2_1 o0 t2_2; auto; simpl; rewrite IHt2_1; auto.
-  - linsert_o_pnode_destruct pr o t2 o0; simpl; auto.
-    rewrite IHt2. reflexivity.
-Qed.
-
-Lemma slinsert_to_yield_preserve {g} (pr : drules g) t1 o t2 :
-  yield (slinsert_to pr t1 o t2) = yield t1 ++ inr o :: yield t2.
-Proof.
-  induction t2; try reflexivity.
-  - slinsert_to_inode_destruct pr o t2_1 o0 t2_2; simpl; auto.
+  - repair_in_2_inode_destruct pr o t2_1 o0 t2_2; simpl; auto.
     + rewrite IHt2_1. simplify_list_eq. reflexivity.
     + rewrite IHt2_1. simplify_list_eq. reflexivity.
-  - slinsert_to_pnode_destruct pr o t2 o0; simpl; auto.
-    rewrite IHt2. simplify_list_eq. reflexivity.
+  - repair_in_2_pnode_destruct pr o t2 o0; simpl; auto. rewrite IHt2. simplify_list_eq. reflexivity.
 Qed.
 
-Lemma linsert_to_yield_preserve {g} (pr : drules g) t1 o opt_t2 fuel t' :
-  linsert_to pr t1 o opt_t2 fuel = Some t' ->
-  (forall t2, opt_t2 = Some t2 -> yield t' = yield t1 ++ inr o :: yield t2) /\
-  (opt_t2 = None -> yield t' = yield t1 ++ [inr o]).
+Lemma repair_in_1_yield_preserve {g} (pr : drules g) t1 o t2 :
+  yield (repair_in_1 pr t1 o t2) = yield t1 ++ inr o :: yield t2.
 Proof.
-  revert t1 o opt_t2 t'.
-  induction fuel; [intros; simpl in H; inv H|].
-  intros. simpl in H. split; intros.
-  - rewrite H0 in *.
-    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1].
-    + simpl. inv H. rewrite linsert_lo_yield_preserve.
-      reflexivity.
-    + simpl. destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H.
-      apply IHfuel in H2. inv H2. rewrite H with p; auto.
-      apply IHfuel in E. inv E. rewrite H1 with t2; auto.
-      simplify_list_eq. reflexivity.
-    + simpl. destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H.
-      rewrite linsert_o_yield_preserve.
-      apply IHfuel in E. inv E. rewrite H with t2; auto.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H.
-      apply IHfuel in E. inv E. assert (yield p = yield t11 ++ [inr o1]); auto.
-      destruct p; simpl.
-      * apply IHfuel in H2. inv H2. rewrite H3 with t2; auto.
-        rewrite H1. reflexivity.
-      * apply IHfuel in H2. inv H2. rewrite H3 with t2; auto.
-        rewrite H1. reflexivity.
-      * apply IHfuel in H2. inv H2. rewrite H3 with t2; auto.
-        rewrite H1. reflexivity.
-      * inv H2.
-        rewrite slinsert_to_yield_preserve.
-        rewrite H1. reflexivity.
-  - rewrite H0 in *.
-    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1].
-    + inv H. reflexivity.
-    + simpl. destruct (linsert_to pr t12 o None fuel) eqn:E; inv H.
-      apply IHfuel in H2. inv H2. rewrite H with p; auto.
-      apply IHfuel in E. inv E. rewrite H2; auto.
-      simplify_list_eq. reflexivity.
-    + simpl. destruct (linsert_to pr t12 o None fuel) eqn:E; inv H.
-      rewrite linsert_o_yield_preserve.
-      apply IHfuel in E. inv E. rewrite H0; auto.
-    + simpl. destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H.
-      apply IHfuel in E. inv E. assert (yield p = yield t11 ++ [inr o1]); auto.
-      destruct p; inv H2; rewrite <- H1; auto.
-      * destruct (linsert_to pr p2 o None fuel) eqn:E; inv H4.
-        apply IHfuel in H3. inv H3. rewrite H2 with p; auto.
-        apply IHfuel in E. inv E. rewrite H5; auto.
-        simpl. simplify_list_eq. reflexivity.
-      * destruct (linsert_to pr p o None fuel) eqn:E; inv H4.
-        simpl. rewrite linsert_o_yield_preserve.
-        apply IHfuel in E. inv E. rewrite H3; auto.
+  revert o t2. induction t1; intros.
+  - simpl. rewrite repair_in_2_yield_preserve. reflexivity.
+  - simplify_list_eq. rewrite <- IHt1_2. rewrite <- IHt1_1. reflexivity.
+  - simpl. rewrite <- IHt1. rewrite repair_pre_yield_preserve. reflexivity.
+  - simpl. rewrite repair_in_2_yield_preserve. reflexivity.
 Qed.
 
-Lemma linsert_to_fueled_yield_preserve {g} (pr : drules g) t1 o opt_t2 t' :
-  linsert_to_fueled pr t1 o opt_t2 = Some t' ->
-  (forall t2, opt_t2 = Some t2 -> yield t' = yield t1 ++ inr o :: yield t2) /\
-  (opt_t2 = None -> yield t' = yield t1 ++ [inr o]).
+Lemma repair_post_yield_preserve {g} (pr : drules g) t1 o :
+  yield (repair_post pr t1 o) = yield t1 ++ [inr o].
 Proof.
-  unfold linsert_to_fueled. apply linsert_to_yield_preserve.
+  induction t1; try reflexivity.
+  - repair_post_inode_destruct pr t1_1 o0 t1_2 o; auto; simplify_list_eq; rewrite IHt1_2; auto.
+  - repair_post_pnode_destruct pr o0 t1 o; auto; simplify_list_eq; rewrite IHt1; auto.
 Qed.
 
-Lemma repair_yield_preserve {g} (pr : drules g) t t' :
-  repair pr t = Some t' ->
-  yield t' = yield t.
+Lemma repair_yield_preserve {g} (pr : drules g) t :
+  yield (repair pr t) = yield t.
 Proof.
-  revert t'. induction t; simpl in *; intros.
-  - inv H. reflexivity.
-  - destruct (repair pr t2) eqn:E; inv H.
-    apply linsert_to_fueled_yield_preserve in H1.
-    inv H1. rewrite H with p; auto.
-    rewrite IHt2 with p; auto.
-  - destruct (repair pr t) eqn:E; inv H.
-    rewrite linsert_o_yield_preserve.
-    rewrite IHt with p; auto.
-  - apply linsert_to_fueled_yield_preserve in H.
-    inv H. rewrite H1; auto.
+  induction t; auto; simpl.
+  - rewrite repair_in_1_yield_preserve. rewrite IHt1. rewrite IHt2. reflexivity.
+  - rewrite repair_pre_yield_preserve. rewrite IHt. reflexivity.
+  - rewrite repair_post_yield_preserve. rewrite IHt. reflexivity.
 Qed.
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* Auxiliary lemmas and tactics that help proving safety. *)
 
 Lemma i_conflict_pattern_cases {g} (pr : drules g) q :
   i_conflict_pattern pr q -> exists o1 o2,
-  q = CR_infix_infix o1 o2 \/
-  q = CL_infix_infix o1 o2 \/
-  q = CR_prefix_infix o1 o2 \/
-  q = CL_postfix_infix o1 o2.
+  q = CR_infix_infix o1 o2 \/ q = CL_infix_infix o1 o2 \/ q = CR_prefix_infix o1 o2 \/ q = CL_postfix_infix o1 o2.
 Proof.
   intros. inv H; eauto 7.
 Qed.
 
 Ltac icp_cases H :=
-  apply i_conflict_pattern_cases in H as T; destruct T as [? T1]; destruct T1 as [? T2];
-  destruct T2 as [T5|T3]; [|destruct T3 as [T5|T4]; [|destruct T4 as [T5|T5]]]; rewrite T5 in *; clear T5.
+  apply i_conflict_pattern_cases in H as T; destruct T as [? T1]; destruct T1 as [? T2]; destruct T2 as [T5|T3];
+  [|destruct T3 as [T5|T4]; [|destruct T4 as [T5|T5]]]; rewrite T5 in *; clear T5.
 
 Lemma rm_conflict_pattern_cases {g} (pr : drules g) q :
   rm_conflict_pattern pr q -> exists o1 o2,
-  q = CL_infix_prefix o1 o2 \/
-  q = CL_postfix_prefix o1 o2.
+  q = CL_infix_prefix o1 o2 \/ q = CL_postfix_prefix o1 o2.
 Proof.
   intros. inv H; eauto.
 Qed.
 
 Ltac rcp_cases H :=
-  apply rm_conflict_pattern_cases in H as T; destruct T as [? T1]; destruct T1 as [? T2];
-  destruct T2; subst.
+  apply rm_conflict_pattern_cases in H as T; destruct T as [? T1]; destruct T1 as [? T2]; destruct T2; subst.
 
 Lemma lm_conflict_pattern_cases {g} (pr : drules g) q :
   lm_conflict_pattern pr q -> exists o1 o2,
-  q = CR_infix_postfix o1 o2 \/
-  q = CR_prefix_postfix o1 o2.
+  q = CR_infix_postfix o1 o2 \/ q = CR_prefix_postfix o1 o2.
 Proof.
   intros. inv H; eauto.
 Qed.
 
 Ltac lcp_cases H :=
-  apply lm_conflict_pattern_cases in H as T; destruct T as [? T1]; destruct T1 as [? T2];
-  destruct T2; subst.
+  apply lm_conflict_pattern_cases in H as T; destruct T as [? T1]; destruct T1 as [? T2]; destruct T2; subst.
 
-Lemma inode_single_icfree {g} (pr : drules g) l1 o l2 :
-  i_conflict_free (i_conflict_pattern pr)
-    (InfixNode (AtomicNode l1) o (AtomicNode l2)).
-Proof.
-  apply Infix_cf; auto using Atomic_cf.
-  intro. inv H. destruct H0.
-  icp_cases H; inv H0. inv H8. inv H3.
-Qed.
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
 
-Lemma linsert_lo_top {g} (pr : drules g) l1 o t2 :
-  matches (linsert_lo pr l1 o t2) (InfixPatt HPatt o HPatt) \/
-  (exists o2, matches t2 (InfixPatt HPatt o2 HPatt) /\ matches (linsert_lo pr l1 o t2) (InfixPatt HPatt o2 HPatt)) \/
-  (exists o2, matches t2 (PostfixPatt HPatt o2) /\ matches (linsert_lo pr l1 o t2) (PostfixPatt HPatt o2)).
+(* Proving safety of shallow conflict patterns (i_conflict_patterns). *)
+
+Lemma repair_in_2_top {g} (pr : drules g) t1 o t2 :
+  matches (repair_in_2 pr t1 o t2) (InfixPatt HPatt o HPatt) \/
+  (exists o2, matches t2 (InfixPatt HPatt o2 HPatt) /\ matches (repair_in_2 pr t1 o t2) (InfixPatt HPatt o2 HPatt)) \/
+  (exists o2, matches t2 (PostfixPatt HPatt o2) /\ matches (repair_in_2 pr t1 o t2) (PostfixPatt HPatt o2)).
 Proof.
   destruct t2; eauto 6 with IPPGrammar.
-  - linsert_lo_inode_destruct pr o t2_1 o0 t2_2; eauto 7 with IPPGrammar.
-  - linsert_lo_pnode_destruct pr o t2 o0; eauto 7 with IPPGrammar.
+  - repair_in_2_inode_destruct pr o t2_1 o0 t2_2; eauto 7 with IPPGrammar.
+  - repair_in_2_pnode_destruct pr o t2 o0; eauto 7 with IPPGrammar.
 Qed.
 
-Lemma linsert_lo_top_unchanged {g} (pr : drules g) l1 o t2 x :
+Lemma repair_in_2_top_unchanged {g} (pr : drules g) t1 o t2 x :
   matches_lm t2 (PostfixPatt HPatt x) ->
   lm_conflict_pattern pr (CR_infix_postfix o x) ->
-  (exists o2, matches t2 (InfixPatt HPatt o2 HPatt) /\ matches (linsert_lo pr l1 o t2) (InfixPatt HPatt o2 HPatt)) \/
-  (exists o2, matches t2 (PostfixPatt HPatt o2) /\ matches (linsert_lo pr l1 o t2) (PostfixPatt HPatt o2)).
+  (exists o2, matches t2 (InfixPatt HPatt o2 HPatt) /\ matches (repair_in_2 pr t1 o t2) (InfixPatt HPatt o2 HPatt)) \/
+  (exists o2, matches t2 (PostfixPatt HPatt o2) /\ matches (repair_in_2 pr t1 o t2) (PostfixPatt HPatt o2)).
 Proof.
   intros. destruct t2.
   - inv H. inv H1.
   - inv H. inv H1. left.
     eexists. split; auto with IPPGrammar.
-    linsert_lo_inode_destruct pr o t2_1 o0 t2_2; auto with IPPGrammar.
-    exfalso. apply H with x; auto with IPPGrammar.
+    repair_in_2_inode_destruct pr o t2_1 o0 t2_2; auto with IPPGrammar. exfalso. apply H with x; auto with IPPGrammar.
   - inv H. inv H1.
   - right. eexists. split; auto with IPPGrammar.
-    linsert_lo_pnode_destruct pr o t2 o0; auto with IPPGrammar.
-    exfalso. apply H1 with x; auto.
+    repair_in_2_pnode_destruct pr o t2 o0; auto with IPPGrammar. exfalso. apply H1 with x; auto.
 Qed.
 
-Lemma linsert_lo_icfree {g} (pr : drules g) l1 o t2 :
+Lemma repair_in_2_icfree {g} (pr : drules g) t1 o t2 :
   safe_pr pr ->
+  i_conflict_free (i_conflict_pattern pr) t1 ->
   i_conflict_free (i_conflict_pattern pr) t2 ->
-  i_conflict_free (i_conflict_pattern pr) (linsert_lo pr l1 o t2).
+  (forall o1, i_conflict_pattern pr (CL_infix_infix o o1) -> ~ matches t1 (InfixPatt HPatt o1 HPatt)) ->
+  i_conflict_free (i_conflict_pattern pr) (repair_in_2 pr t1 o t2).
 Proof.
   intros. induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
-  - simpl. apply inode_single_icfree.
-  - linsert_lo_inode_destruct pr o t21 o2 t22.
-    + inv H0. apply Infix_cf; auto.
-      intro. destruct H0 as [q]. inv H0.
-      icp_cases H1; inv H2.
-      * clear H7. rename x into o2.
-        inv H12. rename x0 into o22. clear H7 H9.
-        destruct H4. eexists. eauto with IPPGrammar.
-      * clear H12. rename x into o2.
-        decompose [or] (linsert_lo_top pr l1 o t21).
-        **inv H7. rewrite <- H2 in H0.
-          inv H0. eauto using safe_infix_infix.
-        **destruct H2 as [o21]. inv H7.
-          rewrite <- H2 in *.
-          inv H0. inv H7.
-          inv H3. destruct H4.
-          eexists. eauto with IPPGrammar.
-        **destruct H2 as [o21]. inv H7.
-          rewrite <- H2 in *. inv H0. inv H7.
-    + inv H0. apply Infix_cf; auto with IPPGrammar.
-      inv E2. inv H0.
-      intro. destruct H0 as [q]. inv H0.
-      icp_cases H3; inv H7.
-      * destruct H4. eexists. eauto with IPPGrammar.
-      * inv H2. inv H0.
-        apply linsert_lo_top_unchanged with pr l1 o t21 x in H11; auto.
-        destruct H11.
-        **inv H0. inv H2. inv H9. rewrite <- H2 in *. inv H7.
-          destruct H4. eexists. eauto with IPPGrammar.
-        **inv H0. inv H2. inv H7. rewrite <- H2 in H9. inv H9.
-    + apply Infix_cf; auto with IPPGrammar.
-      intro. destruct H2 as [q]. inv H2.
-      icp_cases H3; inv H4. 
-      * inv H11. contradiction.
-      * inv H6.
-  - simpl.
-    apply Infix_cf; auto with IPPGrammar.
-    intro. destruct H1 as [q]. inv H1.
-    icp_cases H2; inv H3. inv H10. inv H5.
-  - linsert_lo_pnode_destruct pr o t21 o2.
-    + inv H0. apply Postfix_cf; auto with IPPGrammar.
-      intro. destruct H0 as [q]. inv H0.
-      icp_cases H1; inv H2.
-      inv E. inv H0. inv H6.
-      * inv H0. decompose [or] (linsert_lo_top pr l1 o t21).
-        **inv H5. rewrite <- H6 in *. inv H0.
-          eauto using safe_infix_postfix.
-        **inv H5. rewrite <- H0 in *.
-          inv H6. inv H5. inv H6. inv H8.
-          destruct H3. eexists. eauto with IPPGrammar.
-        **inv H6. inv H0.
-          inv H5. rewrite <- H0 in *. inv H8.
-      * apply linsert_lo_top_unchanged with pr l1 o t21 x1 in H9; auto.
-        destruct H9.
-        **inv H0. inv H6. inv H5. rewrite <- H6 in *. inv H7.
-          inv H0. destruct H3. eexists. eauto with IPPGrammar.
-        **inv H0. inv H6. inv H5. rewrite <- H6 in *. inv H7.
-    + apply Infix_cf; auto with IPPGrammar.
-      intro. inv H2. inv H3. icp_cases H2; inv H4.
-      inv H11. inv H6.
+  - simpl. apply Infix_cf; auto. intro. inv H3. inv H4. icp_cases H3; inv H5. inv H12. eapply H2; eauto.
+  - repair_in_2_inode_destruct pr o t21 o2 t22.
+    + inv H1. apply Infix_cf; auto. intro. inv H1. inv H3. icp_cases H1; inv H4.
+      * destruct H6. eexists. eauto with IPPGrammar.
+      * inv H9. decompose [or] (repair_in_2_top pr t1 o t21); rewrite <- H3 in *.
+        **inv H4. eauto using safe_infix_infix.
+        **inv H5. inv H4. inv H9. destruct H6. eexists. eauto with IPPGrammar.
+        **inv H5. inv H4. inv H9.
+    + inv H1. apply Infix_cf; auto with IPPGrammar. intro. inv H1. inv H3. icp_cases H1; inv H4.
+      * destruct H6. eexists. eauto with IPPGrammar.
+      * inv E2. inv H3. inv H5. inv H3.
+        inv H9. apply repair_in_2_top_unchanged with pr t1 o t21 x2 in H13; auto. destruct H13; rewrite <- H3 in *.
+        **inv H5. inv H9. inv H10. destruct H6. eexists. eauto with IPPGrammar.
+        **inv H5. inv H9. inv H10.
+    + apply Infix_cf; auto. intro. inv H4. inv H5. icp_cases H4; inv H6.
+      * inv H13. contradiction.
+      * inv H8. apply H2 with x1; auto with IPPGrammar.
+  - simpl. apply Infix_cf; auto with IPPGrammar. intro. inv H3. inv H4. icp_cases H3; inv H5. inv H12. inv H1.
+    eapply H2; eauto with IPPGrammar.
+  - repair_in_2_pnode_destruct pr o t21 o2.
+    + inv H1. apply Postfix_cf; auto with IPPGrammar. intro. inv H1. inv H3. icp_cases H1; inv H4. inv H7. inv E.
+      inv H4. inv H8.
+      * inv H4. decompose [or] (repair_in_2_top pr t1 o t21); rewrite <- H3 in *.
+        **inv H4. eauto using safe_infix_postfix.
+        **inv H8. inv H4. inv H12. destruct H5. eexists. eauto with IPPGrammar.
+        **inv H8. inv H4. inv H12.
+      * apply repair_in_2_top_unchanged with pr t1 o t21 x2 in H13; auto. destruct H13; auto; rewrite <- H3 in *.
+        **inv H4. inv H8. inv H10. destruct H5. eexists. eauto with IPPGrammar.
+        **inv H4. inv H8. inv H10.
+    + apply Infix_cf; auto with IPPGrammar. intro. inv H4. inv H5. icp_cases H4; inv H6. inv H13. inv H8.
+      eapply H2; eauto with IPPGrammar.
 Qed.
 
-Lemma linsert_o_top {g} (pr : drules g) o t2 :
-  matches (linsert_o pr o t2) (PrefixPatt o HPatt) \/
-  (exists o2, matches t2 (InfixPatt HPatt o2 HPatt) /\ matches (linsert_o pr o t2) (InfixPatt HPatt o2 HPatt)) \/
-  (exists o2, matches t2 (PostfixPatt HPatt o2) /\ matches (linsert_o pr o t2) (PostfixPatt HPatt o2)).
+Lemma repair_pre_top {g} (pr : drules g) o t2 :
+  matches (repair_pre pr o t2) (PrefixPatt o HPatt) \/
+  (exists o2, matches t2 (InfixPatt HPatt o2 HPatt) /\ matches (repair_pre pr o t2) (InfixPatt HPatt o2 HPatt)) \/
+  (exists o2, matches t2 (PostfixPatt HPatt o2) /\ matches (repair_pre pr o t2) (PostfixPatt HPatt o2)).
 Proof.
   destruct t2; eauto with IPPGrammar.
-  - linsert_o_inode_destruct pr o t2_1 o0 t2_2; eauto 7 with IPPGrammar.
-  - linsert_o_pnode_destruct pr o t2 o0; eauto 7 with IPPGrammar.
+  - repair_pre_inode_destruct pr o t2_1 o0 t2_2; eauto 7 with IPPGrammar.
+  - repair_pre_pnode_destruct pr o t2 o0; eauto 7 with IPPGrammar.
 Qed.
 
-Lemma linsert_o_top_unchanged {g} (pr : drules g) o t2 x :
+Lemma repair_pre_top_unchanged {g} (pr : drules g) o t2 x :
   matches_lm t2 (PostfixPatt HPatt x) ->
   lm_conflict_pattern pr (CR_prefix_postfix o x) ->
-  (exists o2, matches t2 (InfixPatt HPatt o2 HPatt) /\ matches (linsert_o pr o t2) (InfixPatt HPatt o2 HPatt)) \/
-  (exists o2, matches t2 (PostfixPatt HPatt o2) /\ matches (linsert_o pr o t2) (PostfixPatt HPatt o2)).
+  (exists o2, matches t2 (InfixPatt HPatt o2 HPatt) /\ matches (repair_pre pr o t2) (InfixPatt HPatt o2 HPatt)) \/
+  (exists o2, matches t2 (PostfixPatt HPatt o2) /\ matches (repair_pre pr o t2) (PostfixPatt HPatt o2)).
 Proof.
   intros. destruct t2.
   - inv H. inv H1.
   - inv H. inv H1. left.
     eexists. split; auto with IPPGrammar.
-    linsert_o_inode_destruct pr o t2_1 o0 t2_2; auto with IPPGrammar.
-    exfalso. apply H with x; auto with IPPGrammar.
+    repair_pre_inode_destruct pr o t2_1 o0 t2_2; auto with IPPGrammar. exfalso. apply H with x; auto with IPPGrammar.
   - inv H. inv H1.
   - right. eexists. split; auto with IPPGrammar.
-    linsert_o_pnode_destruct pr o t2 o0; auto with IPPGrammar.
-    exfalso. apply H1 with x; auto.
+    repair_pre_pnode_destruct pr o t2 o0; auto with IPPGrammar. exfalso. apply H1 with x; auto.
 Qed.
 
-Lemma linsert_o_icfree {g} (pr : drules g) o t2 :
+Lemma repair_pre_icfree {g} (pr : drules g) o t2 :
   safe_pr pr ->
   i_conflict_free (i_conflict_pattern pr) t2 ->
-  i_conflict_free (i_conflict_pattern pr) (linsert_o pr o t2).
+  i_conflict_free (i_conflict_pattern pr) (repair_pre pr o t2).
 Proof.
   intros. induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
-  - simpl. apply Prefix_cf; auto.
-    intro. inv H1. inv H2. icp_cases H1; inv H3. inv H4.
-  - linsert_o_inode_destruct pr o t21 o2 t22.
-    + inv H0. apply Infix_cf; auto.
-      intro. inv H0. inv H1. icp_cases H0; inv H2.
+  - simpl. apply Prefix_cf; auto. intro. inv H1. inv H2. icp_cases H1; inv H3. inv H4.
+  - repair_pre_inode_destruct pr o t21 o2 t22.
+    + inv H0. apply Infix_cf; auto. intro. inv H0. inv H1. icp_cases H0; inv H2.
       * inv H12. destruct H4. eexists. eauto with IPPGrammar.
-      * decompose [or] (linsert_o_top pr o t21).
+      * decompose [or] (repair_pre_top pr o t21).
         **inv H7. rewrite <- H2 in *. inv H1.
+        **inv H2. inv H1. inv H7. rewrite <- H1 in *. inv H3. destruct H4. eexists. eauto with IPPGrammar.
         **inv H2. inv H1. inv H7. rewrite <- H1 in *. inv H3.
-          destruct H4. eexists. eauto with IPPGrammar.
-        **inv H2. inv H1. inv H7. rewrite <- H1 in *. inv H3.
-    + inv H0. apply Infix_cf; auto.
-      intro. inv H0. inv H1. inv E2. inv H1. inv H7. inv H1.
-      icp_cases H0; inv H2.
+    + inv H0. apply Infix_cf; auto. intro. inv H0. inv H1. inv E2. inv H1. inv H7. inv H1. icp_cases H0; inv H2.
       * destruct H4. eexists. eauto with IPPGrammar.
-      * apply linsert_o_top_unchanged with pr o t21 x0 in H11; auto.
-        destruct H11.
+      * apply repair_pre_top_unchanged with pr o t21 x0 in H11; auto. destruct H11.
+        **inv H1. inv H2. inv H8. rewrite <- H2 in *. inv H7. destruct H4. eexists. eauto with IPPGrammar.
         **inv H1. inv H2. inv H8. rewrite <- H2 in *. inv H7.
-          destruct H4. eexists. eauto with IPPGrammar.
-        **inv H1. inv H2. inv H8. rewrite <- H2 in *. inv H7.
-    + apply Prefix_cf; auto.
-      intro. inv H2. inv H3. icp_cases H2; inv H4.
-      inv H5. contradiction.
-  - simpl. apply Prefix_cf; auto.
-    intro. inv H1. inv H2. inv H1; inv H3. inv H4. inv H4.
-  - linsert_o_pnode_destruct pr o t21 o2.
-    + inv H0. apply Postfix_cf; auto.
-      inv E. inv H0. intro. inv H0. inv H5. icp_cases H0; inv H6. inv H7.
-      inv H2.
-      * inv H6. decompose [or] (linsert_o_top pr o t21); rewrite <- H5 in *.
+    + apply Prefix_cf; auto. intro. inv H2. inv H3. icp_cases H2; inv H4. inv H5. contradiction.
+  - simpl. apply Prefix_cf; auto. intro. inv H1. inv H2. icp_cases H1; inv H3. inv H4.
+  - repair_pre_pnode_destruct pr o t21 o2.
+    + inv H0. apply Postfix_cf; auto. inv E. inv H0. intro. inv H0. inv H5. icp_cases H0; inv H6. inv H7. inv H2.
+      * inv H6. decompose [or] (repair_pre_top pr o t21); rewrite <- H5 in *.
         ** inv H2.
         ** inv H6. inv H2. inv H8. destruct H3. eexists. eauto with IPPGrammar.
         ** inv H6. inv H2. inv H8.
-      * apply linsert_o_top_unchanged with pr o t21 x in H10; auto.
+      * apply repair_pre_top_unchanged with pr o t21 x in H10; auto.
         destruct H10; rewrite <- H5 in *.
         ** inv H2. inv H6. inv H7. destruct H3. eexists. eauto with IPPGrammar.
         ** inv H2. inv H6. inv H7.
@@ -1013,365 +616,189 @@ Proof.
       intro. inv H2. inv H3. icp_cases H2; inv H4. inv H5.
 Qed.
 
-Lemma slinsert_to_top {g} (pr : drules g) t1 o t2 :
-  matches (slinsert_to pr t1 o t2) (InfixPatt HPatt o HPatt) \/
-  (exists o2, matches t2 (InfixPatt HPatt o2 HPatt) /\ matches (slinsert_to pr t1 o t2) (InfixPatt HPatt o2 HPatt)) \/
-  (exists o2, matches t2 (PostfixPatt HPatt o2) /\ matches (slinsert_to pr t1 o t2) (PostfixPatt HPatt o2)).
-Proof.
-  destruct t2; eauto 6 with IPPGrammar.
-  - slinsert_to_inode_destruct pr o t2_1 o0 t2_2; eauto 7 with IPPGrammar.
-  - slinsert_to_pnode_destruct pr o t2 o0; eauto 7 with IPPGrammar.
-Qed.
-
-Lemma slinsert_to_top_unchanged {g} (pr : drules g) t1 o t2 x :
-  matches_lm t2 (PostfixPatt HPatt x) ->
-  lm_conflict_pattern pr (CR_infix_postfix o x) ->
-  (exists o2, matches t2 (InfixPatt HPatt o2 HPatt) /\ matches (slinsert_to pr t1 o t2) (InfixPatt HPatt o2 HPatt)) \/
-  (exists o2, matches t2 (PostfixPatt HPatt o2) /\ matches (slinsert_to pr t1 o t2) (PostfixPatt HPatt o2)).
-Proof.
-  intros. destruct t2.
-  - inv H. inv H1.
-  - inv H. inv H1. left.
-    eexists. split; auto with IPPGrammar.
-    slinsert_to_inode_destruct pr o t2_1 o0 t2_2; auto with IPPGrammar.
-    exfalso. apply H with x; auto with IPPGrammar.
-  - inv H. inv H1.
-  - right. eexists. split; auto with IPPGrammar.
-    slinsert_to_pnode_destruct pr o t2 o0; auto with IPPGrammar.
-    exfalso. apply H1 with x; auto.
-Qed.
-
-Lemma slinsert_to_icfree {g} (pr : drules g) t1 o t2 :
+Lemma repair_in_1_icfree {g} (pr : drules g) t1 o t2 :
   safe_pr pr ->
   i_conflict_free (i_conflict_pattern pr) t1 ->
   i_conflict_free (i_conflict_pattern pr) t2 ->
-  (forall o1, i_conflict_pattern pr (CL_infix_infix o o1) -> ~ matches t1 (InfixPatt HPatt o1 HPatt)) ->
-  i_conflict_free (i_conflict_pattern pr) (slinsert_to pr t1 o t2).
+  i_conflict_free (i_conflict_pattern pr) (repair_in_1 pr t1 o t2).
 Proof.
-  intros. induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2]; intros.
-  - simpl. apply Infix_cf; auto with IPPGrammar.
-    intro. inv H3. inv H4. icp_cases H3; inv H5. inv H12.
-    apply H2 with x1; auto.
-  - slinsert_to_inode_destruct pr o t21 o2 t22.
-    + inv H1. apply Infix_cf; auto.
-      intro. inv H1. inv H3. icp_cases H1; inv H4.
-      * destruct H6. eexists. eauto with IPPGrammar.
-      * inv H9. decompose [or] (slinsert_to_top pr t1 o t21); rewrite <- H3 in *.
-        **inv H4. eauto using safe_infix_infix.
-        **inv H5. inv H4. inv H9.
-          destruct H6. eexists. eauto with IPPGrammar.
-        **inv H5. inv H4. inv H9.
-    + inv H1. apply Infix_cf; auto with IPPGrammar.
-      intro. inv H1. inv H3. icp_cases H1; inv H4.
-      * destruct H6. eexists. eauto with IPPGrammar.
-      * inv E2. inv H3. inv H5. inv H3.
-        inv H9. apply slinsert_to_top_unchanged with pr t1 o t21 x2 in H13; auto.
-        destruct H13; rewrite <- H3 in *.
-        **inv H5. inv H9. inv H10.
-          destruct H6. eexists. eauto with IPPGrammar.
-        **inv H5. inv H9. inv H10.
-    + apply Infix_cf; auto.
-      intro. inv H4. inv H5. icp_cases H4; inv H6.
-      * inv H13. contradiction.
-      * inv H8. apply H2 with x1; auto with IPPGrammar.
-  - simpl. apply Infix_cf; auto with IPPGrammar.
-    intro. inv H3. inv H4. icp_cases H3; inv H5. inv H12.
-    inv H1. eapply H2; eauto with IPPGrammar.
-  - slinsert_to_pnode_destruct pr o t21 o2.
-    + inv H1. apply Postfix_cf; auto with IPPGrammar.
-      intro. inv H1. inv H3. icp_cases H1; inv H4.
-      inv H7. inv E. inv H4. inv H8.
-      * inv H4. decompose [or] (slinsert_to_top pr t1 o t21); rewrite <- H3 in *.
-        **inv H4. eauto using safe_infix_postfix.
-        **inv H8. inv H4. inv H12.
-          destruct H5. eexists. eauto with IPPGrammar.
-        **inv H8. inv H4. inv H12.
-      * apply slinsert_to_top_unchanged with pr t1 o t21 x2 in H13; auto.
-        destruct H13; auto; rewrite <- H3 in *.
-        **inv H4. inv H8. inv H10.
-          destruct H5. eexists. eauto with IPPGrammar.
-        **inv H4. inv H8. inv H10.
-    + apply Infix_cf; auto with IPPGrammar.
-      intro. inv H4. inv H5. icp_cases H4; inv H6. inv H13.
-      inv H8. eapply H2; eauto with IPPGrammar.
+  intro. revert o t2. induction t1 as [l1|t11 ? o1 t12|o1 t12|t11 ? o1]; intros; simpl.
+  - apply repair_in_2_icfree; auto with IPPGrammar. intros. intro. inv H3.
+  - inv H0. auto.
+  - inv H0. apply repair_pre_icfree; auto.
+  - apply repair_in_2_icfree; auto with IPPGrammar. intros. intro. inv H3. 
 Qed.
 
-Lemma linsert_to_icfree {g} (pr : drules g) t1 o opt_t2 fuel t' :
+Lemma repair_post_top {g} (pr : drules g) t1 o :
+  matches (repair_post pr t1 o) (PostfixPatt HPatt o) \/
+  (exists o1, matches t1 (InfixPatt HPatt o1 HPatt) /\ matches (repair_post pr t1 o) (InfixPatt HPatt o1 HPatt)) \/
+  (exists o1, matches t1 (PrefixPatt o1 HPatt) /\ matches (repair_post pr t1 o) (PrefixPatt o1 HPatt)).
+Proof.
+  destruct t1; eauto with IPPGrammar.
+  - repair_post_inode_destruct pr t1_1 o0 t1_2 o; eauto 7 with IPPGrammar.
+  - repair_post_pnode_destruct pr o0 t1 o; eauto 7 with IPPGrammar.
+Qed.
+
+Lemma repair_post_top_unchanged {g} (pr : drules g) t1 o x :
+  matches_rm t1 (PrefixPatt x HPatt) ->
+  rm_conflict_pattern pr (CL_postfix_prefix o x) ->
+  (exists o1, matches t1 (InfixPatt HPatt o1 HPatt) /\ matches (repair_post pr t1 o) (InfixPatt HPatt o1 HPatt)) \/
+  (exists o1, matches t1 (PrefixPatt o1 HPatt) /\ matches (repair_post pr t1 o) (PrefixPatt o1 HPatt)).
+Proof.
+  intros. destruct t1.
+  - inv H. inv H1.
+  - inv H. inv H1. left.
+    eexists. split; auto with IPPGrammar.
+    repair_post_inode_destruct pr t1_1 o0 t1_2 o; auto with IPPGrammar. exfalso. apply H with x; auto with IPPGrammar.
+  - right. eexists. split; auto with IPPGrammar.
+    repair_post_pnode_destruct pr o0 t1 o; auto with IPPGrammar. exfalso. apply H1 with x; auto.
+  - inv H. inv H1.
+Qed.
+
+Lemma repair_post_icfree {g} (pr : drules g) t1 o :
   safe_pr pr ->
-  (forall t2, opt_t2 = Some t2 -> i_conflict_free (i_conflict_pattern pr) t2) ->
-  linsert_to pr t1 o opt_t2 fuel = Some t' ->
-  i_conflict_free (i_conflict_pattern pr) t'.
+  i_conflict_free (i_conflict_pattern pr) t1 ->
+  i_conflict_free (i_conflict_pattern pr) (repair_post pr t1 o).
 Proof.
-  intro. revert t1 o opt_t2 t'. induction fuel; intros; simpl in *. inv H1.
-  destruct opt_t2.
-  - rename p into t2. assert (i_conflict_free (i_conflict_pattern pr) t2); auto. clear H0.
-    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1].
-    + inv H1. auto using linsert_lo_icfree.
-    + destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H1.
-      apply IHfuel with t11 o1 (Some p); auto.
-      intros. inv H0.
-      apply IHfuel with t12 o (Some t2); auto.
-      intros. inv H0. assumption.
-    + destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H1.
-      apply linsert_o_icfree; auto.
-      eapply IHfuel; eauto. intros. inv H0. assumption.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H1.
-      destruct p; inv H3.
-      * eapply IHfuel; eauto. intros. inv H0. assumption.
-      * eapply IHfuel; eauto. intros. inv H0. assumption.
-      * eapply IHfuel; eauto. intros. inv H0. assumption.
-      * apply slinsert_to_icfree; auto.
-        **eapply IHfuel; eauto. intros. inv H0.
-        **intros. intro. inv H1.
-  - clear H0. destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1].
-    + inv H1. apply Postfix_cf; auto with IPPGrammar.
-      intro. inv H0. inv H1. icp_cases H0; inv H2. inv H3.
-    + destruct (linsert_to pr t12 o None fuel) eqn:E; inv H1.
-      eapply IHfuel; eauto. intros. inv H0.
-      eapply IHfuel; eauto. intros. inv H0.
-    + destruct (linsert_to pr t12 o None fuel) eqn:E; inv H1.
-      apply linsert_o_icfree; auto.
-      eapply IHfuel; eauto. intros. inv H0.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H1.
-      apply IHfuel in E; [|intros ? X; inv X].
-      destruct p; inv H2.
-      * apply Postfix_cf; auto.
-        intro. inv H0. inv H1. icp_cases H0; inv H2. inv H3.
-      * destruct (linsert_to pr p2 o None fuel) eqn:E2; inv H1.
-        apply IHfuel with p1 o0 (Some p); auto.
-        intros. inv H0.
-        apply IHfuel with p2 o None; auto.
-        intros. inv H0.
-      * destruct (linsert_to pr p o None fuel) eqn:E2; inv H1.
-        apply linsert_o_icfree; auto.
-        eapply IHfuel; eauto.
-        intros. inv H0.
-      * apply Postfix_cf; auto.
-        intro. inv H0. inv H1. icp_cases H0; inv H2. inv H3.
+  intros. induction t1 as [l1|t11 ? o1 t12|o1 t12|t11 ? o1].
+  - simpl. apply Postfix_cf; auto. intro. inv H1. inv H2. icp_cases H1; inv H3. inv H4.
+  - repair_post_inode_destruct pr t11 o1 t12 o.
+    + inv H0. apply Infix_cf; auto. intro. inv H0. inv H1. icp_cases H0; inv H2.
+      * decompose [or] (repair_post_top pr t12 o).
+        **inv H12. rewrite <- H2 in *. inv H1.
+        **inv H2. inv H1. inv H12. rewrite <- H1 in *. inv H3. destruct H4. eexists. eauto with IPPGrammar.
+        **inv H2. inv H1. inv H12. rewrite <- H1 in *. inv H3.
+      * inv H12. destruct H4. eexists. eauto with IPPGrammar.
+    + inv H0. apply Infix_cf; auto. intro. inv H0. inv H1. inv E2. inv H1. inv H7. inv H1. icp_cases H0; inv H2.
+      * apply repair_post_top_unchanged with pr t12 o x0 in H11; auto. destruct H11.
+        **inv H1. inv H2. inv H7. rewrite <- H2 in *. inv H14. destruct H4. eexists. eauto with IPPGrammar.
+        **inv H1. inv H2. inv H7. rewrite <- H2 in *. inv H14.
+      * destruct H4. eexists. eauto with IPPGrammar.
+    + apply Postfix_cf; auto. intro. inv H2. inv H3. icp_cases H2; inv H4. inv H5. contradiction.
+  - repair_post_pnode_destruct pr o1 t12 o.
+    + inv H0. apply Prefix_cf; auto. inv E. inv H0. intro. inv H0. inv H5. icp_cases H0; inv H6. inv H7. inv H2.
+      * inv H6. decompose [or] (repair_post_top pr t12 o); rewrite <- H5 in *.
+        **inv H2.
+        **inv H6. inv H2. inv H8. destruct H3. eexists. eauto with IPPGrammar.
+        **inv H6. inv H2. inv H8.
+      * apply repair_post_top_unchanged with pr t12 o x in H10; auto.
+        destruct H10; rewrite <- H5 in *.
+        **inv H2. inv H6. inv H7. destruct H3. eexists. eauto with IPPGrammar.
+        **inv H2. inv H6. inv H7.
+    + apply Postfix_cf; auto. intro. inv H2. inv H3. icp_cases H2; inv H4. inv H5.
+  - simpl. apply Postfix_cf; auto. intro. inv H1. inv H2. icp_cases H1; inv H3. inv H4.
 Qed.
 
-Lemma linsert_to_fueled_icfree {g} (pr : drules g) t1 o opt_t2 t' :
+Lemma repair_icfree {g} (pr : drules g) t :
   safe_pr pr ->
-  (forall t2, opt_t2 = Some t2 -> i_conflict_free (i_conflict_pattern pr) t2) ->
-  linsert_to_fueled pr t1 o opt_t2 = Some t' ->
-  i_conflict_free (i_conflict_pattern pr) t'.
+  i_conflict_free (i_conflict_pattern pr) (repair pr t).
 Proof.
-  eauto using linsert_to_icfree.
+  intro. induction t; simpl; auto using repair_in_1_icfree, repair_pre_icfree, repair_post_icfree with IPPGrammar.
 Qed.
 
-Lemma repair_icfree {g} (pr : drules g) t t' :
-  safe_pr pr ->
-  repair pr t = Some t' ->
-  i_conflict_free (i_conflict_pattern pr) t'.
-Proof.
-  intro. revert t'. induction t as [l|t1 ? o t2|o t2|t1 ? o]; intros; simpl in H0.
-  - inv H0. apply Atomic_cf.
-  - destruct (repair pr t2) eqn:E; inv H0.
-    eauto using linsert_to_fueled_icfree.
-  - destruct (repair pr t2) eqn:E; inv H0.
-    auto using linsert_o_icfree.
-  - apply linsert_to_fueled_icfree with t1 o None; auto.
-    intros. inv H1.
-Qed.
 
-Lemma inode_single_drmcfree {g} (pr : drules g) l1 o l2 :
-  drm_conflict_free (rm_conflict_pattern pr)
-    (InfixNode (AtomicNode l1) o (AtomicNode l2)).
-Proof.
-  apply Infix_drmcf; auto using Atomic_drmcf.
-  intro. destruct H as [q]. inv H. rcp_cases H0.
-  - inv H1. inv H3. inv H.
-  - inv H1.
-Qed.
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
 
-Lemma matches_rm_hpatt {g} (t : parse_tree g) :
-  matches_rm t HPatt.
-Proof.
-  apply Match_rm. apply HMatch.
-Qed.
+(* Proving safety of deep rm conflict patterns. *)
 
-Lemma linsert_lo_matches_rm {g} (pr : drules g) l1 o1 t2 o2 :
-  matches_rm (linsert_lo pr l1 o1 t2) (PrefixPatt o2 HPatt) ->
+Lemma repair_in_2_matches_rm {g} (pr : drules g) t1 o1 t2 o2 :
+  matches_rm (repair_in_2 pr t1 o1 t2) (PrefixPatt o2 HPatt) ->
   matches_rm t2 (PrefixPatt o2 HPatt).
 Proof.
   intros. destruct t2.
   - simpl in H. inv H. inv H0. inv H4. inv H.
-  - linsert_lo_inode_destruct pr o1 t2_1 o t2_2.
+  - repair_in_2_inode_destruct pr o1 t2_1 o t2_2.
     + inv H. inv H0. auto with IPPGrammar.
     + inv H. inv H0. auto with IPPGrammar.
     + inv H. inv H1. assumption.
   - simpl in H. inv H. inv H0. assumption.
-  - linsert_lo_pnode_destruct pr o1 t2 o.
+  - repair_in_2_pnode_destruct pr o1 t2 o.
     + inv H. inv H0.
     + inv H. inv H1. inv H5. inv H.
 Qed.
 
-Lemma linsert_lo_drmcfree {g} (pr : drules g) l1 o t2 :
-  safe_pr pr ->
-  drm_conflict_free (rm_conflict_pattern pr) t2 ->
-  drm_conflict_free (rm_conflict_pattern pr) (linsert_lo pr l1 o t2).
-Proof.
-  intros. induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
-  - simpl. apply inode_single_drmcfree.
-  - linsert_lo_inode_destruct pr o t21 o2 t22.
-    + inv H0. apply Infix_drmcf; auto.
-      intro. inv H0. inv H1. rcp_cases H0; inv H2.
-      destruct H4. eexists. split; eauto.
-      unfold CL_infix_prefix. apply InfixMatch_drm; auto.
-      eauto using linsert_lo_matches_rm.
-    + inv H0. apply Infix_drmcf; auto.
-      intro. inv H0. inv H1. rcp_cases H0; inv H2.
-      destruct H4. eexists. split; eauto.
-      unfold CL_infix_prefix. apply InfixMatch_drm; auto.
-      eauto using linsert_lo_matches_rm.
-    + apply Infix_drmcf; auto with IPPGrammar.
-      intro. inv H2. inv H3. rcp_cases H2; inv H4.
-      inv H6. inv H3.
-  - simpl. apply Infix_drmcf; auto with IPPGrammar.
-    intro. inv H1. inv H2. rcp_cases H1; inv H3.
-    inv H5. inv H2.
-  - linsert_lo_pnode_destruct pr o t21 o2.
-    + inv H0. apply Postfix_drmcf; auto.
-      intro. inv H0. inv H1. rcp_cases H0; inv H2.
-      destruct H3. eexists. split; eauto.
-      unfold CL_postfix_prefix. apply PostfixMatch_drm.
-      eauto using linsert_lo_matches_rm.
-    + apply Infix_drmcf; auto with IPPGrammar.
-      intro. inv H2. inv H3. rcp_cases H2; inv H4.
-      inv H6. inv H3.
-Qed.
-
-Lemma slinsert_to_matches_rm {g} (pr : drules g) t1 o1 t2 o2 :
-  matches_rm (slinsert_to pr t1 o1 t2) (PrefixPatt o2 HPatt) ->
-  matches_rm t2 (PrefixPatt o2 HPatt).
-Proof.
-  intros. destruct t2.
-  - simpl in H. inv H. inv H0. inv H4. inv H.
-  - slinsert_to_inode_destruct pr o1 t2_1 o t2_2.
-    + inv H. inv H0. auto with IPPGrammar.
-    + inv H. inv H0. auto with IPPGrammar.
-    + inv H. inv H1. assumption.
-  - simpl in H. inv H. inv H0. assumption.
-  - slinsert_to_pnode_destruct pr o1 t2 o.
-    + inv H. inv H0.
-    + inv H. inv H1. inv H5. inv H.
-Qed.
-
-Lemma slinsert_to_drmcfree {g} (pr : drules g) t1 o t2 :
+Lemma repair_in_2_drmcfree {g} (pr : drules g) t1 o t2 :
   safe_pr pr ->
   drm_conflict_free (rm_conflict_pattern pr) t1 ->
   drm_conflict_free (rm_conflict_pattern pr) t2 ->
   (forall x, rm_conflict_pattern pr (CL_infix_prefix o x) -> ~ matches_rm t1 (PrefixPatt x HPatt)) ->
-  drm_conflict_free (rm_conflict_pattern pr) (slinsert_to pr t1 o t2).
+  drm_conflict_free (rm_conflict_pattern pr) (repair_in_2 pr t1 o t2).
 Proof.
   intros. induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
-  - simpl. apply Infix_drmcf; auto.
-    intro. inv H3. inv H4. rcp_cases H3; inv H5.
-    eapply H2; eauto.
-  - slinsert_to_inode_destruct pr o t21 o2 t22.
-    + inv H1. apply Infix_drmcf; auto.
-      intro. inv H1. inv H3. rcp_cases H1; inv H4.
-      destruct H6. eexists. split; eauto.
-      unfold CL_infix_prefix. apply InfixMatch_drm; auto.
-      eauto using slinsert_to_matches_rm.
-    + inv H1. apply Infix_drmcf; auto.
-      intro. inv H1. inv H3. rcp_cases H1; inv H4.
-      destruct H6. eexists. split; eauto.
-      unfold CL_infix_prefix. apply InfixMatch_drm; auto.
-      eauto using slinsert_to_matches_rm.
-    + apply Infix_drmcf; auto with IPPGrammar.
-      intro. inv H4. inv H5. rcp_cases H4; inv H6.
-      eapply H2; eauto.
-  - simpl. apply Infix_drmcf; auto with IPPGrammar.
-    intro. inv H3. inv H4. rcp_cases H3; inv H5.
-    eapply H2; eauto.
-  - slinsert_to_pnode_destruct pr o t21 o2.
-    + inv H1. apply Postfix_drmcf; auto.
-      intro. inv H1. inv H3. rcp_cases H1; inv H4.
-      destruct H5. eexists. split; eauto.
-      unfold CL_postfix_prefix. apply PostfixMatch_drm.
-      eauto using slinsert_to_matches_rm.
-    + apply Infix_drmcf; auto with IPPGrammar.
-      intro. inv H4. inv H5. rcp_cases H4; inv H6.
-      eapply H2; eauto.
+  - simpl. apply Infix_drmcf; auto. intro. inv H3. inv H4. rcp_cases H3; inv H5. eapply H2; eauto.
+  - repair_in_2_inode_destruct pr o t21 o2 t22.
+    + inv H1. apply Infix_drmcf; auto. intro. inv H1. inv H3. rcp_cases H1; inv H4.
+      destruct H6. eexists. eauto using repair_in_2_matches_rm with IPPGrammar.
+    + inv H1. apply Infix_drmcf; auto. intro. inv H1. inv H3. rcp_cases H1; inv H4.
+      destruct H6. eexists. eauto using repair_in_2_matches_rm with IPPGrammar.
+    + apply Infix_drmcf; auto with IPPGrammar. intro. inv H4. inv H5. rcp_cases H4; inv H6. eapply H2; eauto.
+  - simpl. apply Infix_drmcf; auto with IPPGrammar. intro. inv H3. inv H4. rcp_cases H3; inv H5. eapply H2; eauto.
+  - repair_in_2_pnode_destruct pr o t21 o2.
+    + inv H1. apply Postfix_drmcf; auto. intro. inv H1. inv H3. rcp_cases H1; inv H4.
+      destruct H5. eexists. eauto using repair_in_2_matches_rm with IPPGrammar.
+    + apply Infix_drmcf; auto with IPPGrammar. intro. inv H4. inv H5. rcp_cases H4; inv H6. eapply H2; eauto.
 Qed.
 
 Lemma prefixnode_single_drmcfree {g} (pr : drules g) o l2 :
-  drm_conflict_free (rm_conflict_pattern pr)
-    (PrefixNode o (AtomicNode l2)).
+  drm_conflict_free (rm_conflict_pattern pr) (PrefixNode o (AtomicNode l2)).
 Proof.
-  apply Prefix_drmcf; auto using Atomic_drmcf.
-  intro. destruct H as [q]. inv H. rcp_cases H0; inv H1.
+  apply Prefix_drmcf; auto using Atomic_drmcf. intro. destruct H as [q]. inv H. rcp_cases H0; inv H1.
 Qed.
 
-Lemma linsert_o_matches_rm {g} (pr : drules g) o t2 o2 :
-  matches_rm (linsert_o pr o t2) (PrefixPatt o2 HPatt) ->
+Lemma repair_pre_matches_rm {g} (pr : drules g) o t2 o2 :
+  matches_rm (repair_pre pr o t2) (PrefixPatt o2 HPatt) ->
   matches_rm t2 (PrefixPatt o2 HPatt) \/ o2 = o.
 Proof.
   intros. destruct t2.
   - simpl in H. inv H.
     + inv H0. auto.
     + inv H3. inv H.
-  - linsert_o_inode_destruct pr o t2_1 o0 t2_2.
+  - repair_pre_inode_destruct pr o t2_1 o0 t2_2.
+    + inv H. inv H0. left. auto with IPPGrammar.
+    + inv H. inv H0. left. auto with IPPGrammar.
+    + inv H; auto. inv H1. auto.
+  - inv H; auto. inv H0. auto.
+  - repair_pre_pnode_destruct pr o t2 o0.
     + inv H. inv H0.
-      left. auto with IPPGrammar.
-    + inv H. inv H0.
-      left. auto with IPPGrammar.
-    + inv H; auto.
-      inv H1. auto.
-  - inv H; auto.
-    inv H0. auto.
-  - linsert_o_pnode_destruct pr o t2 o0.
-    + inv H. inv H0.
-    + inv H; auto.
-      inv H1. auto.
+    + inv H; auto. inv H1. auto.
 Qed.
 
-Lemma linsert_o_drmcfree {g} (pr : drules g) o t2 :
+Lemma repair_pre_drmcfree {g} (pr : drules g) o t2 :
   safe_pr pr ->
   drm_conflict_free (rm_conflict_pattern pr) t2 ->
-  drm_conflict_free (rm_conflict_pattern pr) (linsert_o pr o t2).
+  drm_conflict_free (rm_conflict_pattern pr) (repair_pre pr o t2).
 Proof.
   intros. induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
   - simpl. apply prefixnode_single_drmcfree.
-  - linsert_o_inode_destruct pr o t21 o2 t22.
-    + inv H0. apply Infix_drmcf; auto.
-      intro. inv H0. inv H1.
-      rcp_cases H0; inv H2.
-      apply linsert_o_matches_rm in H7.
-      inv H7.
+  - repair_pre_inode_destruct pr o t21 o2 t22.
+    + inv H0. apply Infix_drmcf; auto. intro. inv H0. inv H1. rcp_cases H0; inv H2.
+      apply repair_pre_matches_rm in H7. inv H7.
       * destruct H4. eexists. eauto with IPPGrammar.
       * eapply safe_infix_prefix; eauto using CPrio_infix_prefix.
-    + inv H0. apply Infix_drmcf; auto.
-      intro. inv H0. inv H1.
-      rcp_cases H0; inv H2.
-      inv E2. inv H1. inv H3. inv H1.
+    + inv H0. apply Infix_drmcf; auto. intro. inv H0. inv H1. rcp_cases H0; inv H2. inv E2. inv H1. inv H3. inv H1.
       destruct t21.
       **inv H11. inv H1.
-      **inv H11. inv H1.
-        rename E into E'.
-        linsert_o_inode_destruct pr o t21_1 o0 t21_2.
-        ***inv H7. inv H1.
-          destruct H4. eexists. eauto with IPPGrammar.
-        ***inv H7. inv H1. destruct H4.
-          eexists. eauto with IPPGrammar.
+      **inv H11. inv H1. rename E into E'. repair_pre_inode_destruct pr o t21_1 o0 t21_2.
+        ***inv H7. inv H1. destruct H4. eexists. eauto with IPPGrammar.
+        ***inv H7. inv H1. destruct H4. eexists. eauto with IPPGrammar.
         ***eapply H1; eauto with IPPGrammar.
       **inv H11. inv H1.
-      **rename E into E'. linsert_o_pnode_destruct pr o t21 o0.
+      **rename E into E'. repair_pre_pnode_destruct pr o t21 o0.
         ***inv H7. inv H1.
         ***eapply H1; eauto.
-    + apply Prefix_drmcf; auto.
-      intro. inv H2. inv H3. rcp_cases H2; inv H4.
+    + apply Prefix_drmcf; auto. intro. inv H2. inv H3. rcp_cases H2; inv H4.
   - simpl. apply Prefix_drmcf; auto. intro. inv H1. inv H2. rcp_cases H1; inv H3.
-  - linsert_o_pnode_destruct pr o t21 o2.
-    + inv H0. apply Postfix_drmcf; auto.
-      intro. inv H0. inv H1. rcp_cases H0; inv H2.
-      inv E. inv H1. inv H6.
+  - repair_pre_pnode_destruct pr o t21 o2.
+    + inv H0. apply Postfix_drmcf; auto. intro. inv H0. inv H1. rcp_cases H0; inv H2. inv E. inv H1. inv H6.
       * inv H1. destruct t21.
         **simpl in H5. inv H5.
           ***inv H1. eauto using safe_prefix_postfix.
           ***inv H9. inv H1.
-        **linsert_o_inode_destruct pr o t21_1 o0 t21_2.
+        **repair_pre_inode_destruct pr o t21_1 o0 t21_2.
           ***inv H5. inv H1. destruct H3. eexists. eauto with IPPGrammar.
           ***inv H5. inv H1. destruct H3. eexists. eauto with IPPGrammar.
           ***inv H5.
@@ -1380,279 +807,250 @@ Proof.
         **simpl in H5. inv H5.
           ***inv H1. eauto using safe_prefix_postfix.
           ***destruct H3. eexists. eauto with IPPGrammar.
-        **linsert_o_pnode_destruct pr o t21 o0.
+        **repair_pre_pnode_destruct pr o t21 o0.
           ***inv H5. inv H1.
           ***inv H5.
             ****inv H6. eauto using safe_prefix_postfix.
             ****inv H10. inv H5.
       * destruct t21.
         **inv H9. inv H1.
-        **inv H9. inv H1.
-          linsert_o_inode_destruct pr o t21_1 o0 t21_2.
+        **inv H9. inv H1. repair_pre_inode_destruct pr o t21_1 o0 t21_2.
           ***inv H5. inv H1. destruct H3. eexists. eauto with IPPGrammar.
           ***inv H5. inv H1. destruct H3. eexists. eauto with IPPGrammar.
           ***inv H5.
             ****inv H6. eapply H1; eauto with IPPGrammar.
             ****inv H9. inv H5. destruct H3. eexists. eauto with IPPGrammar.
         **inv H9. inv H1.
-        **linsert_o_pnode_destruct pr o t21 o0.
+        **repair_pre_pnode_destruct pr o t21 o0.
           ***inv H5. inv H1.
           ***eapply H1; eauto.
-    + apply Prefix_drmcf; auto.
-      intro. inv H2. inv H3. rcp_cases H2; inv H4.
+    + apply Prefix_drmcf; auto. intro. inv H2. inv H3. rcp_cases H2; inv H4.
 Qed.
 
-Lemma linsert_to_drmcfree {g} (pr : drules g) t1 o opt_t2 fuel t' :
-  safe_pr pr ->
-  linsert_to pr t1 o opt_t2 fuel = Some t' ->
-  (forall t2, opt_t2 = Some t2 -> drm_conflict_free (rm_conflict_pattern pr) t2) ->
-  drm_conflict_free (rm_conflict_pattern pr) t'.
+Lemma postfixnode_single_drmcfree {g} (pr : drules g) o l1 :
+  drm_conflict_free (rm_conflict_pattern pr) (PostfixNode (AtomicNode l1) o).
 Proof.
-  revert t1 o opt_t2 t'. induction fuel; intros; simpl in *. inv H0.
-  destruct opt_t2.
-  - rename p into t2. assert (drm_conflict_free (rm_conflict_pattern pr) t2); auto. clear H1.
-    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1].
-    + inv H0. auto using linsert_lo_drmcfree.
-    + destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H0.
-      eapply IHfuel; eauto. intros. inv H0.
-      eapply IHfuel; eauto. intros. inv H0.
-      assumption.
-    + destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H0.
-      apply linsert_o_drmcfree; auto.
-      eapply IHfuel; eauto. intros. inv H0.
-      assumption.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H0.
-      destruct p; inv H3.
-      * eapply IHfuel; eauto. intros. inv H0. assumption.
-      * eapply IHfuel; eauto. intros. inv H0. assumption.
-      * eapply IHfuel; eauto. intros. inv H0. assumption.
-      * apply slinsert_to_drmcfree; auto.
-        ** eapply IHfuel; eauto. intros. inv H0.
-        ** intros. intro. inv H1. inv H3.
-  - clear H1. destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1].
-    + inv H0. apply Postfix_drmcf; auto with IPPGrammar.
-      intro. inv H0. inv H1. rcp_cases H0; inv H2. inv H3. inv H1.
-    + destruct (linsert_to pr t12 o None fuel) eqn:E; inv H0.
-      eapply IHfuel; eauto. intros. inv H0.
-      eapply IHfuel; eauto. intros. inv H0.
-    + destruct (linsert_to pr t12 o None fuel) eqn:E; inv H0.
-      apply linsert_o_drmcfree; auto.
-      eapply IHfuel; eauto. intros. inv H0.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H0.
-      apply IHfuel in E; auto; [|intros ? X; inv X].
-      destruct p.
-      * inv H2. apply Postfix_drmcf; auto with IPPGrammar.
-        intro. inv H0. inv H1. rcp_cases H0; inv H2. inv H3. inv H1.
-      * destruct (linsert_to pr p2 o None fuel) eqn:E2; inv H2.
-        eapply IHfuel; eauto. intros. inv H0.
-        eapply IHfuel; eauto. intros. inv H0.
-      * destruct (linsert_to pr p o None fuel) eqn:E2; inv H2.
-        apply linsert_o_drmcfree; auto.
-        eapply IHfuel; eauto. intros. inv H0.
-      * inv H2. apply Postfix_drmcf; auto.
-        intro. inv H0. inv H1. rcp_cases H0; inv H2.
-        inv H3. inv H1.
+  apply Postfix_drmcf; auto using Atomic_drmcf. intro. destruct H as [q]. inv H. rcp_cases H0; inv H1. inv H2. inv H.
 Qed.
 
-Lemma linsert_to_fueled_drmcfree {g} (pr : drules g) t1 o opt_t2 t' :
+Lemma repair_post_drmcfree {g} (pr : drules g) t1 o :
   safe_pr pr ->
-  linsert_to_fueled pr t1 o opt_t2 = Some t' ->
-  (forall t2, opt_t2 = Some t2 -> drm_conflict_free (rm_conflict_pattern pr) t2) ->
-  drm_conflict_free (rm_conflict_pattern pr) t'.
+  drm_conflict_free (rm_conflict_pattern pr) t1 ->
+  drm_conflict_free (rm_conflict_pattern pr) (repair_post pr t1 o).
 Proof.
-  unfold linsert_to_fueled. apply linsert_to_drmcfree.
-Qed.
-
-Lemma repair_drmcfree {g} (pr : drules g) t t' :
-  safe_pr pr ->
-  repair pr t = Some t' ->
-  drm_conflict_free (rm_conflict_pattern pr) t'.
-Proof.
-  intro. revert t'. induction t; intros; simpl in *.
-  - inv H0. auto with IPPGrammar.
-  - destruct (repair pr t2) eqn:E; inv H0.
-    eauto using linsert_to_fueled_drmcfree.
-  - destruct (repair pr t) eqn:E; inv H0.
-    eauto using linsert_o_drmcfree.
-  - eapply linsert_to_fueled_drmcfree; eauto.
-    intros. inv H1.
-Qed.
-
-Lemma linsert_lo_dlmcfree {g} (pr : drules g) l1 o t2 :
-  safe_pr pr ->
-  dlm_conflict_free (lm_conflict_pattern pr) t2 ->
-  dlm_conflict_free (lm_conflict_pattern pr) (linsert_lo pr l1 o t2).
-Proof.
-  intros. induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
-  - simpl. apply Infix_dlmcf; auto with IPPGrammar.
-    intro. inv H1. inv H2. lcp_cases H1; inv H3. inv H10. inv H2.
-  - linsert_lo_inode_destruct pr o t21 o2 t22.
-    + inv H0. apply Infix_dlmcf; auto.
-      intro. inv H0. inv H1. lcp_cases H0; inv H2.
+  intros. induction t1 as [l1|t11 ? o1 t12|o1 t12|t11 ? o1].
+  - simpl. apply Postfix_drmcf; auto. intro. inv H1. inv H2. rcp_cases H1; inv H3. inv H4. inv H2.
+  - repair_post_inode_destruct pr t11 o1 t12 o.
+    + inv H0. apply Infix_drmcf; auto. intro. inv H0. inv H1. rcp_cases H0; inv H2.
       destruct H4. eexists. eauto with IPPGrammar.
-    + inv H0. apply Infix_dlmcf; auto.
-      intro. inv H0. inv H1. lcp_cases H0; inv H2.
+    + inv H0. apply Infix_drmcf; auto. intro. inv H0. inv H1. rcp_cases H0; inv H2.
       destruct H4. eexists. eauto with IPPGrammar.
-    + apply Infix_dlmcf; auto with IPPGrammar.
-      intro. inv H2. inv H3. lcp_cases H2; inv H4.
-      inv H11. inv H3.
+    + apply Postfix_drmcf; auto. intro. inv H2. inv H3. rcp_cases H2; inv H4. inv H5. inv H3.
       eapply H1; eauto with IPPGrammar.
-  - simpl. apply Infix_dlmcf; auto with IPPGrammar.
-    intro. inv H1. inv H2. lcp_cases H1; inv H3.
-    inv H10. inv H2.
-  - linsert_lo_pnode_destruct pr o t21 o2.
-    + inv H0. apply Postfix_dlmcf; auto.
-      intro. inv H0. inv H1. lcp_cases H0; inv H2.
-    + apply Infix_dlmcf; auto with IPPGrammar.
-      intro. inv H2. inv H3. lcp_cases H2; inv H4.
-      eapply H1; eauto.
+  - repair_post_pnode_destruct pr o1 t12 o.
+    + inv H0. apply Prefix_drmcf; auto. intro. inv H0. inv H1. rcp_cases H0; inv H2.
+    + apply Postfix_drmcf; auto. intro. inv H2. inv H3. rcp_cases H2; inv H4. eapply H1; eauto.
+  - simpl. apply Postfix_drmcf; auto. intro. inv H1. inv H2. rcp_cases H1; inv H3. inv H4. inv H2.
 Qed.
 
-Lemma slinsert_to_dlmcfree {g} (pr : drules g) t1 o t2 :
+Lemma repair_in_1_drmcfree {g} (pr : drules g) t1 o t2 :
+  safe_pr pr ->
+  drm_conflict_free (rm_conflict_pattern pr) t1 ->
+  drm_conflict_free (rm_conflict_pattern pr) t2 ->
+  drm_conflict_free (rm_conflict_pattern pr) (repair_in_1 pr t1 o t2).
+Proof.
+  intro. revert o t2. induction t1 as [l1|t11 ? o1 t12|o1 t12|t11 ? o1]; intros; simpl.
+  - apply repair_in_2_drmcfree; auto with IPPGrammar. intros. intro. inv H3. inv H4.
+  - inv H0. auto.
+  - inv H0. apply repair_pre_drmcfree; auto.
+  - apply repair_in_2_drmcfree; auto with IPPGrammar. intros. intro. inv H3. inv H4. 
+Qed.
+
+Lemma repair_drmcfree {g} (pr : drules g) t :
+  safe_pr pr ->
+  drm_conflict_free (rm_conflict_pattern pr) (repair pr t).
+Proof.
+  intro. induction t; simpl; auto using repair_in_1_drmcfree, repair_pre_drmcfree, repair_post_drmcfree with IPPGrammar.
+Qed.
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* Proving safety of deep lm conflict patterns. *)
+
+Lemma repair_in_2_dlmcfree {g} (pr : drules g) t1 o t2 :
   safe_pr pr ->
   dlm_conflict_free (lm_conflict_pattern pr) t1 ->
   dlm_conflict_free (lm_conflict_pattern pr) t2 ->
-  dlm_conflict_free (lm_conflict_pattern pr) (slinsert_to pr t1 o t2).
+  dlm_conflict_free (lm_conflict_pattern pr) (repair_in_2 pr t1 o t2).
 Proof.
   intros. induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
-  - simpl. apply Infix_dlmcf; auto with IPPGrammar.
-    intro. inv H2. inv H3. lcp_cases H2; inv H4. inv H11. inv H3.
-  - slinsert_to_inode_destruct pr o t21 o2 t22.
-    + inv H1. apply Infix_dlmcf; auto.
-      intro. inv H1. inv H2. lcp_cases H1; inv H3.
+  - simpl. apply Infix_dlmcf; auto. intro. inv H2. inv H3. lcp_cases H2; inv H4. inv H11. inv H3.
+  - repair_in_2_inode_destruct pr o t21 o2 t22.
+    + inv H1. apply Infix_dlmcf; auto. intro. inv H1. inv H2. lcp_cases H1; inv H3.
       destruct H5. eexists. eauto with IPPGrammar.
-    + inv H1. apply Infix_dlmcf; auto.
-      intro. inv H1. inv H2. lcp_cases H1; inv H3.
+    + inv H1. apply Infix_dlmcf; auto. intro. inv H1. inv H2. lcp_cases H1; inv H3.
       destruct H5. eexists. eauto with IPPGrammar.
-    + apply Infix_dlmcf; auto with IPPGrammar.
-      intro. inv H3. inv H4. lcp_cases H3; inv H5.
-      inv H12. inv H4.
+    + apply Infix_dlmcf; auto. intro. inv H3. inv H4. lcp_cases H3; inv H5. inv H12. inv H4.
       eapply H2; eauto with IPPGrammar.
-  - simpl. apply Infix_dlmcf; auto with IPPGrammar.
-    intro. inv H2. inv H3. lcp_cases H2; inv H4.
-    inv H11. inv H3.
-  - slinsert_to_pnode_destruct pr o t21 o2.
-    + inv H1. apply Postfix_dlmcf; auto.
-      intro. inv H1. inv H2. lcp_cases H1; inv H3.
-    + apply Infix_dlmcf; auto with IPPGrammar.
-      intro. inv H3. inv H4. lcp_cases H3; inv H5.
-      eapply H2; eauto.
+  - simpl. apply Infix_dlmcf; auto with IPPGrammar. intro. inv H2. inv H3. lcp_cases H2; inv H4. inv H11. inv H3.
+  - repair_in_2_pnode_destruct pr o t21 o2.
+    + inv H1. apply Postfix_dlmcf; auto. intro. inv H1. inv H2. lcp_cases H1; inv H3.
+    + apply Infix_dlmcf; auto with IPPGrammar. intro. inv H3. inv H4. lcp_cases H3; inv H5. eapply H2; eauto.
 Qed.
 
-Lemma linsert_o_dlmcfree {g} (pr : drules g) o t2 :
+Lemma repair_pre_dlmcfree {g} (pr : drules g) o t2 :
   safe_pr pr ->
   dlm_conflict_free (lm_conflict_pattern pr) t2 ->
-  dlm_conflict_free (lm_conflict_pattern pr) (linsert_o pr o t2).
+  dlm_conflict_free (lm_conflict_pattern pr) (repair_pre pr o t2).
 Proof.
   intros. induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
-  - simpl. apply Prefix_dlmcf; auto with IPPGrammar.
-    intro. inv H1. inv H2. lcp_cases H1; inv H3. inv H4. inv H2.
-  - linsert_o_inode_destruct pr o t21 o2 t22.
-    + inv H0. apply Infix_dlmcf; auto.
-      intro. inv H0. inv H1. lcp_cases H0; inv H2.
+  - simpl. apply Prefix_dlmcf; auto. intro. inv H1. inv H2. lcp_cases H1; inv H3. inv H4. inv H2.
+  - repair_pre_inode_destruct pr o t21 o2 t22.
+    + inv H0. apply Infix_dlmcf; auto. intro. inv H0. inv H1. lcp_cases H0; inv H2.
       destruct H4. eexists. eauto with IPPGrammar.
-    + inv H0. apply Infix_dlmcf; auto.
-      intro. inv H0. inv H1. lcp_cases H0; inv H2.
+    + inv H0. apply Infix_dlmcf; auto. intro. inv H0. inv H1. lcp_cases H0; inv H2.
       destruct H4. eexists. eauto with IPPGrammar.
-    + apply Prefix_dlmcf; auto with IPPGrammar.
-      intro. inv H2. inv H3. lcp_cases H2; inv H4.
-      inv H5. inv H3.
+    + apply Prefix_dlmcf; auto. intro. inv H2. inv H3. lcp_cases H2; inv H4. inv H5. inv H3.
       eapply H1; eauto with IPPGrammar.
-  - simpl. apply Prefix_dlmcf; auto with IPPGrammar.
-    intro. inv H1. inv H2. lcp_cases H1; inv H3.
-    inv H4. inv H2.
-  - linsert_o_pnode_destruct pr o t21 o2.
-    + inv H0. apply Postfix_dlmcf; auto.
-      intro. inv H0. inv H1. lcp_cases H0; inv H2.
-    + apply Prefix_dlmcf; auto with IPPGrammar.
-      intro. inv H2. inv H3. lcp_cases H2; inv H4.
-      eapply H1; eauto.
+  - simpl. apply Prefix_dlmcf; auto. intro. inv H1. inv H2. lcp_cases H1; inv H3. inv H4. inv H2.
+  - repair_pre_pnode_destruct pr o t21 o2.
+    + inv H0. apply Postfix_dlmcf; auto. intro. inv H0. inv H1. lcp_cases H0; inv H2.
+    + apply Prefix_dlmcf; auto with IPPGrammar. intro. inv H2. inv H3. lcp_cases H2; inv H4. eapply H1; eauto.
 Qed.
 
-Lemma linsert_to_dlmcfree {g} (pr : drules g) t1 o opt_t2 fuel t' :
-  safe_pr pr ->
-  (forall t2, opt_t2 = Some t2 -> dlm_conflict_free (lm_conflict_pattern pr) t2) ->
-  linsert_to pr t1 o opt_t2 fuel = Some t' ->
-  dlm_conflict_free (lm_conflict_pattern pr) t'.
+Lemma postfixnode_single_dlmcfree {g} (pr : drules g) o l1 :
+  dlm_conflict_free (lm_conflict_pattern pr) (PostfixNode (AtomicNode l1) o).
 Proof.
-  intro. revert t1 o opt_t2 t'. induction fuel; intros; simpl in *. inv H1.
-  destruct opt_t2.
-  - rename p into t2. assert (dlm_conflict_free (lm_conflict_pattern pr) t2); auto. clear H0.
-    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1].
-    + inv H1. auto using linsert_lo_dlmcfree.
-    + destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H1.
-      eapply IHfuel; eauto. intros. inv H0.
-      eapply IHfuel; eauto. intros. inv H0. assumption.
-    + destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H1.
-      apply linsert_o_dlmcfree; auto.
-      eapply IHfuel; eauto. intros. inv H0. assumption.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H1.
-      apply IHfuel in E; [|intros ? X; inv X].
-      destruct p.
-      * eapply IHfuel; eauto. intros. inv H0. assumption.
-      * eapply IHfuel; eauto. intros. inv H0. assumption.
-      * eapply IHfuel; eauto. intros. inv H0. assumption.
-      * inv H3. apply slinsert_to_dlmcfree; auto.
-  - clear H0.
-    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1].
-    + inv H1. apply Postfix_dlmcf; auto with IPPGrammar.
-      intro. inv H0. inv H1. lcp_cases H0; inv H2.
-    + destruct (linsert_to pr t12 o None fuel) eqn:E; inv H1.
-      eapply IHfuel; eauto. intros. inv H0.
-      eapply IHfuel; eauto. intros. inv H0.
-    + destruct (linsert_to pr t12 o None fuel) eqn:E; inv H1.
-      apply linsert_o_dlmcfree; auto.
-      eapply IHfuel; eauto. intros. inv H0.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H1.
-      apply IHfuel in E; [|intros ? X; inv X].
-      destruct p.
-      * inv H2. apply Postfix_dlmcf; auto.
-        intro. inv H0. inv H1. lcp_cases H0; inv H2.
-      * destruct (linsert_to pr p2 o None fuel) eqn:E2; inv H2.
-        eapply IHfuel; eauto. intros. inv H0.
-        inv E. eapply IHfuel; eauto. intros. inv H0.
-      * destruct (linsert_to pr p o None fuel) eqn:E2; inv H2.
-        apply linsert_o_dlmcfree; auto.
-        inv E. eapply IHfuel; eauto. intros. inv H0.
-      * inv H2. apply Postfix_dlmcf; auto.
-        intro. inv H0. inv H1. lcp_cases H0; inv H2.
+  apply Postfix_dlmcf; auto with IPPGrammar. intro. destruct H as [q]. inv H. lcp_cases H0; inv H1.
 Qed.
 
-Lemma linsert_to_fueled_dlmcfree {g} (pr : drules g) t1 o opt_t2 t' :
-  safe_pr pr ->
-  (forall t2, opt_t2 = Some t2 -> dlm_conflict_free (lm_conflict_pattern pr) t2) ->
-  linsert_to_fueled pr t1 o opt_t2 = Some t' ->
-  dlm_conflict_free (lm_conflict_pattern pr) t'.
+Lemma repair_post_matches_lm {g} (pr : drules g) o t1 o1 :
+  matches_lm (repair_post pr t1 o) (PostfixPatt HPatt o1) ->
+  matches_lm t1 (PostfixPatt HPatt o1) \/ o1 = o.
 Proof.
-  unfold linsert_to_fueled. apply linsert_to_dlmcfree.
+  intros. destruct t1.
+  - simpl in H. inv H.
+    + inv H0. auto.
+    + inv H3. inv H.
+  - repair_post_inode_destruct pr t1_1 o0 t1_2 o.
+    + inv H. inv H0. left. auto with IPPGrammar.
+    + inv H. inv H0. left. auto with IPPGrammar.
+    + inv H; auto. inv H1. auto.
+  - repair_post_pnode_destruct pr o0 t1 o.
+    + inv H. inv H0.
+    + inv H; auto. inv H1; auto.
+  - inv H; auto. inv H0. auto.
 Qed.
 
-Lemma repair_dlmcfree {g} (pr : drules g) t t' :
+Lemma repair_post_dlmcfree {g} (pr : drules g) t1 o :
   safe_pr pr ->
-  repair pr t = Some t' ->
-  dlm_conflict_free (lm_conflict_pattern pr) t'.
+  dlm_conflict_free (lm_conflict_pattern pr) t1 ->
+  dlm_conflict_free (lm_conflict_pattern pr) (repair_post pr t1 o).
 Proof.
-  intro. revert t'. induction t; intros; simpl in *.
-  - inv H0. auto with IPPGrammar.
-  - destruct (repair pr t2) eqn:E; inv H0.
-    eapply linsert_to_fueled_dlmcfree; eauto.
-  - destruct (repair pr t) eqn:E; inv H0.
-    eauto using linsert_o_dlmcfree.
-  - apply linsert_to_fueled_dlmcfree with t o None; auto.
-    intros. inv H1.
+  intros. induction t1 as [l1|t11 ? o1 t12|o1 t12|t11 ? o1].
+  - simpl. apply postfixnode_single_dlmcfree.
+  - repair_post_inode_destruct pr t11 o1 t12 o.
+    + inv H0. apply Infix_dlmcf; auto. intro. inv H0. inv H1. lcp_cases H0; inv H2.
+      apply repair_post_matches_lm in H12. inv H12.
+      * destruct H4. eexists. eauto with IPPGrammar.
+      * eauto using safe_infix_postfix.
+    + inv H0. apply Infix_dlmcf; auto. intro. inv H0. inv H1. lcp_cases H0; inv H2. inv E2. inv H1. inv H3. inv H1.
+      destruct t12.
+      **inv H11. inv H1.
+      **inv H11. inv H1. rename E into E'. repair_post_inode_destruct pr t12_1 o0 t12_2 o.
+        ***inv H12. inv H1. destruct H4. eexists. eauto with IPPGrammar.
+        ***inv H12. inv H1. destruct H4. eexists. eauto with IPPGrammar.
+        ***eapply H1; eauto with IPPGrammar.
+      **rename E into E'. repair_post_pnode_destruct pr o0 t12 o.
+        ***inv H12. inv H1.
+        ***eapply H1; eauto.
+      **inv H11. inv H1.
+    + apply Postfix_dlmcf; auto. intro. inv H2. inv H3. lcp_cases H2; inv H4.
+  - repair_post_pnode_destruct pr o1 t12 o.
+    + inv H0. apply Prefix_dlmcf; auto. intro. inv H0. inv H1. lcp_cases H0; inv H2. inv E. inv H1. inv H6.
+      * inv H1. destruct t12.
+        **simpl in H5. inv H5.
+          ***inv H1. eauto using safe_prefix_postfix.
+          ***inv H9. inv H1.
+        **repair_post_inode_destruct pr t12_1 o0 t12_2 o.
+          ***inv H5. inv H1. destruct H3. eexists. eauto with IPPGrammar.
+          ***inv H5. inv H1. destruct H3. eexists. eauto with IPPGrammar.
+          ***inv H5.
+            ****inv H6. eauto using safe_prefix_postfix.
+            ****inv H10. inv H5. destruct H3. eexists. eauto with IPPGrammar.
+        **repair_post_pnode_destruct pr o0 t12 o.
+          ***inv H5. inv H1.
+          ***inv H5.
+            ****inv H6. eauto using safe_prefix_postfix.
+            ****inv H10. inv H5.
+        **simpl in H5. inv H5.
+          ***inv H1. eauto using safe_prefix_postfix.
+          ***destruct H3. eexists. eauto with IPPGrammar.
+      * destruct t12.
+        **inv H9. inv H1.
+        **inv H9. inv H1. repair_post_inode_destruct pr t12_1 o0 t12_2 o.
+          ***inv H5. inv H1. destruct H3. eexists. eauto with IPPGrammar.
+          ***inv H5. inv H1. destruct H3. eexists. eauto with IPPGrammar.
+          ***inv H5.
+            ****inv H6. eapply H1; eauto with IPPGrammar.
+            ****inv H9. inv H5. destruct H3. eexists. eauto with IPPGrammar.
+        **repair_post_pnode_destruct pr o0 t12 o.
+          ***inv H5. inv H1.
+          ***eapply H1; eauto.
+        **inv H9. inv H1.
+    + apply Postfix_dlmcf; auto. intro. inv H2. inv H3. lcp_cases H2; inv H4.
+  - simpl. apply Postfix_dlmcf; auto. intro. inv H1. inv H2. lcp_cases H1; inv H3.
 Qed.
+
+Lemma repair_in_1_dlmcfree {g} (pr : drules g) t1 o t2 :
+  safe_pr pr ->
+  dlm_conflict_free (lm_conflict_pattern pr) t1 ->
+  dlm_conflict_free (lm_conflict_pattern pr) t2 ->
+  dlm_conflict_free (lm_conflict_pattern pr) (repair_in_1 pr t1 o t2).
+Proof.
+  intro. revert o t2. induction t1 as [l1|t11 ? o1 t12|o1 t12|t11 ? o1]; intros; simpl.
+  - apply repair_in_2_dlmcfree; auto with IPPGrammar.
+  - inv H0. auto.
+  - inv H0. apply repair_pre_dlmcfree; auto.
+  - apply repair_in_2_dlmcfree; auto with IPPGrammar. 
+Qed.
+
+Lemma repair_dlmcfree {g} (pr : drules g) t :
+  safe_pr pr ->
+  dlm_conflict_free (lm_conflict_pattern pr) (repair pr t).
+Proof.
+  intro. induction t; simpl; auto using repair_in_1_dlmcfree, repair_pre_dlmcfree, repair_post_dlmcfree with IPPGrammar.
+Qed.
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* SAFETY *)
 
 Theorem safety {g} (pr : drules g) :
-  safe_pr pr ->
-  safe pr.
+  safe_pr pr -> safe pr.
 Proof.
   unfold safe. unfold language. unfold dlanguage. unfold cfree. unfold conflict_free.
   intros. destruct H0 as [t]. destruct H0.
-  destruct @repair_some with g pr t.
-  exists x.
+  exists (repair pr t).
   erewrite repair_yield_preserve; eauto.
   eauto 10 using repair_wf, repair_yield_preserve, repair_icfree, repair_drmcfree, repair_dlmcfree.
 Qed.
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* The following lemmas relate completeness to relations between conflict patterns. *)
 
 Lemma complete_trans_1 {g} (pr : drules g) o1 o2 o3 :
   complete_pr pr ->
@@ -1660,19 +1058,16 @@ Lemma complete_trans_1 {g} (pr : drules g) o1 o2 o3 :
   i_conflict_pattern pr (CL_infix_infix o2 o3) ->
   i_conflict_pattern pr (CL_infix_infix o1 o3).
 Proof.
-  intros. destruct H.
-  inv H0; inv H1; eauto with IPPGrammar.
+  intros. destruct H. inv H0; inv H1; eauto with IPPGrammar.
 Qed.
 
 Lemma complete_trans_2 {g} (pr : drules g) o1 o2 o3 :
   complete_pr pr ->
-  i_conflict_pattern pr (CR_prefix_infix o1 o2) ->
-  i_conflict_pattern pr (CL_infix_infix o2 o3) ->
-  i_conflict_pattern pr (CR_prefix_infix o1 o3).
+  i_conflict_pattern pr (CL_infix_infix o1 o2) ->
+  rm_conflict_pattern pr (CL_infix_prefix o2 o3) ->
+  rm_conflict_pattern pr (CL_infix_prefix o1 o3).
 Proof.
-  intros. destruct H.
-  inv H0; inv H1; eauto with IPPGrammar.
-  edestruct complete_10; eauto.
+  intros. destruct H. inv H0; inv H1; eauto with IPPGrammar.
 Qed.
 
 Lemma complete_trans_3 {g} (pr : drules g) o1 o2 o3 :
@@ -1681,8 +1076,7 @@ Lemma complete_trans_3 {g} (pr : drules g) o1 o2 o3 :
   i_conflict_pattern pr (CR_infix_infix o2 o3) ->
   i_conflict_pattern pr (CR_prefix_infix o1 o3).
 Proof.
-  intros. destruct H.
-  inv H0; inv H1; eauto with IPPGrammar.
+  intros. destruct H. inv H0; inv H1; eauto with IPPGrammar.
 Qed.
 
 Lemma complete_trans_4 {g} (pr : drules g) o1 o2 o3 :
@@ -1691,8 +1085,7 @@ Lemma complete_trans_4 {g} (pr : drules g) o1 o2 o3 :
   i_conflict_pattern pr (CR_infix_infix o2 o3) ->
   i_conflict_pattern pr (CR_infix_infix o1 o3).
 Proof.
-  intros. destruct H.
-  inv H0; inv H1; eauto with IPPGrammar.
+  intros. destruct H. inv H0; inv H1; eauto with IPPGrammar.
 Qed.
 
 Lemma complete_trans_5 {g} (pr : drules g) o1 o2 o3 :
@@ -1701,8 +1094,7 @@ Lemma complete_trans_5 {g} (pr : drules g) o1 o2 o3 :
   i_conflict_pattern pr (CL_infix_infix o2 o3) ->
   i_conflict_pattern pr (CL_postfix_infix o1 o3).
 Proof.
-  intros. destruct H.
-  inv H0; inv H1; eauto with IPPGrammar.
+  intros. destruct H. inv H0; inv H1; eauto with IPPGrammar.
 Qed.
 
 Lemma complete_trans_6 {g} (pr : drules g) o1 o2 o3 :
@@ -1711,8 +1103,7 @@ Lemma complete_trans_6 {g} (pr : drules g) o1 o2 o3 :
   rm_conflict_pattern pr (CL_infix_prefix o2 o3) ->
   rm_conflict_pattern pr (CL_postfix_prefix o1 o3).
 Proof.
-  intros. destruct H.
-  inv H0; inv H1; eauto with IPPGrammar.
+  intros. destruct H. inv H0; inv H1; eauto with IPPGrammar.
 Qed.
 
 Lemma complete_trans_7 {g} (pr : drules g) o1 o2 o3 :
@@ -1721,8 +1112,7 @@ Lemma complete_trans_7 {g} (pr : drules g) o1 o2 o3 :
   lm_conflict_pattern pr (CR_infix_postfix o2 o3) ->
   lm_conflict_pattern pr (CR_infix_postfix o1 o3).
 Proof.
-  intros. destruct H.
-  inv H0; inv H1; eauto with IPPGrammar.
+  intros. destruct H. inv H0; inv H1; eauto with IPPGrammar.
 Qed.
 
 Lemma complete_trans_8 {g} (pr : drules g) o1 o2 o3 :
@@ -1731,8 +1121,7 @@ Lemma complete_trans_8 {g} (pr : drules g) o1 o2 o3 :
   lm_conflict_pattern pr (CR_infix_postfix o2 o3) ->
   lm_conflict_pattern pr (CR_prefix_postfix o1 o3).
 Proof.
-  intros. destruct H.
-  inv H0; inv H1; eauto with IPPGrammar.
+  intros. destruct H. inv H0; inv H1; eauto with IPPGrammar.
 Qed.
 
 Lemma complete_neg_1 {g} (pr : drules g) o1 o2 :
@@ -1807,763 +1196,217 @@ Proof.
   - destruct H0. auto with IPPGrammar.
 Qed.
 
-Lemma linsert_lo_slinsert_to {g} (pr : drules g) l1 o t2 :
-  linsert_lo pr l1 o t2 = slinsert_to pr (AtomicNode l1) o t2.
-Proof.
-  induction t2; simpl; try reflexivity.
-  - rewrite IHt2_1. reflexivity.
-  - rewrite IHt2. reflexivity.
-Qed.
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
 
-Lemma slinsert_to_complete {g} (pr : drules g) t1 o t2 :
+(* Lemmas showing [repair t] = t if [t] is conflict free *)
+
+Lemma repair_in_2_complete {g} (pr : drules g) t1 o t2 :
   complete_pr pr ->
   cfree pr (InfixNode t1 o t2) ->
-  slinsert_to pr t1 o t2 = InfixNode t1 o t2.
+  repair_in_2 pr t1 o t2 = InfixNode t1 o t2.
 Proof.
-  intros. inv H0. inv H2. 
-  destruct t2; auto.
-  - slinsert_to_inode_destruct pr o t2_1 o0 t2_2; auto.
+  intros. inv H0. inv H2. destruct t2; auto.
+  - repair_in_2_inode_destruct pr o t2_1 o0 t2_2; auto.
     + inv H1. destruct H6. eexists. eauto with IPPGrammar.
-    + inv E2. inv H2.
-      inv H3. destruct H8. eexists. eauto with IPPGrammar.
-  - slinsert_to_pnode_destruct pr o t2 o0; auto.
-    inv E. inv H2.
-    inv H3. destruct H8. eexists. eauto with IPPGrammar.
+    + inv E2. inv H2. inv H3. destruct H8. eexists. eauto with IPPGrammar.
+  - repair_in_2_pnode_destruct pr o t2 o0; auto. inv E. inv H2. inv H3. destruct H8. eexists. eauto with IPPGrammar.
 Qed.
 
-Lemma slinsert_to_matches_lm {g} (pr : drules g) t1 o t2 x :
+Lemma repair_in_2_matches_lm {g} (pr : drules g) t1 o t2 x :
   lm_conflict_pattern pr (CR_infix_postfix o x) ->
   matches_lm t2 (PostfixPatt HPatt x) ->
-  matches_lm (slinsert_to pr t1 o t2) (PostfixPatt HPatt x).
+  matches_lm (repair_in_2 pr t1 o t2) (PostfixPatt HPatt x).
 Proof.
   intros. induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
   - inv H0. inv H1.
-  - inv H0. inv H1.
-    slinsert_to_inode_destruct pr o t21 o2 t22.
+  - inv H0. inv H1. repair_in_2_inode_destruct pr o t21 o2 t22.
     + auto with IPPGrammar.
-    + inv E2. inv H0. inv H2. inv H0.
-      auto with IPPGrammar.
+    + inv E2. inv H0. inv H2. inv H0. auto with IPPGrammar.
     + edestruct H0; eauto with IPPGrammar.
   - inv H0. inv H1.
-  - slinsert_to_pnode_destruct pr o t21 o2.
+  - repair_in_2_pnode_destruct pr o t21 o2.
     + inv H0.
       * inv H1. auto with IPPGrammar.
       * auto with IPPGrammar.
     + edestruct H1; eauto with IPPGrammar.
 Qed.
 
-Lemma slinsert_to_assoc {g} (pr : drules g) t11 o1 t12 o t2 :
+Lemma repair_in_2_assoc {g} (pr : drules g) t11 o1 t12 o t2 :
   complete_pr pr ->
   cfree pr (InfixNode t11 o1 t12) ->
   ~ i_conflict_pattern pr (CL_infix_infix o o1) ->
-  slinsert_to pr t11 o1 (slinsert_to pr t12 o t2) = slinsert_to pr (InfixNode t11 o1 t12) o t2.
+  repair_in_2 pr t11 o1 (repair_in_2 pr t12 o t2) = repair_in_2 pr (InfixNode t11 o1 t12) o t2.
 Proof.
   intros. assert (H0' := H0). inv H0'. inv H3.
   induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
-  - assert (slinsert_to pr t12 o (AtomicNode l2) = InfixNode t12 o (AtomicNode l2)); auto.
-    rewrite H3.
-    slinsert_to_inode_destruct pr o1 t12 o (AtomicNode l2).
-    + rewrite slinsert_to_complete; auto.
-    + rewrite slinsert_to_complete; auto.
+  - assert (repair_in_2 pr t12 o (AtomicNode l2) = InfixNode t12 o (AtomicNode l2)); auto. rewrite H3.
+    repair_in_2_inode_destruct pr o1 t12 o (AtomicNode l2).
+    + rewrite repair_in_2_complete; auto.
+    + rewrite repair_in_2_complete; auto.
     + exfalso. destruct H1. auto using complete_neg_1.
-  - slinsert_to_inode_destruct pr o t21 o2 t22.
-    + rewrite <- IHt2_1.
-      rename E into E'.
-      slinsert_to_inode_destruct pr o1 (slinsert_to pr t12 o t21) o2 t22; auto.
-      destruct E. apply complete_trans_4 with o; auto.
-      auto using complete_neg_3.
-    + rewrite <- IHt2_1.
-      rename E into E'. rename E2 into E2'.
-      slinsert_to_inode_destruct pr o1 (slinsert_to pr t12 o t21) o2 t22; auto.
-      exfalso.
-      inv E2'. inv H6. inv H8. inv H6.
-      apply slinsert_to_matches_lm with pr t12 o t21 x in H12; auto.
-      edestruct H3; eauto with IPPGrammar.
-      apply complete_trans_7 with o; auto.
-      auto using complete_neg_3.
-    + rename E into E'. rename E2 into E2'.
-      slinsert_to_inode_destruct pr o1 t12 o (InfixNode t21 o2 t22).
-      * rewrite slinsert_to_complete; auto.
+  - repair_in_2_inode_destruct pr o t21 o2 t22.
+    + rewrite <- IHt2_1. rename E into E'. repair_in_2_inode_destruct pr o1 (repair_in_2 pr t12 o t21) o2 t22; auto.
+      destruct E. apply complete_trans_4 with o; auto. auto using complete_neg_3.
+    + rewrite <- IHt2_1. rename E into E'. rename E2 into E2'.
+      repair_in_2_inode_destruct pr o1 (repair_in_2 pr t12 o t21) o2 t22; auto. exfalso. inv E2'. inv H6. inv H8.
+      inv H6. apply repair_in_2_matches_lm with pr t12 o t21 x in H12; auto. edestruct H3; eauto with IPPGrammar.
+      apply complete_trans_7 with o; auto. auto using complete_neg_3.
+    + rename E into E'. rename E2 into E2'. repair_in_2_inode_destruct pr o1 t12 o (InfixNode t21 o2 t22).
+      * rewrite repair_in_2_complete; auto.
       * destruct H1. auto using complete_neg_1.
       * destruct H1. auto using complete_neg_1.
-  - slinsert_to_inode_destruct pr o1 t12 o (PrefixNode o2 t22).
-    + rewrite slinsert_to_complete; auto.
-    + rewrite slinsert_to_complete; auto.
+  - repair_in_2_inode_destruct pr o1 t12 o (PrefixNode o2 t22).
+    + rewrite repair_in_2_complete; auto.
+    + rewrite repair_in_2_complete; auto.
     + destruct H1. auto using complete_neg_1.
-  - slinsert_to_pnode_destruct pr o t21 o2.
-    + rewrite <- IHt2.
-      rename E into E'.
-      slinsert_to_pnode_destruct pr o1 (slinsert_to pr t12 o t21) o2; auto.
-      exfalso. inv E'. inv H6.
-      inv H8.
-      * inv H6.
-        edestruct H3; eauto with IPPGrammar.
-        apply complete_trans_7 with o; auto.
-        auto using complete_neg_3.
-      * apply slinsert_to_matches_lm with pr t12 o t21 x in H11; auto.
-        edestruct H3; eauto with IPPGrammar.
-        apply complete_trans_7 with o; auto.
-        auto using complete_neg_3.
-    + rename E into E'.
-      slinsert_to_inode_destruct pr o1 t12 o (PostfixNode t21 o2).
-      * rewrite slinsert_to_complete; auto.
+  - repair_in_2_pnode_destruct pr o t21 o2.
+    + rewrite <- IHt2. rename E into E'. repair_in_2_pnode_destruct pr o1 (repair_in_2 pr t12 o t21) o2; auto.
+      exfalso. inv E'. inv H6. inv H8.
+      * inv H6. edestruct H3; eauto with IPPGrammar. apply complete_trans_7 with o; auto. auto using complete_neg_3.
+      * apply repair_in_2_matches_lm with pr t12 o t21 x in H11; auto. edestruct H3; eauto with IPPGrammar.
+        apply complete_trans_7 with o; auto. auto using complete_neg_3.
+    + rename E into E'. repair_in_2_inode_destruct pr o1 t12 o (PostfixNode t21 o2).
+      * rewrite repair_in_2_complete; auto.
       * destruct H1. auto using complete_neg_1.
       * destruct H1. auto using complete_neg_1.
 Qed.
 
-Lemma linsert_o_complete {g} (pr : drules g) o t2 :
+Lemma repair_pre_complete {g} (pr : drules g) o t2 :
   cfree pr (PrefixNode o t2) ->
-  linsert_o pr o t2 = PrefixNode o t2.
+  repair_pre pr o t2 = PrefixNode o t2.
 Proof.
   intro. inv H. inv H1. destruct t2 as [l2|t21 o2 t22|o2 t22|t21 o2]; auto.
-  - linsert_o_inode_destruct pr o t21 o2 t22; auto.
+  - repair_pre_inode_destruct pr o t21 o2 t22; auto.
     + inv H0. destruct H4. eexists. eauto with IPPGrammar.
-    + inv E2. inv H1. inv H4. inv H1.
-      inv H2. destruct H5. eexists. eauto with IPPGrammar.
-  - linsert_o_pnode_destruct pr o t21 o2; auto.
-    inv E. inv H1.
-    inv H2. destruct H6. eexists. eauto with IPPGrammar.
+    + inv E2. inv H1. inv H4. inv H1. inv H2. destruct H5. eexists. eauto with IPPGrammar.
+  - repair_pre_pnode_destruct pr o t21 o2; auto. inv E. inv H1. inv H2. destruct H6. eexists. eauto with IPPGrammar.
 Qed.
 
-Lemma slinsert_to_prefix {g} (pr : drules g) o1 t12 o t2 :
+Lemma repair_in_2_prefix {g} (pr : drules g) o1 t12 o t2 :
   complete_pr pr ->
   cfree pr (PrefixNode o1 t12) ->
   ~ rm_conflict_pattern pr (CL_infix_prefix o o1) ->
-  slinsert_to pr (PrefixNode o1 t12) o t2 = linsert_o pr o1 (slinsert_to pr t12 o t2).
+  repair_in_2 pr (PrefixNode o1 t12) o t2 = repair_pre pr o1 (repair_in_2 pr t12 o t2).
 Proof.
-  intros. assert (H0' := H0). inv H0'. inv H3.
-  induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
-  - cbn [slinsert_to]. linsert_o_inode_destruct pr o1 t12 o (AtomicNode l2).
-    + rewrite linsert_o_complete; auto.
-    + rewrite linsert_o_complete; auto.
+  intros. assert (H0' := H0). inv H0'. inv H3. induction t2 as [l2|t21 ? o2 t22|o2 t22|t21 ? o2].
+  - cbn [repair_in_2]. repair_pre_inode_destruct pr o1 t12 o (AtomicNode l2).
+    + rewrite repair_pre_complete; auto.
+    + rewrite repair_pre_complete; auto.
     + destruct E. auto using complete_neg_2.
-  - slinsert_to_inode_destruct pr o t21 o2 t22.
-    + rewrite IHt2_1.
-      rename E into E'.
-      linsert_o_inode_destruct pr o1 (slinsert_to pr t12 o t21) o2 t22; auto.
-      destruct E.
-      apply complete_trans_3 with o; auto.
-      auto using complete_neg_2.
-    + rewrite IHt2_1.
-      rename E into E', E2 into E2'.
-      linsert_o_inode_destruct pr o1 (slinsert_to pr t12 o t21) o2 t22; auto.
-      exfalso. inv E2'. inv H6. inv H8. inv H6.
-      apply slinsert_to_matches_lm with pr t12 o t21 x in H12; auto.
-      edestruct H3; eauto with IPPGrammar.
-      apply complete_trans_8 with o; auto.
-      auto using complete_neg_2.
-    + rename E into E', E2 into E2'.
-      linsert_o_inode_destruct pr o1 t12 o (InfixNode t21 o2 t22).
-      * rewrite linsert_o_complete; auto.
-      * rewrite linsert_o_complete; auto.
+  - repair_in_2_inode_destruct pr o t21 o2 t22.
+    + rewrite IHt2_1. rename E into E'. repair_pre_inode_destruct pr o1 (repair_in_2 pr t12 o t21) o2 t22; auto.
+      destruct E. apply complete_trans_3 with o; auto. auto using complete_neg_2.
+    + rewrite IHt2_1. rename E into E', E2 into E2'.
+      repair_pre_inode_destruct pr o1 (repair_in_2 pr t12 o t21) o2 t22; auto. exfalso. inv E2'. inv H6. inv H8. inv H6.
+      apply repair_in_2_matches_lm with pr t12 o t21 x in H12; auto. edestruct H3; eauto with IPPGrammar.
+      apply complete_trans_8 with o; auto. auto using complete_neg_2.
+    + rename E into E', E2 into E2'. repair_pre_inode_destruct pr o1 t12 o (InfixNode t21 o2 t22).
+      * rewrite repair_pre_complete; auto.
+      * rewrite repair_pre_complete; auto.
       * destruct E. auto using complete_neg_2.
-  - cbn [slinsert_to]. linsert_o_inode_destruct pr o1 t12 o (PrefixNode o2 t22).
-    + rewrite linsert_o_complete; auto.
-    + rewrite linsert_o_complete; auto.
+  - cbn [repair_in_2]. repair_pre_inode_destruct pr o1 t12 o (PrefixNode o2 t22).
+    + rewrite repair_pre_complete; auto.
+    + rewrite repair_pre_complete; auto.
     + destruct E. auto using complete_neg_2.
-  - slinsert_to_pnode_destruct pr o t21 o2.
-    + rewrite IHt2.
-      rename E into E'.
-      linsert_o_pnode_destruct pr o1 (slinsert_to pr t12 o t21) o2; auto.
-      exfalso.
+  - repair_in_2_pnode_destruct pr o t21 o2.
+    + rewrite IHt2. rename E into E'. repair_pre_pnode_destruct pr o1 (repair_in_2 pr t12 o t21) o2; auto. exfalso.
       inv E'. inv H6. inv H8.
-      * inv H6.
-        edestruct H3; eauto with IPPGrammar.
-        apply complete_trans_8 with o; auto.
-        auto using complete_neg_2.
-      * apply slinsert_to_matches_lm with pr t12 o t21 x in H11; auto.
-        edestruct H3; eauto with IPPGrammar.
-        apply complete_trans_8 with o; auto.
-        auto using complete_neg_2.
-    + rename E into E'. linsert_o_inode_destruct pr o1 t12 o (PostfixNode t21 o2).
-      * rewrite linsert_o_complete; auto.
-      * rewrite linsert_o_complete; auto.
+      * inv H6. edestruct H3; eauto with IPPGrammar. apply complete_trans_8 with o; auto. auto using complete_neg_2.
+      * apply repair_in_2_matches_lm with pr t12 o t21 x in H11; auto. edestruct H3; eauto with IPPGrammar.
+        apply complete_trans_8 with o; auto. auto using complete_neg_2.
+    + rename E into E'. repair_pre_inode_destruct pr o1 t12 o (PostfixNode t21 o2).
+      * rewrite repair_pre_complete; auto.
+      * rewrite repair_pre_complete; auto.
       * destruct E. auto using complete_neg_2.
 Qed.
 
-Lemma linsert_to_slinsert_to {g} (pr : drules g) t1 o opt_t2 fuel t' :
+Lemma repair_in_1_repair_in_2 {g} (pr : drules g) t1 o t2 :
   complete_pr pr ->
   cfree pr t1 ->
-  (forall t2, opt_t2 = Some t2 ->
-    (forall x1, matches t1 (InfixPatt HPatt x1 HPatt) -> ~ i_conflict_pattern pr (CL_infix_infix o x1)) /\
-    (forall x1, matches_rm t1 (PrefixPatt x1 HPatt) -> ~ rm_conflict_pattern pr (CL_infix_prefix o x1))
-  ) ->
-  (opt_t2 = None ->
-    (forall x1, matches t1 (InfixPatt HPatt x1 HPatt) -> ~ i_conflict_pattern pr (CL_postfix_infix o x1)) /\
-    (forall x1, matches_rm t1 (PrefixPatt x1 HPatt) -> ~ rm_conflict_pattern pr (CL_postfix_prefix o x1))
-  ) ->
-  linsert_to pr t1 o opt_t2 fuel = Some t' ->
-  (forall t2, opt_t2 = Some t2 -> t' = slinsert_to pr t1 o t2) /\
-  (opt_t2 = None -> t' = PostfixNode t1 o).
+  (forall x1, matches t1 (InfixPatt HPatt x1 HPatt) -> ~ i_conflict_pattern pr (CL_infix_infix o x1)) ->
+  (forall x1, matches_rm t1 (PrefixPatt x1 HPatt) -> ~ rm_conflict_pattern pr (CL_infix_prefix o x1)) ->
+  repair_in_1 pr t1 o t2 = repair_in_2 pr t1 o t2.
 Proof.
-  unfold cfree. unfold conflict_free.
-  intro. revert t1 o opt_t2 t'. induction fuel; intros; simpl in *. inv H3.
-  split; intros.
-  - subst.
-    clear H2. specialize H1 with t2. assert (Some t2 = Some t2); auto.
-    apply H1 in H2. clear H1. inv H2.
-    inv H0. inv H5.
-    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1].
-    + inv H3. apply linsert_lo_slinsert_to.
-    + destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H3.
-      inv H2. inv H0. inv H6.
-      apply IHfuel in H7; auto; [|intros ? X; inv X; split|intros X; inv X].
-      * inv H7. clear H2. erewrite H0; auto. clear H0.
-        apply IHfuel in E; auto; [|intros ? X; inv X; split|intros X; inv X].
-        **inv E. erewrite H0; auto. rewrite slinsert_to_assoc; auto with IPPGrammar.
-          split; auto with IPPGrammar.
-        **intros. inv H0. intro.
-          apply H1 with o1; auto with IPPGrammar.
-          apply complete_trans_1 with x1; auto.
-          apply complete_neg_1; auto. intro.
-          destruct H9. eexists. eauto with IPPGrammar.
-        **intros. apply H4. auto with IPPGrammar.
-      * intros. inv H0.
-        intro. destruct H9. eexists. eauto with IPPGrammar.
-      * intros. intro. destruct H8. eexists. eauto with IPPGrammar.
-    + destruct (linsert_to pr t12 o (Some t2) fuel) eqn:E; inv H3.
-      inv H2. inv H0. inv H6. apply IHfuel in E; auto; [|intros ? X; inv X; split|intros X; inv X].
-      * inv E. clear H2. erewrite H0; auto. rewrite slinsert_to_prefix; auto with IPPGrammar.
-        split; auto with IPPGrammar.
-      * intros. inv H0. intro. destruct H7.
-        exists (CR_prefix_infix o1 x1). split; [|unfold CR_prefix_infix; auto with IPPGrammar].
-        apply complete_trans_2 with o; auto.
-        apply complete_neg_2; auto with IPPGrammar.
-      * intros. auto with IPPGrammar.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H3.
-      inv H2. inv H0. inv H6. apply IHfuel in E; auto; [|intros ? X; inv X| intros; split].
-      * inv E. rewrite H2 in *; auto. clear H0 H2.
-        inv H7. reflexivity.
-      * intros. intro. destruct H8. eexists. eauto with IPPGrammar.
-      * intros. intro. destruct H5. eexists. eauto with IPPGrammar.
-  - subst. clear H1.
-    assert (@None (parse_tree g) = None); auto.
-    apply H2 in H1. clear H2. inv H1.
-    inv H0. inv H5.
-    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1].
-    + inv H3. reflexivity.
-    + destruct (linsert_to pr t12 o None fuel) eqn:E; inv H3.
-      inv H1. inv H0. inv H6.
-      apply IHfuel in H7; auto; [|intros ? X; inv X; split| intros X; inv X].
-      * inv H7. clear H1. erewrite H0; eauto.
-        apply IHfuel in E; auto; [|intros ? X; inv X|intros; split].
-        **inv E. rewrite H3; auto.
-          slinsert_to_pnode_destruct pr o1 t12 o.
-          ***rewrite slinsert_to_complete; auto.
-            split; auto with IPPGrammar.
-          ***exfalso. apply H6 with o; auto with IPPGrammar.
-            apply complete_neg_4; auto with IPPGrammar.
-        **intros. intro. apply H2 with o1; auto with IPPGrammar.
-          apply complete_trans_5 with x1; auto.
-          apply complete_neg_1; auto.
-          intro. destruct H9. eexists. eauto with IPPGrammar.
-        **intros. auto with IPPGrammar.
-      * intros. intro. destruct H9. eexists. eauto with IPPGrammar.
-      * intros. intro. destruct H8. exists (CL_infix_prefix o1 x1).
-        split; auto. apply InfixMatch_drm; auto with IPPGrammar.
-    + destruct (linsert_to pr t12 o None fuel) eqn:E; inv H3.
-      inv H1. inv H0. inv H6.
-      apply IHfuel in E; auto; [|intros ? X; inv X|intros; split].
-      * inv E. rewrite H1; auto.
-        linsert_o_pnode_destruct pr o1 t12 o.
-        **rewrite linsert_o_complete; auto.
-          split; auto with IPPGrammar.
-        **exfalso. eapply H6; eauto with IPPGrammar.
-          apply complete_neg_5; auto with IPPGrammar.
-      * intros. intro.
-        inv H1. rename t1 into t121, t2 into t122, x1 into o12.
-        eapply H4; eauto with IPPGrammar.
-        eapply complete_trans_6; eauto.
-        apply complete_neg_6; auto.
-        intro. apply H7. eexists. eauto with IPPGrammar.
-      * intros. auto with IPPGrammar.
-    + destruct (linsert_to pr t11 o1 None fuel) eqn:E; inv H3.
-      inv H1. inv H0. inv H6.
-      apply IHfuel in E; auto; [|intros ? X; inv X| intros; split].
-      * inv E. rewrite H1 in H7; auto. inv H7. reflexivity.
-      * intros. intro. destruct H8. eexists. eauto with IPPGrammar.
-      * intros. intro. destruct H5. eexists. eauto with IPPGrammar.
+  unfold cfree. unfold conflict_free. intro. intro.
+  revert o t2. induction t1 as [l1|t11 ? o1 t12|o1 t12|t11 ? o1]; intros; simpl; auto.
+  - rewrite IHt12.
+    + rewrite IHt1_1.
+      * rewrite repair_in_2_assoc; auto. apply H1. auto with IPPGrammar.
+      * inv H0. inv H4. inv H3. inv H0. inv H5. auto.
+      * intros. inv H3. rename x1 into o11, t1 into t111, t0 into t112. intro. inv H0. inv H4. destruct H10.
+        eexists. eauto with IPPGrammar.
+      * intros. intro. inv H0. inv H6. inv H0. destruct H10. eexists. eauto with IPPGrammar.
+    + inv H0. inv H4. inv H3. inv H0. inv H5. auto.
+    + intros. inv H3. rename x1 into o12, t1 into t121, t0 into t122. intro. apply H1 with o1; auto with IPPGrammar.
+      apply complete_trans_1 with o12; auto. apply complete_neg_1; auto. intro. inv H0. inv H5. destruct H11. eexists.
+      eauto with IPPGrammar.
+    + intros. apply H2. auto with IPPGrammar.
+  - rewrite IHt12.
+    + rewrite repair_in_2_prefix; auto. apply H2. auto with IPPGrammar.
+    + inv H0. inv H4. inv H3. inv H0. inv H5. auto.
+    + intros. inv H3. rename x1 into o12, t1 into t121, t0 into t122. intro. apply H2 with o1; auto with IPPGrammar.
+      apply complete_trans_2 with o12; auto. apply complete_neg_6; auto. intro. inv H0. inv H5. destruct H10. eexists.
+      eauto with IPPGrammar.
+    + intros. apply H2. auto with IPPGrammar.
 Qed.
 
-Lemma linsert_to_complete_1 {g} (pr : drules g) t1 o t2 fuel t' :
+Lemma repair_in_1_complete {g} (pr : drules g) t1 o t2 :
   complete_pr pr ->
   cfree pr (InfixNode t1 o t2) ->
-  linsert_to pr t1 o (Some t2) fuel = Some t' ->
-  t' = InfixNode t1 o t2.
+  repair_in_1 pr t1 o t2 = InfixNode t1 o t2.
 Proof.
-  intros.
-  apply linsert_to_slinsert_to in H1; auto.
-  - inv H1. erewrite H2; auto.
-    auto using slinsert_to_complete.
-  - inv H0. inv H3. inv H2. inv H0. inv H4.
-    split; auto with IPPGrammar.
-  - intros. split; intros.
-    + intro.
-      inv H0. inv H5.
-      destruct H9. eexists. eauto with IPPGrammar.
-    + inv H2. intro.
-      inv H0. inv H5. inv H0. destruct H9. eexists. eauto with IPPGrammar.
-  - intros. inv H2.
+  intros. assert (H0' := H0). inv H0. inv H2. inv H1. inv H0. inv H3. rewrite repair_in_1_repair_in_2; auto.
+  - rewrite repair_in_2_complete; auto.
+  - unfold cfree. unfold conflict_free. auto.
+  - intros. intro. destruct H6. eexists. eauto with IPPGrammar.
+  - intros. intro. destruct H5. eexists. eauto with IPPGrammar.
 Qed.
 
-Lemma linsert_to_complete_2 {g} (pr : drules g) t1 o fuel t' :
-  complete_pr pr ->
+Lemma repair_post_complete {g} (pr : drules g) t1 o :
   cfree pr (PostfixNode t1 o) ->
-  linsert_to pr t1 o None fuel = Some t' ->
-  t' = PostfixNode t1 o.
+  repair_post pr t1 o = PostfixNode t1 o.
 Proof.
-  intros.
-  apply linsert_to_slinsert_to in H1; auto.
-  - inv H1. erewrite H3; auto.
-  - inv H0. inv H3. inv H2. inv H0. inv H4.
-    split; auto with IPPGrammar.
-  - intros. inv H2.
-  - intros. inv H0. inv H4.
-    split; intros.
-    + inv H3. intro.
-      destruct H8. eexists. eauto with IPPGrammar.
-    + inv H0. intro.
-      destruct H8. eexists. eauto with IPPGrammar.
-Qed.
-
-Lemma linsert_to_fueled_complete_1 {g} (pr : drules g) t1 o t2 :
-  complete_pr pr ->
-  cfree pr (InfixNode t1 o t2) ->
-  linsert_to_fueled pr t1 o (Some t2) = Some (InfixNode t1 o t2).
-Proof.
-  intros.
-  destruct (linsert_to_fueled_some pr t1 o (Some t2)).
-  rewrite H1.
-  eapply linsert_to_complete_1 in H1; auto.
-  subst. reflexivity.
-Qed.
-
-Lemma linsert_to_fueled_complete_2 {g} (pr : drules g) t1 o :
-  complete_pr pr ->
-  cfree pr (PostfixNode t1 o) ->
-  linsert_to_fueled pr t1 o None = Some (PostfixNode t1 o).
-Proof.
-  intros.
-  destruct (linsert_to_fueled_some pr t1 o None).
-  rewrite H1.
-  eapply linsert_to_complete_2 in H1; auto.
-  subst. reflexivity.
+  intro. inv H. inv H1. destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1]; auto.
+  - repair_post_inode_destruct pr t11 o1 t12 o; auto.
+    + inv H0. destruct H4. eexists. eauto with IPPGrammar.
+    + inv E2. inv H1. inv H4. inv H1. inv H. destruct H5. eexists. eauto with IPPGrammar.
+  - repair_post_pnode_destruct pr o1 t12 o; auto. inv E. inv H1. inv H. destruct H6. eexists. eauto with IPPGrammar.
 Qed.
 
 Lemma repair_complete {g} (pr : drules g) t :
   complete_pr pr ->
   cfree pr t ->
-  repair pr t = Some t.
+  repair pr t = t.
 Proof.
-  intros. induction t; simpl.
-  - reflexivity.
-  - destruct (repair_some pr t2). rewrite H1.
-    assert (H0' := H0). inv H0'. inv H3. inv H2. inv H4. inv H5.
-    rewrite IHt2 in H1; [|split; auto with IPPGrammar].
-    rewrite <- H1.
-    rewrite linsert_to_fueled_complete_1; auto.
-  - destruct (repair_some pr t). rewrite H1.
-    assert (H0' := H0). inv H0'. inv H3. inv H2. inv H4. inv H5.
-    rewrite IHt in H1; [|split; auto with IPPGrammar].
-    inv H1.
-    rewrite linsert_o_complete; auto.
-  - rewrite linsert_to_fueled_complete_2; auto.
+  intro. induction t; simpl; auto; intros.
+  - assert (H0' := H0). inv H0'. inv H2. inv H1. inv H3. inv H4. rewrite IHt1; try split; auto.
+    rewrite IHt2; try split; auto. apply repair_in_1_complete; auto.
+  - assert (H0' := H0). inv H0'. inv H2. inv H1. inv H3. inv H4. rewrite IHt; try split; auto.
+    apply repair_pre_complete; auto.
+  - assert (H0' := H0). inv H0'. inv H2. inv H1. inv H3. inv H4. rewrite IHt; try split; auto.
+    apply repair_post_complete; auto.
 Qed.
-
-Lemma parse_struct_app {g} (w1 : word g) o w2 :
-  (parse_none_struct w1 ->
-  parse_none_struct w2 ->
-  parse_none_struct (w1 ++ inr (inl o) :: w2))
-    /\
-  (parse_some_struct w1 ->
-  parse_none_struct w2 ->
-  parse_some_struct (w1 ++ inr (inl o) :: w2)).
-Proof.
-  induction w1; split; intros; simpl.
-  - inv H.
-  - auto using Infix_Parse.
-  - inv IHw1. inv H.
-    + auto using Lex_Parse.
-    + apply Prefix_Parse. auto.
-  - inv IHw1. inv H.
-    + apply Infix_Parse. auto.
-    + apply Postfix_Parse. auto.
-Qed.
-
-Lemma parse_struct_app_2 {g} (w : word g) o :
-  (parse_none_struct w ->
-  parse_none_struct (w ++ [inr (inr o)]))
-    /\
-  (parse_some_struct w ->
-  parse_some_struct (w ++ [inr (inr o)])).
-Proof.
-  induction w; split; intros; simpl.
-  - inv H.
-  - apply Postfix_Parse. apply Nil_Parse.
-  - inv IHw. inv H.
-    + apply Lex_Parse. auto.
-    + apply Prefix_Parse. auto.
-  - inv IHw. inv H.
-    + apply Infix_Parse. auto.
-    + apply Postfix_Parse. auto.
-Qed.
-
-Lemma yield_is_parse_struct {g} (t : parse_tree g) :
-  wf_parse_tree g t ->
-  parse_none_struct (yield t).
-Proof.
-  intro. induction H; simpl.
-  - apply Lex_Parse. apply Nil_Parse.
-  - destruct (parse_struct_app (yield t1) o (yield t2)). auto.
-  - apply Prefix_Parse. auto.
-  - destruct (parse_struct_app_2 (yield t) o). auto.
-Qed.
-
-Lemma parse_struct_some {g} (pr : drules g) opt_t (w : word g) :
-  (opt_t = None -> parse_none_struct w -> exists t', parse pr opt_t w = Some t') /\
-  ((exists t, opt_t = Some t /\ postfix_tree t) -> parse_some_struct w -> exists t', parse pr opt_t w = Some t').
-Proof.
-  revert opt_t. induction w; split; intros; subst.
-  - inv H0.
-  - destruct H as [t]. inv H. inv H0.
-    simpl. eauto.
-  - inv H0.
-    + simpl. specialize IHw with (Some (AtomicNode l)).
-      inv IHw. apply H0 in H1; eauto.
-      eexists. split; eauto. apply Atomic_Ptree.
-    + simpl. destruct (parse pr None w) eqn:E; eauto.
-      exfalso. specialize IHw with None. inv IHw.
-      clear H0. apply H in H1; auto. inv H1.
-      rewrite E in H0. inv H0.
-  - destruct H as [t]. inv H. inv H0.
-    + simpl. destruct (parse pr None w) eqn:E; eauto.
-      exfalso. specialize IHw with None. inv IHw.
-      clear H0. apply H in H1; auto. inv H1.
-      rewrite E in H0. inv H0.
-    + simpl. specialize IHw with (Some (PostfixNode t (inr o))).
-      inv IHw. clear H. apply H0 in H1; eauto.
-      eexists. split; eauto. apply Postfix_PStruct. assumption.
-Qed.
-
-Lemma parse_yield_some {g} (pr : drules g) (t : parse_tree g) :
-  wf_parse_tree g t ->
-  exists t', parse pr None (yield t) = Some t'.
-Proof.
-  intros.
-  destruct (parse_struct_some pr None (yield t)).
-  apply H0; auto.
-  auto using yield_is_parse_struct.
-Qed.
-
-Lemma linsert_to_add_fuel {g} (pr : drules g) t1 o opt_t2 t' fuel :
-  linsert_to pr t1 o opt_t2 fuel = Some t' ->
-  linsert_to pr t1 o opt_t2 (S fuel) = Some t'.
-Proof.
-  revert t1 o opt_t2 t'. simpl. induction fuel; intros.
-  - simpl in H. inv H.
-  - simpl in H.
-    destruct opt_t2.
-    + destruct t1.
-      * assumption.
-      * destruct (linsert_to pr t1_2 o (Some p) fuel) eqn:E; inv H.
-        apply IHfuel in E as E'. apply IHfuel in H1 as H1'.
-        simpl. rewrite E'. rewrite H1'. rewrite <- H1. reflexivity.
-      * destruct (linsert_to pr t1 o (Some p) fuel) eqn:E; inv H.
-        apply IHfuel in E as E'.
-        simpl. rewrite E'. reflexivity.
-      * destruct (linsert_to pr t1 o0 None fuel) eqn:E; inv H.
-        apply IHfuel in E as E'.
-        simpl. rewrite E'. rewrite H1.
-        destruct p0; try apply IHfuel in H1 as H1'; try assumption.
-    + destruct t1.
-      * assumption.
-      * destruct (linsert_to pr t1_2 o None fuel) eqn:E; inv H.
-        apply IHfuel in E as E'. apply IHfuel in H1 as H1'.
-        simpl. rewrite E'. rewrite H1'. rewrite <- H1. reflexivity.
-      * destruct (linsert_to pr t1 o None fuel) eqn:E; inv H.
-        apply IHfuel in E as E'.
-        simpl. rewrite E'. reflexivity.
-      * destruct (linsert_to pr t1 o0 None fuel) eqn:E; inv H.
-        apply IHfuel in E as E'.
-        simpl. rewrite E'. rewrite H1. simpl.
-        destruct p; auto.
-        **destruct (linsert_to pr p2 o None fuel) eqn:E2; inv H1.
-          apply IHfuel in E2 as E2'. apply IHfuel in H0 as H0'.
-          rewrite E2'. rewrite H0'. rewrite <- H0. reflexivity.
-        **destruct (linsert_to pr p o None fuel) eqn:E2; inv H1.
-          apply IHfuel in E2 as E2'.
-          rewrite E2'. reflexivity.
-Qed.
-
-Lemma linsert_to_fueled_super {g} (pr : drules g) t1 o opt_t2 :
-  linsert_to_fueled pr t1 o opt_t2 =
-    match opt_t2 with
-    | Some t2 =>
-      match t1 with
-      | AtomicNode l1 => Some (linsert_lo pr l1 o t2)
-      | InfixNode t11 o1 t12 =>
-        match (linsert_to_fueled pr t12 o (Some t2)) with
-        | Some t2' => linsert_to_fueled pr t11 o1 (Some t2')
-        | None => None
-        end
-      | PrefixNode o1 t12 =>
-        match (linsert_to_fueled pr t12 o (Some t2)) with
-        | Some t2' => Some (linsert_o pr o1 t2')
-        | None => None
-        end
-      | PostfixNode t11 o1 =>
-        match (linsert_to_fueled pr t11 o1 None) with
-        | Some t1 =>
-          match t1 with
-          | PostfixNode t11 o1 => Some (slinsert_to pr t1 o t2)
-          | _ => linsert_to_fueled pr t1 o (Some t2)
-          end
-        | None => None
-        end
-      end
-    | None =>
-      match t1 with
-      | AtomicNode l1 => Some (PostfixNode t1 o)
-      | InfixNode t11 o1 t12 =>
-        match (linsert_to_fueled pr t12 o None) with
-        | Some t2' => linsert_to_fueled pr t11 o1 (Some t2')
-        | None => None
-        end
-      | PrefixNode o1 t12 =>
-        match (linsert_to_fueled pr t12 o None) with
-        | Some t2' => Some (linsert_o pr o1 t2')
-        | None => None
-        end
-      | PostfixNode t11 o1 =>
-        match (linsert_to_fueled pr t11 o1 None) with
-        | Some t1 =>
-          match t1 with
-          | InfixNode t11 o1 t12 =>
-            match (linsert_to_fueled pr t12 o None) with
-            | Some t2' => linsert_to_fueled pr t11 o1 (Some t2')
-            | None => None
-            end
-          | PrefixNode o1 t12 =>
-            match (linsert_to_fueled pr t12 o None) with
-            | Some t2' => Some (linsert_o pr o1 t2')
-            | None => None
-            end
-          | _ => Some (PostfixNode t1 o)
-          end
-        | None => None
-        end
-      end
-    end.
-Proof.
-  assert (exists t', linsert_to_fueled pr t1 o opt_t2 = Some t'). { apply linsert_to_fueled_some. }
-  destruct H as [t'].
-  unfold linsert_to_fueled in *. Admitted.
-
-Fixpoint something {g} (pr : drules g) (w1 : word g) (o : OPpost g) (w2 : word g) fuel : option (parse_tree g) :=
-  match w2 with
-  | [] =>
-    match (parse pr None w1) with
-    | None => None
-    | Some t1 => linsert_to pr t1 (inr o) None fuel
-    end
-  | (inr (inl o2)) :: w2 =>
-    match (parse pr None w1) with
-    | None => None
-    | Some t1 =>
-      match (parse pr None w2) with
-      | None => None
-      | Some t2 =>
-        match (linsert_to pr t1 (inr o) None fuel) with
-        | Some t1 =>
-          match t1 with
-          | PostfixNode t11 o1 => Some (slinsert_to pr t1 (inl o2) t2)
-          | _ => linsert_to pr t1 (inl o2) (Some t2) fuel
-          end
-        | None => None
-        end
-      end
-    end
-  | (inr (inr o2)) :: w2 => something pr (w1 ++ [(inr (inr o))]) o2 w2 fuel
-  | _ => None
-  end.
-
-Lemma something_out_of_fuel {g} (pr : drules g) w1 o w2 :
-  something pr w1 o w2 0 = None.
-Proof.
-  revert w1 o. induction w2; intros.
-  - simpl. destruct (parse pr None w1); auto.
-  - simpl. destruct a; auto.
-    destruct o0.
-    + destruct (parse pr None w1); auto. destruct (parse pr None w2); auto.
-    + apply IHw2.
-Qed.
-
-
-Lemma parse_app {g} (pr : drules g) t1 (w2 : word g) t' fuel :
-  wf_parse_tree g t1 ->
-  (forall t2 (o : g.(OPinpre)), parse_none_struct w2 ->
-   parse pr None w2 = Some t2 ->
-   linsert_to pr t1 (inl o) (Some t2) fuel = Some t' ->
-   parse pr None ((yield t1) ++ inr (inl o) :: w2) = Some t') /\
-  (forall o : g.(OPpost), parse_some_struct w2 ->
-   something pr (yield t1) o w2 fuel = Some t' ->
-   parse pr None ((yield t1) ++ inr (inr o) :: w2) = Some t'
-  ).
-Proof.
-  revert t1 w2 t'. induction fuel; intros; split; intros.
-  - inv H2.
-  - rewrite something_out_of_fuel in H1. inv H1.
-  - simpl in H2.
-    destruct t1 as [l1|t11 o1 t12|o1 t12|t11 o1]; inv H.
-    + inv H2. simpl. rewrite H1.
-      rewrite linsert_lo_slinsert_to. reflexivity.
-    + rename o0 into o1. simpl. simplify_list_eq.
-      destruct (linsert_to pr t12 (inl o) (Some t2) fuel) eqn:E; inv H2.
-      specialize IHfuel with t11 (yield t12 ++ inr (inl o) :: w2) t' as IH'.
-      apply IH' in H7. inv H7.
-      clear IH' H2. specialize H with p o1.
-      rewrite H3. apply H; auto.
-      * destruct (parse_struct_app (yield t12) o w2). clear H4.
-        apply H2; auto using yield_is_parse_struct.
-      * specialize IHfuel with t12 w2 p.
-        apply IHfuel in H8. inv H8. clear H4.
-        eapply H2; eauto.
-    + rename o0 into o1.
-      destruct (linsert_to pr t12 (inl o) (Some t2) fuel) eqn:E; inv H2.
-      simpl.
-      specialize IHfuel with t12 w2 p. apply IHfuel in H6.
-      inv H6. clear H2.
-      erewrite H; eauto.
-    + rename o0 into o1.
-      simpl. simplify_list_eq. destruct (linsert_to pr t11 (inr o1) None fuel) eqn:E; inv H2.
-      specialize IHfuel with t11 ((inr (inl o)) :: w2) p.
-      apply IHfuel in H6. inv H6. clear H.
-      specialize H2 with o1. rename p into t1'.
-      assert (something pr (yield t11) o1 (inr (inl o) :: w2) fuel = Some p). {
-        simpl.
-        destruct (parse pr None (yield t11)) eqn:E2.
-        - rewrite H1. 
-      }
-      
-
-
-  revert t1 t2 t2' t' o. induction fuel; intros; simpl in *.
-  - inv H1.
-  - inv H.
-    + simpl. rewrite H0.
-      rewrite <- linsert_lo_slinsert_to. assumption.
-    + rename t0 into t11, o0 into o1, t3 into t12.
-      simpl. simplify_list_eq.
-      destruct (linsert_to pr t12 (inl o) (Some t2') fuel) eqn:E; inv H1.
-      erewrite IHfuel with (t2 := InfixNode t12 (inl o) t2); eauto.
-      simpl. erewrite IHfuel; eauto.
-    + rename t into t12, o0 into o1.
-      destruct (linsert_to pr t12 (inl o) (Some t2') fuel) eqn:E; inv H1.
-      simpl. erewrite IHfuel; eauto.
-    + rename t into t11, o0 into o1.
-      simpl.
-
-      erewrite IHfuel with (t1 := PostfixNode t11 (inr o1)); eauto using Postfix_wf.
-      destruct (linsert_to pr t11 (inr o1) None fuel) eqn:E; inv H1.
-      destruct p.
-      * admit.
-      * admit.
-      * admit.
-      * destruct fuel. inv E. simpl.
-
-
-
-Lemma repair_parse {g} (pr : drules g) t :
-  wf_parse_tree g t ->
-  parse pr None (yield t) = repair pr t.
-Proof.
-  assert (forall t, exists t', repair pr t = Some t'). {
-    intros. apply repair_some.
-  }
-  intros.
-  induction H0; auto.
-  - simpl. destruct (repair pr t2) eqn:E.
-    + admit.
-    + admit.
-  - simpl. rewrite IHwf_parse_tree. reflexivity.
-  - simpl.
-
-(* 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-TODO from here
- *)
-
-
-(* ####################################### *)
-(* ####################################### *)
-(* ####################################### *)
-(* ####################################### *)
-(* ####################################### *)
-(* ####################################### *)
 
 (*
-Lemma parse_app {g} (pr : drules g) t1 t2 t2' o :
-  parse pr (yield t2) = Some t2' ->
-  parse pr (yield t1 ++ inr o :: yield t2) = Some (linsert_to pr t1 o t2').
-Proof.
-  revert t2 t2' o. induction t1; intros; simpl.
-  - rewrite H. reflexivity.
-  - simplify_list_eq. rename o into o1, o0 into o.
-    destruct (parse_yield_some pr t1_2).
-    erewrite IHt1_1 with (t2 := (InfixNode t1_2 o t2)); auto.
-    simpl. erewrite IHt1_2; auto.
-  - destruct (parse_yield_some pr t1).
-    erewrite IHt1; auto.
-Qed.
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
 
-Lemma repair_parse {g} (pr : drules g) t :
-  parse pr (yield t) = Some (repair pr t).
-Proof.
-  induction t; simpl; auto.
-  - erewrite parse_app; eauto.
-  - rewrite IHt. reflexivity.
-Qed.
-
-Lemma repair_is_fully_yield_dependent {g} (pr : drules g) t1 t2 :
-  yield t1 = yield t2 ->
-  repair pr t1 = repair pr t2.
-Proof.
-  intro.
-  assert (Some (repair pr t1) = Some (repair pr t2)). {
-    rewrite <- repair_parse.
-    rewrite H.
-    rewrite repair_parse.
-    reflexivity.
-  }
-  inv H0. reflexivity.
-Qed.
+(* COMPLETENESS *)
 
 Theorem completeness {g} (pr : drules g) :
   complete_pr pr ->
   complete pr.
 Proof.
-  intro. intro. unfold complete. intros.
-  apply repair_is_fully_yield_dependent with pr t1 t2 in H0.
-  rewrite repair_complete in H0; auto.
-  rewrite repair_complete in H0; auto.
-Qed.
-
-End IPGrammarTheorems.
+  intro. intro. intros.
+  assert (repair_fully_yield_dependent: forall x y, yield x = yield y -> repair pr x = repair pr y). {
+    admit. (* FUTURE WORK *)
+  }
+  apply repair_fully_yield_dependent in H0.
+  rewrite repair_complete in H0; auto. rewrite repair_complete in H0; auto.
+Admitted.
