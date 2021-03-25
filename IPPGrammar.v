@@ -391,196 +391,75 @@ Fixpoint has_prefix_lm_conflicts {g} (pr : drules g) o t2 : bool :=
   | _ => false
   end.
 
-Fixpoint linsert_lo {g} (pr : drules g) l1 o t2 : parse_tree g :=
-  match t2 with
-  | InfixNode t21 o2 t22 =>
-      if is_i_conflict_pattern pr (CR_infix_infix o o2)
-      then InfixNode (linsert_lo pr l1 o t21) o2 t22
-      else if has_infix_lm_conflicts pr o t2
-      then InfixNode (linsert_lo pr l1 o t21) o2 t22
-      else InfixNode (AtomicNode l1) o t2
-  | PostfixNode t21 o2 =>
-      if has_infix_lm_conflicts pr o t2
-      then PostfixNode (linsert_lo pr l1 o t21) o2
-      else InfixNode (AtomicNode l1) o t2
-  | _ => InfixNode (AtomicNode l1) o t2
+Fixpoint has_postfix_rm_conflicts {g} (pr : drules g) t1 o : bool :=
+  match t1 with
+  | PrefixNode o1 t12 =>
+      if decide (pr.(prio) (PostfixProd o) (PrefixProd o1)) then true
+      else if decide (pr.(right_a) (PostfixProd o) (PrefixProd o1)) then true
+      else has_postfix_rm_conflicts pr t12 o
+  | InfixNode t11 o1 t12 => has_postfix_rm_conflicts pr t12 o
+  | _ => false
   end.
 
-Fixpoint linsert_o {g} (pr : drules g) o t2 : parse_tree g :=
+Fixpoint repair_pre {g} (pr : drules g) o t2 : parse_tree g :=
   match t2 with
   | InfixNode t21 o2 t22 =>
       if is_i_conflict_pattern pr (CR_prefix_infix o o2)
-      then InfixNode (linsert_o pr o t21) o2 t22
+      then InfixNode (repair_pre pr o t21) o2 t22
       else if has_prefix_lm_conflicts pr o t2
-      then InfixNode (linsert_o pr o t21) o2 t22
+      then InfixNode (repair_pre pr o t21) o2 t22
       else PrefixNode o t2
   | PostfixNode t21 o2 =>
       if has_prefix_lm_conflicts pr o t2
-      then PostfixNode (linsert_o pr o t21) o2
+      then PostfixNode (repair_pre pr o t21) o2
       else PrefixNode o t2
   | _ => PrefixNode o t2
   end.
 
-Fixpoint slinsert_to {g} (pr : drules g) t1 o t2 : parse_tree g :=
+Fixpoint repair_post {g} (pr : drules g) t1 o : parse_tree g :=
+  match t1 with
+  | InfixNode t11 o1 t12 =>
+      if is_i_conflict_pattern pr (CL_postfix_infix o o1)
+      then InfixNode t11 o1 (repair_post pr t12 o)
+      else if has_postfix_rm_conflicts pr t1 o
+      then InfixNode t11 o1 (repair_post pr t12 o)
+      else PostfixNode t1 o
+  | PrefixNode o1 t12 =>
+      if has_postfix_rm_conflicts pr t1 o
+      then PrefixNode o1 (repair_post pr t12 o)
+      else PostfixNode t1 o
+  | _ => PostfixNode t1 o
+  end.
+
+Fixpoint repair_in_2 {g} (pr : drules g) t1 o t2 : parse_tree g :=
   match t2 with
   | InfixNode t21 o2 t22 =>
       if is_i_conflict_pattern pr (CR_infix_infix o o2)
-      then InfixNode (slinsert_to pr t1 o t21) o2 t22
+      then InfixNode (repair_in_2 pr t1 o t21) o2 t22
       else if has_infix_lm_conflicts pr o t2
-      then InfixNode (slinsert_to pr t1 o t21) o2 t22
+      then InfixNode (repair_in_2 pr t1 o t21) o2 t22
       else InfixNode t1 o t2
   | PostfixNode t21 o2 =>
       if has_infix_lm_conflicts pr o t2
-      then PostfixNode (slinsert_to pr t1 o t21) o2
+      then PostfixNode (repair_in_2 pr t1 o t21) o2
       else InfixNode t1 o t2
   | _ => InfixNode t1 o t2
   end.
 
-Fixpoint linsert_to {g} (pr : drules g)
-    (t1 : parse_tree g) (o : OP g) (t2 : option (parse_tree g)) (fuel : nat) : option (parse_tree g) :=
-  match fuel with
-  | S fuel =>
-    match t2 with
-    | Some t2 =>
-      match t1 with
-      | AtomicNode l1 => Some (linsert_lo pr l1 o t2)
-      | InfixNode t11 o1 t12 =>
-        match (linsert_to pr t12 o (Some t2) fuel) with
-        | Some t2' => linsert_to pr t11 o1 (Some t2') fuel
-        | None => None
-        end
-      | PrefixNode o1 t12 =>
-        match (linsert_to pr t12 o (Some t2) fuel) with
-        | Some t2' => Some (linsert_o pr o1 t2')
-        | None => None
-        end
-      | PostfixNode t11 o1 =>
-        match (linsert_to pr t11 o1 None fuel) with
-        | Some t1 =>
-          match t1 with
-          | PostfixNode t11 o1 => Some (slinsert_to pr t1 o t2)
-          | _ => linsert_to pr t1 o (Some t2) fuel
-          end
-        | None => None
-        end
-      end
-    | None =>
-      match t1 with
-      | AtomicNode l1 => Some (PostfixNode t1 o)
-      | InfixNode t11 o1 t12 =>
-        match (linsert_to pr t12 o None fuel) with
-        | Some t2' => linsert_to pr t11 o1 (Some t2') fuel
-        | None => None
-        end
-      | PrefixNode o1 t12 =>
-        match (linsert_to pr t12 o None fuel) with
-        | Some t2' => Some (linsert_o pr o1 t2')
-        | None => None
-        end
-      | PostfixNode t11 o1 =>
-        match (linsert_to pr t11 o1 None fuel) with
-        | Some t1 =>
-          match t1 with
-          | InfixNode t11 o1 t12 =>
-            match (linsert_to pr t12 o None fuel) with
-            | Some t2' => linsert_to pr t11 o1 (Some t2') fuel
-            | None => None
-            end
-          | PrefixNode o1 t12 =>
-            match (linsert_to pr t12 o None fuel) with
-            | Some t2' => Some (linsert_o pr o1 t2')
-            | None => None
-            end
-          | _ => Some (PostfixNode t1 o)
-          end
-        | None => None
-        end
-      end
-    end
-  | 0 => None
+Fixpoint repair_in_1 {g} (pr : drules g) t1 o t2 : parse_tree g :=
+  match t1 with
+  | InfixNode t11 o1 t12 => repair_in_1 pr t11 o1 (repair_in_1 pr t12 o t2)
+  | PrefixNode o1 t12 => repair_pre pr o1 (repair_in_1 pr t12 o t2)
+  | _ => repair_in_2 pr t1 o t2
   end.
 
-Fixpoint size {g} (t : parse_tree g) : nat :=
+
+Fixpoint repair {g} (pr : drules g) t : parse_tree g :=
   match t with
-  | AtomicNode l => 0
-  | InfixNode t1 o t2 => S (size t1 + size t2)
-  | PrefixNode o t2 => S (size t2)
-  | PostfixNode t1 o => S (size t1)
+  | AtomicNode l => AtomicNode l
+  | InfixNode t1 o t2 => repair_in_1 pr (repair pr t1) o (repair pr t2)
+  | PrefixNode o t2 => repair_pre pr o (repair pr t2)
+  | PostfixNode t1 o => repair_post pr (repair pr t1) o
   end.
-
-Definition size2 {g} (t : parse_tree g) : nat :=
-  match t with
-  | PostfixNode t1 o => 1
-  | _ => 0
-  end.
-
-Definition linsert_to_fueled {g} (pr : drules g) t1 o t2 :=
-  linsert_to pr t1 o t2 (size t1 * size t1 + 2).
-
-Fixpoint repair {g} (pr : drules g) t : option (parse_tree g) :=
-  match t with
-  | AtomicNode l => Some (AtomicNode l)
-  | InfixNode t1 o t2 =>
-    match (repair pr t2) with
-    | Some t2 => linsert_to_fueled pr t1 o (Some t2)
-    | None => None
-    end
-  | PrefixNode o t2 =>
-    match (repair pr t2) with
-    | Some t2 => Some (linsert_o pr o t2)
-    | None => None
-    end
-  | PostfixNode t1 o => linsert_to_fueled pr t1 o None
-  end.
-
-Fixpoint parse {g} (pr : drules g) (t : option (parse_tree g)) (w : word g) : option (parse_tree g) :=
-  match t with
-  | None =>
-    match w with
-    | inl l :: w => parse pr (Some (AtomicNode l)) w
-    | inr (inl o) :: w =>
-      match (parse pr None w) with
-      | None => None
-      | Some t => Some (linsert_o pr (inl o) t)
-      end
-    | _ => None
-    end
-  | Some t =>
-    match w with
-    | [] => Some t
-    | inr (inl o) :: w =>
-      match parse pr None w with
-      | Some tw => Some (slinsert_to pr t (inl o) tw)
-      | None => None
-      end
-    | inr (inr o) :: w => parse pr (Some (PostfixNode t (inr o))) w
-    | _ => None
-    end
-  end.
-
-Inductive postfix_tree {g} : parse_tree g -> Prop :=
-  | Atomic_Ptree l :
-      postfix_tree (AtomicNode l)
-  | Postfix_PStruct t o :
-      postfix_tree t ->
-      postfix_tree (PostfixNode t o).
-
-Inductive parse_none_struct {g} : word g -> Prop :=
-  | Lex_Parse l w :
-      parse_some_struct w ->
-      parse_none_struct ((inl l) :: w)
-  | Prefix_Parse o w :
-      parse_none_struct w ->
-      parse_none_struct ((inr (inl o)) :: w)
-
-with parse_some_struct {g} : word g -> Prop :=
-  | Nil_Parse :
-      parse_some_struct []
-  | Infix_Parse o w :
-      parse_none_struct w ->
-      parse_some_struct ((inr (inl o)) :: w)
-  | Postfix_Parse o w :
-      parse_some_struct w ->
-      parse_some_struct ((inr (inr o)) :: w).
 
 End IPPGrammarRepair.
