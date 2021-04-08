@@ -5,7 +5,7 @@ Supplementary Coq code for proofs related to semantics of disambiguation relatio
 ## Compiling the code
 
 Requires [The Coq Proof Assistant](https://coq.inria.fr/) to be installed, tested on version 8.11.0.
-Running the file `compile.sh` compiles everything. Note: This project requires the [coq-std++](https://gitlab.mpi-sws.org/iris/stdpp) library. The `compile.sh` script should automatically clone this repository using Git and then compile that library using the `make` command.
+Running the file `compile.sh` compiles everything. Note: This project uses the version 1.5.0 of the [coq-std++](https://gitlab.mpi-sws.org/iris/stdpp) library. The `compile.sh` script should automatically clone this repository using Git and then compile that library using the `make` command.
 
 ## Files
 
