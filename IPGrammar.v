@@ -246,54 +246,37 @@ Definition is_i_conflict_pattern {g} (pr : drules g) (q : tree_pattern g) :=
       else false
   | _ => false
   end.
-(* 
-Definition is_rm_conflict_pattern {g} (pr : drules g) (q : tree_pattern g) :=
-  match q with
-  | InfixPatt (PrefixPatt o2 HPatt) o1 HPatt =>
-      if decide (pr.(prio) (InfixProd o1) (PrefixProd o2)) then true
-      else false
-  | _ => false
-  end. *)
 
-Fixpoint linsert_lo {g} (pr : drules g) l1 o t2 : parse_tree g :=
+Fixpoint insert_in {g} (pr : drules g) t1 o t2 : parse_tree g :=
   match t2 with
   | InfixNode t21 o2 t22 =>
       if is_i_conflict_pattern pr (CR_infix_infix o o2)
-      then InfixNode (linsert_lo pr l1 o t21) o2 t22
-      else InfixNode (AtomicNode l1) o t2
-  | _ => InfixNode (AtomicNode l1) o t2
+      then InfixNode (insert_in pr t1 o t21) o2 t22
+      else InfixNode t1 o t2
+  | _ => InfixNode t1 o t2
   end.
 
-Fixpoint linsert_o {g} (pr : drules g) o t2 : parse_tree g :=
+Fixpoint insert_pre {g} (pr : drules g) o t2 : parse_tree g :=
   match t2 with
   | InfixNode t21 o2 t22 =>
       if is_i_conflict_pattern pr (CR_prefix_infix o o2)
-      then InfixNode (linsert_o pr o t21) o2 t22
+      then InfixNode (insert_pre pr o t21) o2 t22
       else PrefixNode o t2
   | _ => PrefixNode o t2
   end.
 
-Fixpoint linsert_to {g} (pr : drules g) t1 o t2 : parse_tree g :=
+Fixpoint repair_in {g} (pr : drules g) t1 o t2 : parse_tree g :=
   match t1 with
-  | AtomicNode l1 => linsert_lo pr l1 o t2
-  | InfixNode t11 o1 t12 => linsert_to pr t11 o1 (linsert_to pr t12 o t2)
-  | PrefixNode o1 t12 => linsert_o pr o1 (linsert_to pr t12 o t2)
+  | AtomicNode l1 => insert_in pr (AtomicNode l1) o t2
+  | InfixNode t11 o1 t12 => repair_in pr t11 o1 (repair_in pr t12 o t2)
+  | PrefixNode o1 t12 => insert_pre pr o1 (repair_in pr t12 o t2)
   end.
 
 Fixpoint repair {g} (pr : drules g) t : parse_tree g :=
   match t with
   | AtomicNode l => AtomicNode l
-  | InfixNode t1 o t2 => linsert_to pr t1 o (repair pr t2)
-  | PrefixNode o t2 => linsert_o pr o (repair pr t2)
-  end.
-
-Fixpoint slinsert_to {g} (pr : drules g) t1 o t2 : parse_tree g :=
-  match t2 with
-  | InfixNode t21 o2 t22 =>
-      if is_i_conflict_pattern pr (CR_infix_infix o o2)
-      then InfixNode (slinsert_to pr t1 o t21) o2 t22
-      else InfixNode t1 o t2
-  | _ => InfixNode t1 o t2
+  | InfixNode t1 o t2 => repair_in pr t1 o (repair pr t2)
+  | PrefixNode o t2 => insert_pre pr o (repair pr t2)
   end.
 
 Fixpoint parse {g} (pr : drules g) (w : word g) : option (parse_tree g) :=
@@ -302,12 +285,12 @@ Fixpoint parse {g} (pr : drules g) (w : word g) : option (parse_tree g) :=
   | inl l :: inr o :: w =>
       match (parse pr w) with
       | None => None
-      | Some t => Some (linsert_lo pr l o t)
+      | Some t => Some (insert_in pr (AtomicNode l) o t)
       end
   | inr o :: w =>
       match (parse pr w) with
       | None => None
-      | Some t => Some (linsert_o pr o t)
+      | Some t => Some (insert_pre pr o t)
       end
   | _ => None
   end.
