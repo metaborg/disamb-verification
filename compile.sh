@@ -1,6 +1,6 @@
 if [ -d stdpp ]
 then
-  echo updating and compiling stdpp library
+  echo compiling stdpp library
 else
   echo stdpp library not detected, cloning git repository
   git clone https://gitlab.mpi-sws.org/iris/stdpp.git
@@ -8,6 +8,7 @@ else
   echo compiling stdpp library
 fi
 cd stdpp
+git checkout 13df6821
 git pull
 make
 cd ..
