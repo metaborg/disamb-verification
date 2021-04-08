@@ -14,7 +14,7 @@ Global Arguments PostfixProd {_} _.
 
 Record ipg := mkIpgrammar {
   LEX : Type;
-  OPinpre : Type;
+  OPinpre : Type; (* We allow overlap between infix and prefix operators *)
   OPpost : Type;
   prods: prod (OPinpre + OPpost) -> Prop
 }.
@@ -401,65 +401,65 @@ Fixpoint has_postfix_rm_conflicts {g} (pr : drules g) t1 o : bool :=
   | _ => false
   end.
 
-Fixpoint repair_pre {g} (pr : drules g) o t2 : parse_tree g :=
+Fixpoint insert_pre {g} (pr : drules g) o t2 : parse_tree g :=
   match t2 with
   | InfixNode t21 o2 t22 =>
       if is_i_conflict_pattern pr (CR_prefix_infix o o2)
-      then InfixNode (repair_pre pr o t21) o2 t22
+      then InfixNode (insert_pre pr o t21) o2 t22
       else if has_prefix_lm_conflicts pr o t2
-      then InfixNode (repair_pre pr o t21) o2 t22
+      then InfixNode (insert_pre pr o t21) o2 t22
       else PrefixNode o t2
   | PostfixNode t21 o2 =>
       if has_prefix_lm_conflicts pr o t2
-      then PostfixNode (repair_pre pr o t21) o2
+      then PostfixNode (insert_pre pr o t21) o2
       else PrefixNode o t2
   | _ => PrefixNode o t2
   end.
 
-Fixpoint repair_post {g} (pr : drules g) t1 o : parse_tree g :=
+Fixpoint insert_post {g} (pr : drules g) t1 o : parse_tree g :=
   match t1 with
   | InfixNode t11 o1 t12 =>
       if is_i_conflict_pattern pr (CL_postfix_infix o o1)
-      then InfixNode t11 o1 (repair_post pr t12 o)
+      then InfixNode t11 o1 (insert_post pr t12 o)
       else if has_postfix_rm_conflicts pr t1 o
-      then InfixNode t11 o1 (repair_post pr t12 o)
+      then InfixNode t11 o1 (insert_post pr t12 o)
       else PostfixNode t1 o
   | PrefixNode o1 t12 =>
       if has_postfix_rm_conflicts pr t1 o
-      then PrefixNode o1 (repair_post pr t12 o)
+      then PrefixNode o1 (insert_post pr t12 o)
       else PostfixNode t1 o
   | _ => PostfixNode t1 o
   end.
 
-Fixpoint repair_in_2 {g} (pr : drules g) t1 o t2 : parse_tree g :=
+Fixpoint insert_in {g} (pr : drules g) t1 o t2 : parse_tree g :=
   match t2 with
   | InfixNode t21 o2 t22 =>
       if is_i_conflict_pattern pr (CR_infix_infix o o2)
-      then InfixNode (repair_in_2 pr t1 o t21) o2 t22
+      then InfixNode (insert_in pr t1 o t21) o2 t22
       else if has_infix_lm_conflicts pr o t2
-      then InfixNode (repair_in_2 pr t1 o t21) o2 t22
+      then InfixNode (insert_in pr t1 o t21) o2 t22
       else InfixNode t1 o t2
   | PostfixNode t21 o2 =>
       if has_infix_lm_conflicts pr o t2
-      then PostfixNode (repair_in_2 pr t1 o t21) o2
+      then PostfixNode (insert_in pr t1 o t21) o2
       else InfixNode t1 o t2
   | _ => InfixNode t1 o t2
   end.
 
-Fixpoint repair_in_1 {g} (pr : drules g) t1 o t2 : parse_tree g :=
+Fixpoint repair_in {g} (pr : drules g) t1 o t2 : parse_tree g :=
   match t1 with
-  | InfixNode t11 o1 t12 => repair_in_1 pr t11 o1 (repair_in_1 pr t12 o t2)
-  | PrefixNode o1 t12 => repair_pre pr o1 (repair_in_1 pr t12 o t2)
-  | _ => repair_in_2 pr t1 o t2
+  | InfixNode t11 o1 t12 => repair_in pr t11 o1 (repair_in pr t12 o t2)
+  | PrefixNode o1 t12 => insert_pre pr o1 (repair_in pr t12 o t2)
+  | _ => insert_in pr t1 o t2
   end.
 
 
 Fixpoint repair {g} (pr : drules g) t : parse_tree g :=
   match t with
   | AtomicNode l => AtomicNode l
-  | InfixNode t1 o t2 => repair_in_1 pr (repair pr t1) o (repair pr t2)
-  | PrefixNode o t2 => repair_pre pr o (repair pr t2)
-  | PostfixNode t1 o => repair_post pr (repair pr t1) o
+  | InfixNode t1 o t2 => repair_in pr (repair pr t1) o (repair pr t2)
+  | PrefixNode o t2 => insert_pre pr o (repair pr t2)
+  | PostfixNode t1 o => insert_post pr (repair pr t1) o
   end.
 
 End IPPGrammarRepair.
