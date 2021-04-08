@@ -9,7 +9,7 @@ Hint Resolve CPrio2 : IGrammar.
 Hint Resolve CLeft : IGrammar.
 Hint Resolve CRight : IGrammar.
 Hint Resolve HMatch : IGrammar.
-Hint Resolve IMatch : IGrammar.
+Hint Resolve InfixMatch : IGrammar.
 
 (*
   ############################################## 
@@ -51,20 +51,11 @@ Proof.
 Qed.
 
 (* This tactic can be used to simplify a goal with a term
-   [linsert_one pr l1 o1 (INode t1 o2 t2))], creating two cases: one
+   [insert_in pr t1 o1 (InfixNode t21 o2 t22))], creating two cases: one
    where [CR o1 o2] is a conflict pattern and one where it is not a
    conflict pattern. *)
-Ltac linsert_one_inode_destruct pr o1 o2 :=
-    cbn [linsert_one] in *;
-     destruct (is_conflict_pattern pr (CR o1 o2)) eqn:E;
-     [apply is_conflict_pattern_true in E | apply is_conflict_pattern_false in E].
-
-(* This tactic can be used to simplify a goal with a term
-   [simpleton_linsert pr l1 o1 (INode t1 o2 t2))], creating two cases: one
-   where [CR o1 o2] is a conflict pattern and one where it is not a
-   conflict pattern. *)
-Ltac simpleton_linsert_inode_destruct pr o1 o2 :=
-    cbn [simpleton_linsert] in *;
+Ltac insert_in_inode_destruct pr o1 o2 :=
+    cbn [insert_in] in *;
      destruct (is_conflict_pattern pr (CR o1 o2)) eqn:E;
      [apply is_conflict_pattern_true in E | apply is_conflict_pattern_false in E].
 
@@ -134,18 +125,18 @@ Qed.
 (* The following lemmas aim to prove that [repair] preserves the yield of the tree
    being repaired. This will be useful later when proving safety. *)
 
-Lemma linsert_one_yield_preserve {L O} (pr : drules O) (l1 : L) o1 t :
-  yield (linsert_one pr l1 o1 t) = inl l1 :: inr o1 :: yield t.
+Lemma insert_in_yield_preserve {L O} (pr : drules O) (l1 : L) o t2 :
+  yield (insert_in pr (AtomicNode l1) o t2) = inl l1 :: inr o :: yield t2.
 Proof.
-  induction t.
+  induction t2.
   - reflexivity.
-  - linsert_one_inode_destruct pr o1 o; simpl; auto.
-    rewrite IHt1. reflexivity.
+  - insert_in_inode_destruct pr o o0; simpl; auto.
+    rewrite IHt2_1. reflexivity.
 Qed.
-Hint Resolve linsert_one_yield_preserve : IGrammar.
+Hint Resolve insert_in_yield_preserve : IGrammar.
 
-Lemma linsert_yield_preserve {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
-  yield (linsert pr t1 o t2) = yield t1 ++ inr o :: yield t2.
+Lemma repair_in_yield_preserve {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
+  yield (repair_in pr t1 o t2) = yield t1 ++ inr o :: yield t2.
 Proof.
   revert o t2.
   induction t1; intros; simpl.
@@ -153,7 +144,7 @@ Proof.
   - simplify_list_eq. rewrite <- IHt1_2. rewrite <- IHt1_1.
     reflexivity.
 Qed.
-Hint Resolve linsert_yield_preserve : IGrammar.
+Hint Resolve repair_in_yield_preserve : IGrammar.
 
 Lemma repair_yield_preserve {L O} (pr : drules O) (t : parse_tree L O) :
   yield (repair pr t) = yield t.
@@ -173,14 +164,15 @@ Qed.
    is conflict-free, assuming the disambiguation rules are safe. *)
 
 
-(* The top operator of [linsert_one l1 o t2] either is [o] or remains the same as [t2] *)
-Lemma linsert_one_top_operator_match {L O} (pr : drules O) (l1 : L) (o : O) (t2 : parse_tree L O) :
-  matches (linsert_one pr l1 o t2) (IPatt HPatt o HPatt) \/
-  (exists o2, matches t2 (IPatt HPatt o2 HPatt) /\ matches (linsert_one pr l1 o t2) (IPatt HPatt o2 HPatt)).
+(* The top operator of [insert_in l1 o t2] either is [o] or remains the same as [t2] *)
+Lemma insert_in_top_operator_match {L O} (pr : drules O) (l1 : L) (o : O) (t2 : parse_tree L O) :
+  matches (insert_in pr (AtomicNode l1) o t2) (InfixPatt HPatt o HPatt) \/
+  (exists o2, matches t2 (InfixPatt HPatt o2 HPatt) /\
+              matches (insert_in pr (AtomicNode l1) o t2) (InfixPatt HPatt o2 HPatt)).
 Proof.
   destruct t2.
   - simpl. auto with IGrammar.
-  - linsert_one_inode_destruct pr o o0; eauto 6 with IGrammar.
+  - insert_in_inode_destruct pr o o0; eauto 6 with IGrammar.
 Qed.
 
 (* Simple Lemma that states that proving something holds for all conflict patterns [q],
@@ -198,35 +190,35 @@ Ltac cp_cases H := eapply conflict_pattern_cases in H; try eassumption; intros; 
 
 (* A parse tree with just one infix node is always conflict-free *)
 Lemma inode_single_cfree {L O} (pr : drules O) (l1 l2 : L) (o : O) :
-  conflict_free (conflict_pattern pr) (INode (ANode l1) o (ANode l2)).
+  conflict_free (conflict_pattern pr) (InfixNode (AtomicNode l1) o (AtomicNode l2)).
 Proof.
-  apply INode_cfree; auto using ANode_cfree.
+  apply Infix_cf; auto using Atomic_cf.
   intro. destruct H as [q]. inv H. cp_cases H0.
   - inv H1. inv H3.
   - inv H1. inv H8.
 Qed.
 
-(* One-Left-Insertion is safe. *)
-Lemma linsert_one_safe {L O} (pr : drules O) (l1 : L) (o : O) (t2 : parse_tree L O) :
+(* insert_in is safe. *)
+Lemma insert_in_safe {L O} (pr : drules O) (l1 : L) (o : O) (t2 : parse_tree L O) :
   safe_pr pr ->
   conflict_free (conflict_pattern pr) t2 ->
-  conflict_free (conflict_pattern pr) (linsert_one pr l1 o t2).
+  conflict_free (conflict_pattern pr) (insert_in pr (AtomicNode l1) o t2).
 Proof.
   (* By induction over [t2] *)
   intros Hsafe Hcfree. induction t2 as [l2|t21 ? o2 t22].
   (* Base case *)
   apply inode_single_cfree.
   (* Inductive case *)
-  linsert_one_inode_destruct pr o o2.
+  insert_in_inode_destruct pr o o2.
   - (* Case: [CR o o2] is a conflict pattern *)
-    inv Hcfree. apply INode_cfree; auto. clear H3 H4.
+    inv Hcfree. apply Infix_cf; auto. clear H3 H4.
     intro. destruct H as [q]. inv H.
     cp_cases H0.
     + (* Proving that our tree does not match arbitrary conflict pattern [CL x1 x2] *)
       rename o1 into x1, o0 into x2.
       inv H1. rename x1 into o2. clear H9. inv H4. clear H5 H7.
-      (* Case analysis over the top operator of [linsert_one pr l1 o t21]. *)
-      destruct (linsert_one_top_operator_match pr l1 o t21).
+      (* Case analysis over the top operator of [insert_in pr l1 o t21]. *)
+      destruct (insert_in_top_operator_match pr l1 o t21).
       * (* Case: top operator is [o] *)
         rewrite <- H in H1. inv H1.
         (* Contradiction: Both [CR o o2] and [CL o2 o] are conflict patterns. *)
@@ -243,21 +235,21 @@ Proof.
       (* Contradiction: It cannot conflict because our original tree has no conflicts. *)
       destruct H2. eexists. eauto with IGrammar.
   - (* Case: [CR o o2] is NOT a conflict pattern *)
-    apply INode_cfree; auto using ANode_cfree.
+    apply Infix_cf; auto using Atomic_cf.
     intro. destruct H as [q]. inv H.
     cp_cases H0.
     + inv H1. inv H3.
     + inv H1. inv H8. contradiction.
 Qed.
 
-(* Left-Insertion is safe. *)
-Lemma linsert_safe {L O} (pr : drules O) (o : O) (t1 t2 : parse_tree L O) :
+(* repair_in is safe. *)
+Lemma repair_in_safe {L O} (pr : drules O) (o : O) (t1 t2 : parse_tree L O) :
   safe_pr pr ->
   conflict_free (conflict_pattern pr) t2 ->
-  conflict_free (conflict_pattern pr) (linsert pr t1 o t2).
+  conflict_free (conflict_pattern pr) (repair_in pr t1 o t2).
 Proof.
   intro Hsafe. revert o t2.
-  induction t1; eauto using linsert_one_safe.
+  induction t1; eauto using insert_in_safe.
 Qed.
 
 (* Repair is safe. *)
@@ -266,8 +258,8 @@ Lemma repair_safe {L O} (pr : drules O) (t : parse_tree L O) :
   conflict_free (conflict_pattern pr) (repair pr t).
 Proof.
   intro. induction t.
-  - apply ANode_cfree.
-  - eauto using linsert_safe.
+  - apply Atomic_cf.
+  - eauto using repair_in_safe.
 Qed.
 
 (*
@@ -298,7 +290,7 @@ Qed.
 (* The following lemmas aim to prove that [repair] is fully yield-dependent.
    Meaning that of two trees have equal yields, then they repair to the same
    tree. This will be useful for proving completeness later on.
-   We prove this by showing that [repair] is the same as the [build] function. *)
+   We prove this by showing that [repair] is the same as the [parse] function. *)
 
 Lemma yield_struct_app {L O} (w1 : word L O) o w2 :
   yield_struct w1 →
@@ -316,9 +308,9 @@ Proof.
   - auto using yield_struct_app.
 Qed.
 
-Lemma build_yield_struct_some {L O} (pr : drules O) (w : word L O) :
+Lemma parse_yield_struct_some {L O} (pr : drules O) (w : word L O) :
   yield_struct w ->
-  exists t, build pr w = Some t.
+  exists t, parse pr w = Some t.
 Proof.
   intros. induction H; eauto.
   destruct IHyield_struct.
@@ -326,28 +318,28 @@ Proof.
 Qed.
 
 Lemma build_yield_some {L O} (pr : drules O) (t : parse_tree L O) :
-  exists t', build pr (yield t) = Some t'.
+  exists t', parse pr (yield t) = Some t'.
 Proof.
-  auto using yield_is_yield_struct, build_yield_struct_some.
+  auto using yield_is_yield_struct, parse_yield_struct_some.
 Qed.
 
-Lemma build_app {L O} (pr : drules O) (t1 t2 t2' : parse_tree L O) o :
-  build pr (yield t2) = Some t2' ->
-  build pr (yield t1 ++ inr o :: yield t2) = Some (linsert pr t1 o t2').
+Lemma parse_app {L O} (pr : drules O) (t1 t2 t2' : parse_tree L O) o :
+  parse pr (yield t2) = Some t2' ->
+  parse pr (yield t1 ++ inr o :: yield t2) = Some (repair_in pr t1 o t2').
 Proof.
   revert t2 t2' o. induction t1; intros; simpl.
   - rewrite H. reflexivity.
   - simplify_list_eq. rename o into o1, o0 into o.
     destruct (build_yield_some pr t1_2).
-    erewrite IHt1_1 with (t2 := (INode t1_2 o t2)); auto.
+    erewrite IHt1_1 with (t2 := (InfixNode t1_2 o t2)); auto.
     simpl. erewrite IHt1_2; auto.
 Qed.
 
-Lemma repair_build {L O} (pr : drules O) (t : parse_tree L O) :
-  build pr (yield t) = Some (repair pr t).
+Lemma repair_parse {L O} (pr : drules O) (t : parse_tree L O) :
+  parse pr (yield t) = Some (repair pr t).
 Proof.
   induction t; simpl; auto.
-  erewrite build_app; eauto.
+  erewrite parse_app; eauto.
 Qed.
 
 Lemma repair_is_fully_yield_dependent {L O} (pr : drules O) (t1 t2 : parse_tree L O) :
@@ -356,9 +348,9 @@ Lemma repair_is_fully_yield_dependent {L O} (pr : drules O) (t1 t2 : parse_tree 
 Proof.
   intro.
   assert (Some (repair pr t1) = Some (repair pr t2)). {
-    rewrite <- repair_build.
+    rewrite <- repair_parse.
     rewrite H.
-    rewrite repair_build.
+    rewrite repair_parse.
     reflexivity.
   }
   inv H0. reflexivity.
@@ -373,70 +365,64 @@ Qed.
 (* The following lemmas aim to prove that [repair] preserves conflict-free trees
    (i.e. [repair t = t], if [t] is conflict-free), assuming the disambiguation rules are complete.
 
-   This is done as follows: [repair] expands to [linsert]. Proving that [linsert]
-   preserves conflict-free trees is difficult. Instead we show that [linsert] is the same
-   as [simpleton_linsert] for conflict-free trees. Showing that [simpleton_linsert] preserves
+   This is done as follows: [repair] expands to [repair_in]. Proving that [repair_in]
+   preserves conflict-free trees is difficult. Instead we show that [repair_in] is the same
+   as [insert_in] for conflict-free trees. Showing that [insert_in] preserves
    conflict-free trees follows almost directly from the definition. *)
 
-Lemma linsert_one_simpleton_linsert_anode {L O} (pr : drules O) l1 o (t2 : parse_tree L O) :
-  linsert_one pr l1 o t2 = simpleton_linsert pr (ANode l1) o t2.
-Proof.
-  induction t2; auto.
-  simpl. rewrite IHt2_1. reflexivity.
-Qed.
 
-(* The usefulness of this lemma will become clear when we show that [linsert] equals
-   [simpleton_linsert] for conflict-free trees. *)
-Lemma simpleton_linsert_assoc {L O} (pr : drules O) o o1 (t11 t12 t2 : parse_tree L O) :
+(* The usefulness of this lemma will become clear when we show that [repair_in] equals
+   [insert_in] for conflict-free trees. *)
+Lemma insert_in_assoc {L O} (pr : drules O) o o1 (t11 t12 t2 : parse_tree L O) :
   complete_pr pr ->
-  conflict_free (conflict_pattern pr) (INode t11 o1 t12) ->
+  conflict_free (conflict_pattern pr) (InfixNode t11 o1 t12) ->
   ~ conflict_pattern pr (CL o o1) ->
-  simpleton_linsert pr (INode t11 o1 t12) o t2 = simpleton_linsert pr t11 o1 (simpleton_linsert pr t12 o t2).
+  insert_in pr (InfixNode t11 o1 t12) o t2 = insert_in pr t11 o1 (insert_in pr t12 o t2).
 Proof.
   intros. induction t2.
-  - simpleton_linsert_inode_destruct pr o1 o.
+  - insert_in_inode_destruct pr o1 o.
     + destruct t12 as [?|t121 o12 t122]; auto.
       rename E into E'.
-      simpleton_linsert_inode_destruct pr o1 o12; auto.
+      insert_in_inode_destruct pr o1 o12; auto.
       exfalso. inv H0. destruct H5.
       eexists. eauto with IGrammar.
     + apply complete_neg_cl_cr in H1; auto.
       contradiction.
   - rename t2_1 into t21, o0 into o2, t2_2 into t22.
-    simpleton_linsert_inode_destruct pr o o2.
+    insert_in_inode_destruct pr o o2.
     + rewrite IHt2_1.
       rename E into E'.
-      simpleton_linsert_inode_destruct pr o1 o2; auto.
+      insert_in_inode_destruct pr o1 o2; auto.
       exfalso. destruct E.
       eapply complete_pr_cr_trans; eauto.
       apply complete_neg_cl_cr in H1; auto.
     + rename E into E'.
-      simpleton_linsert_inode_destruct pr o1 o.
+      insert_in_inode_destruct pr o1 o.
       * destruct t12 as [?|t121 o12 t122]; auto.
         rename E into E''.
-        simpleton_linsert_inode_destruct pr o1 o12; auto.
+        insert_in_inode_destruct pr o1 o12; auto.
         exfalso. inv H0. destruct H5.
         eexists. eauto with IGrammar.
       * exfalso. destruct E.
         apply complete_neg_cl_cr in H1; auto.
 Qed.
 
-(* [linsert] equals [simpleton_linsert]. Note the premise of this lemma:
-   We do not require the tree [INode t1 o t2] to be conflict-free. Instead
+(* [repair_in] equals [insert_in]. Note the premise of this lemma:
+   We do not require the tree [InfixNode t1 o t2] to be conflict-free. Instead
    we just require that [t1] is conflict-free, and that [o] does not conflict
    with the top operator of [t1]. *)
-Lemma linsert_simpleton_linsert {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
+Lemma repair_in_insert_in {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
   complete_pr pr ->
   conflict_free (conflict_pattern pr) t1 ->
-  (forall x1, matches t1 (IPatt HPatt x1 HPatt) -> ~ conflict_pattern pr (CL o x1)) ->
-  linsert pr t1 o t2 = simpleton_linsert pr t1 o t2.
+  (forall x1, matches t1 (InfixPatt HPatt x1 HPatt) -> ~ conflict_pattern pr (CL o x1)) ->
+  repair_in pr t1 o t2 = insert_in pr t1 o t2.
 Proof.
   intro. intro. revert o t2.
-  induction t1; intros; simpl; eauto using linsert_one_simpleton_linsert_anode.
+  induction t1; intros; simpl; auto.
   rename t1_1 into t11, o into o1, t1_2 into t12, o0 into o.
   rewrite IHt1_2.
     - rewrite IHt1_1.
-      + symmetry. eauto using simpleton_linsert_assoc with IGrammar.
+      + symmetry. eauto using insert_in_assoc with IGrammar.
       + inv H0. assumption.
       + intros. intro. inv H2. inv H0. destruct H6.
         eexists. eauto with IGrammar.
@@ -449,37 +435,37 @@ Proof.
       exfalso. apply H1 with o1; eauto with IGrammar.
 Qed.
 
-Lemma simpleton_linsert_identity {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
-  conflict_free (conflict_pattern pr) (INode t1 o t2) ->
-  simpleton_linsert pr t1 o t2 = INode t1 o t2.
+Lemma insert_in_complete {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
+  conflict_free (conflict_pattern pr) (InfixNode t1 o t2) ->
+  insert_in pr t1 o t2 = InfixNode t1 o t2.
 Proof.
   intros. inv H.
   destruct t2; auto.
-  simpleton_linsert_inode_destruct pr o o0; auto.
+  insert_in_inode_destruct pr o o0; auto.
   exfalso. destruct H3.
   eexists. eauto with IGrammar.
 Qed.
 
-Lemma linsert_identity {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
+Lemma repair_in_complete {L O} (pr : drules O) o (t1 t2 : parse_tree L O) :
   complete_pr pr ->
-  conflict_free (conflict_pattern pr) (INode t1 o t2) ->
-  linsert pr t1 o t2 = INode t1 o t2.
+  conflict_free (conflict_pattern pr) (InfixNode t1 o t2) ->
+  repair_in pr t1 o t2 = InfixNode t1 o t2.
 Proof.
   intros.
-  rewrite linsert_simpleton_linsert; auto using simpleton_linsert_identity.
+  rewrite repair_in_insert_in; auto using insert_in_complete.
   - inv H0. assumption.
   - intros. intro. inv H1. inv H0. destruct H5.
     eexists. eauto with IGrammar.
 Qed.
 
-Lemma repair_identity {L O} (pr : drules O) (t : parse_tree L O) :
+Lemma repair_complete {L O} (pr : drules O) (t : parse_tree L O) :
   complete_pr pr ->
   conflict_free (conflict_pattern pr) t ->
   repair pr t = t.
 Proof.
   intros. induction t; simpl; auto.
   rewrite IHt2.
-  - rewrite linsert_identity; auto.
+  - rewrite repair_in_complete; auto.
   - inv H0. assumption.
 Qed.
 
@@ -495,8 +481,8 @@ Theorem completeness {L O} (pr : drules O) :
 Proof.
   intro. unfold complete. intros.
   apply repair_is_fully_yield_dependent with pr t1 t2 in H0.
-  rewrite repair_identity in H0; auto.
-  rewrite repair_identity in H0; auto.
+  rewrite repair_complete in H0; auto.
+  rewrite repair_complete in H0; auto.
 Qed.
 
 End IGrammarTheorems.
