@@ -19,6 +19,8 @@ echo compiling IGrammar.v
 coqc IGrammar.v
 echo compiling IGrammarTheorems.v
 coqc IGrammarTheorems.v
+echo compiling IGrammarBonusTheorems.v
+coqc IGrammarBonusTheorems.v
 echo compiling IPGrammar.v
 coqc IPGrammar.v
 echo compiling IPGrammarTheorems.v

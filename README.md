@@ -11,5 +11,6 @@ Running the file `compile.sh` compiles everything. Note: This project uses versi
 
 1. `IGrammar.v` contains all definitions related to *Infix Expression Grammars*.
 2. `IGrammarTheorems.v` contains lemmas and theorems related to Infix Expression Grammars. This includes proofs for *safety* and *completeness*.
-3. Similarly `IPGrammar.v` and `IPGrammarTheorems.v` are related to expression grammars containing Infix and Prefix productions.
-4. `IPPGrammar.v` and `IPPGrammarTheorems.v` also allow Postfix productions.
+3. `IGrammarBonusTheorems.v` contains proofs that show our restrictions for safety and completeness are *most general*.
+4. Similarly `IPGrammar.v` and `IPGrammarTheorems.v` are related to expression grammars containing Infix and Prefix productions.
+5. `IPPGrammar.v` and `IPPGrammarTheorems.v` also allow Postfix productions.

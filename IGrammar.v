@@ -152,8 +152,6 @@ Record complete_pr {O} (pr : drules O) := mkComplete_pr {
   complete_2 : forall o1 o2 o3,
     pr.(prio) o1 o2 -> pr.(prio) o2 o3 -> pr.(prio) o1 o3;
 
-  complete_3 : forall o1 o2 o3,
-    pr.(prio) o1 o2 -> pr.(prio) o2 o3 -> pr.(prio) o1 o3;
   complete_4 : forall o1 o2 o3,
     pr.(prio) o1 o2 -> pr.(left_a) o2 o3 -> pr.(prio) o1 o3;
   complete_5 : forall o1 o2 o3,
