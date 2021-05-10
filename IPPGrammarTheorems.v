@@ -1,8 +1,6 @@
 Require Import MyUtils.
 Require Export IPPGrammar.
 
-Section IPPGrammarTheorems.
-
 Create HintDb IPPGrammar.
 Hint Resolve CPrio_infix_infix_1 CPrio_infix_infix_2 CPrio_prefix_infix CPrio_infix_prefix CLeft_prefix_infix
   CRight_infix_prefix CRight_postfix_infix CRight_postfix_infix CPrio_postfix_infix CPrio_postfix_prefix
@@ -13,6 +11,7 @@ Hint Resolve CPrio_infix_infix_1 CPrio_infix_infix_2 CPrio_prefix_infix CPrio_in
   PostfixMatch_lm InfixMatch_dlm PrefixMatch_dlm PostfixMatch_dlm
     : IPPGrammar.
 
+Section IPPGrammarBaseLemmas.
 
 (*
   ############################################## 
@@ -205,49 +204,7 @@ Proof.
     apply has_postfix_rm_conflicts_true in E. inv E. inv H0. edestruct H; eauto.
 Qed.
 
-(*
-  ############################################## 
-  ##############################################
-  ##############################################
-*)
-
-(* The following lemmas relate safety to relations between conflict patterns. *)
-
-Lemma safe_infix_infix {g} (pr : drules g) o1 o2 :
-  safe_pr pr ->
-  i_conflict_pattern pr (CL_infix_infix o1 o2) ->
-  i_conflict_pattern pr (CR_infix_infix o2 o1) ->
-  False.
-Proof.
-  intros H_safe H_CL H_CR. unfold safe_pr in H_safe. inv H_CL; inv H_CR; eauto.
-Qed.
-
-Lemma safe_infix_prefix {g} (pr : drules g) o1 o2 :
-  safe_pr pr ->
-  rm_conflict_pattern pr (CL_infix_prefix o1 o2) ->
-  i_conflict_pattern pr (CR_prefix_infix o2 o1) ->
-  False.
-Proof.
-  intros. unfold safe_pr in H. inv H0; inv H1; eauto.
-Qed.
-
-Lemma safe_infix_postfix {g} (pr : drules g) o1 o2 :
-  safe_pr pr ->
-  lm_conflict_pattern pr (CR_infix_postfix o1 o2) ->
-  i_conflict_pattern pr (CL_postfix_infix o2 o1) ->
-  False.
-Proof.
-  intros. unfold safe_pr in H. inv H0; inv H1; eauto.
-Qed.
-
-Lemma safe_prefix_postfix {g} (pr : drules g) o1 o2 :
-  safe_pr pr ->
-  lm_conflict_pattern pr (CR_prefix_postfix o1 o2) ->
-  rm_conflict_pattern pr (CL_postfix_prefix o2 o1) ->
-  False.
-Proof.
-  intros. unfold safe_pr in H. inv H0; inv H1; eauto.
-Qed.
+End IPPGrammarBaseLemmas.
 
 (*
   ############################################## 
@@ -328,6 +285,52 @@ Ltac insert_post_pnode_destruct pr o1 t12 o :=
             ~ rm_conflict_pattern pr (CL_postfix_prefix o x));
       [apply has_postfix_rm_conflicts_false; assumption|]
     ].
+
+Section IPPGrammarTheorems.
+
+(*
+  ############################################## 
+  ##############################################
+  ##############################################
+*)
+
+(* The following lemmas relate safety to relations between conflict patterns. *)
+
+Lemma safe_infix_infix {g} (pr : drules g) o1 o2 :
+  safe_pr pr ->
+  i_conflict_pattern pr (CL_infix_infix o1 o2) ->
+  i_conflict_pattern pr (CR_infix_infix o2 o1) ->
+  False.
+Proof.
+  intros H_safe H_CL H_CR. unfold safe_pr in H_safe. inv H_CL; inv H_CR; eauto.
+Qed.
+
+Lemma safe_infix_prefix {g} (pr : drules g) o1 o2 :
+  safe_pr pr ->
+  rm_conflict_pattern pr (CL_infix_prefix o1 o2) ->
+  i_conflict_pattern pr (CR_prefix_infix o2 o1) ->
+  False.
+Proof.
+  intros. unfold safe_pr in H. inv H0; inv H1; eauto.
+Qed.
+
+Lemma safe_infix_postfix {g} (pr : drules g) o1 o2 :
+  safe_pr pr ->
+  lm_conflict_pattern pr (CR_infix_postfix o1 o2) ->
+  i_conflict_pattern pr (CL_postfix_infix o2 o1) ->
+  False.
+Proof.
+  intros. unfold safe_pr in H. inv H0; inv H1; eauto.
+Qed.
+
+Lemma safe_prefix_postfix {g} (pr : drules g) o1 o2 :
+  safe_pr pr ->
+  lm_conflict_pattern pr (CR_prefix_postfix o1 o2) ->
+  rm_conflict_pattern pr (CL_postfix_prefix o2 o1) ->
+  False.
+Proof.
+  intros. unfold safe_pr in H. inv H0; inv H1; eauto.
+Qed.
 
 (*
   ############################################## 
