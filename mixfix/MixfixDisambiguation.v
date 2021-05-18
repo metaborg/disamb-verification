@@ -1,7 +1,5 @@
-From disamb Require Export MyUtils.
+From disamb Require Import MyUtils.
 From disamb Require Export MixfixGrammar.
-
-Section MixfixDisambiguation.
 
 Record disambiguation_rules (T : Type) := mkDisambiguation_rules {
   priority : production T → production T → Prop;
@@ -155,5 +153,3 @@ Qed.
 Definition drules_to_dpatts {T} (PR : drules T) : dpatts T := mk_disambiguation_patterns T
   (disambiguation_rules_to_patterns PR)
   (disambiguation_rules_to_patterns_decidable PR).
-
-End MixfixDisambiguation.

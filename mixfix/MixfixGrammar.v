@@ -1,7 +1,5 @@
 From stdpp Require Export list.
 
-Section MixfixGrammar.
-
 Inductive symbol (T : Type) :=
   | terminal (a : T)
   | nonterminal.
@@ -71,5 +69,3 @@ Notation yt t := (yield_tree t).
 Notation yts ts := (yield_forest ts).
 
 Definition sentence {T} (g : mixfixgrammar T) w := ∃ t, wft g E t ∧ yt t = w.
-
-End MixfixGrammar.

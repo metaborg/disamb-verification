@@ -1,8 +1,6 @@
 From stdpp Require Export relations.
 From disamb Require Export MixfixGrammar.
 
-Section MixfixReorder.
-
 Inductive reorder_forest_left_up {T} (p1 : list (symbol T)) (ts1 : parse_forest T) : 
                                       parse_forest T → parse_forest T → Prop :=
   | reorder_left_up_last p3 ts3 :
@@ -32,5 +30,3 @@ Scheme reorder_step_tree_forest := Induction for reorder_step_tree Sort Prop
 with reorder_step_forest_tree := Induction for reorder_step_forest Sort Prop.
 
 Definition reorder_tree {T} := rtsc (@reorder_step_tree T).
-
-End MixfixReorder.
