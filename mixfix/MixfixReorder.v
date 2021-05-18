@@ -26,7 +26,7 @@ with reorder_step_forest {T} : parse_forest T → parse_forest T → Prop :=
       reorder_step_forest ts ts' →
       reorder_step_forest (cons_forest t ts) (cons_forest t ts').
 
-Scheme reorder_step_tree_forest := Induction for reorder_step_tree Sort Prop
-with reorder_step_forest_tree := Induction for reorder_step_forest Sort Prop.
+Scheme reorder_step_tree_forest_rec := Induction for reorder_step_tree Sort Prop
+with reorder_step_forest_tree_rec := Induction for reorder_step_forest Sort Prop.
 
 Definition reorder_tree {T} := rtsc (@reorder_step_tree T).

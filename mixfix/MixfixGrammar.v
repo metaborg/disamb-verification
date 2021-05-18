@@ -69,3 +69,6 @@ Notation yt t := (yield_tree t).
 Notation yts ts := (yield_forest ts).
 
 Definition sentence {T} (g : mixfixgrammar T) w := ∃ t, wft g E t ∧ yt t = w.
+
+Create HintDb mixfix.
+Hint Resolve well_formed_leaf well_formed_node well_formed_nil_forest well_formed_cons_forest : mixfix.
