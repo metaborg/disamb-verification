@@ -9,3 +9,6 @@
 *.aux
 *.class
 *.iml
+CoqMakefile.conf
+.CoqMakefile.d
+Makefile.coq
