@@ -1,3 +1,4 @@
+From stdpp Require Export relations.
 From disamb Require Export MixfixGrammar.
 
 Section MixfixReorder.
@@ -29,3 +30,7 @@ with reorder_step_forest {T} : parse_forest T → parse_forest T → Prop :=
 
 Scheme reorder_step_tree_forest := Induction for reorder_step_tree Sort Prop
 with reorder_step_forest_tree := Induction for reorder_step_forest Sort Prop.
+
+Definition reorder_tree {T} := rtsc (@reorder_step_tree T).
+
+End MixfixReorder.

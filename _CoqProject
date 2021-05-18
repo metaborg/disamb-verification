@@ -2,3 +2,5 @@
 
 MyUtils.v
 mixfix/MixfixGrammar.v
+mixfix/MixfixReorder.v
+mixfix/MixfixDisambiguation.v
