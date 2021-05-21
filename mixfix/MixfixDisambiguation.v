@@ -1,5 +1,5 @@
 From disamb Require Import MyUtils.
-From disamb Require Export MixfixGrammar.
+From disamb Require Export MixfixReorder.
 
 Record disambiguation_rules (T : Type) := mkDisambiguation_rules {
   priority : production T → production T → Prop;
@@ -36,6 +36,8 @@ Record disambiguation_patterns (T : Type) := mk_disambiguation_patterns {
   patterns : disambiguation_pattern T → Prop;
   patterns_decidable : ∀ q, Decision (patterns q);
 }.
+
+Global Existing Instances patterns_decidable.
 
 Global Arguments patterns {_} _ _.
 Global Arguments patterns_decidable {_} _.
@@ -86,23 +88,28 @@ Inductive conflict_right_forest {T} (p : production T) : parse_forest T → Prop
 
 Notation crf := conflict_right_forest.
 
-Inductive conflict {T} (Q : dpatts T) : parse_tree T → Prop :=
-  | conflict_left p1 p2 t ts :
-      p1 CL p2 ∠ Q →
-      t Mrm p2 →
-      conflict Q (node p1 (cons_forest t ts))
-  | conflict_right p1 p2 ts :
+Inductive conflict_right {T} (Q : dpatts T) : parse_tree T → Prop :=
+  | conflict_right_app p1 p2 ts :
       p1 CR p2 ∠ Q →
       conflict_right_forest p2 ts →
-      conflict Q (node p1 ts).
+      conflict_right Q (node p1 ts).
 
-Notation c := conflict.
+Notation cr := conflict_right.
+
+Inductive conflict_left {T} (Q : dpatts T) : parse_tree T → Prop :=
+  | conflict_left_app p1 p2 t ts :
+      p1 CL p2 ∠ Q →
+      t Mrm p2 →
+      conflict_left Q (node p1 (cons_forest t ts)).
+
+Notation cl := conflict_left.
 
 Inductive conflict_free_tree {T} (Q : dpatts T) : parse_tree T → Prop :=
   | conflict_free_leaf a :
       conflict_free_tree Q (leaf a)
   | conflict_free_node p ts :
-      ¬ conflict Q (node p ts) →
+      ¬ cl Q (node p ts) →
+      ¬ cr Q (node p ts) →
       conflict_free_forest Q ts →
       conflict_free_tree Q (node p ts)
 
