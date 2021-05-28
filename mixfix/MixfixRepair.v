@@ -1,5 +1,4 @@
 From disamb Require Export MixfixDisambiguation.
-From disamb Require Import MyUtils.
 
 Fixpoint repair_cl {T} (Q : dpatts T) (p : production T) (t1 : parse_tree T) (ts : parse_forest T)
       : parse_tree T * bool :=

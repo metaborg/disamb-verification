@@ -4,3 +4,5 @@ MyUtils.v
 mixfix/MixfixGrammar.v
 mixfix/MixfixReorder.v
 mixfix/MixfixDisambiguation.v
+mixfix/MixfixRepair.v
+mixfix/theorems/MixfixReorderTheorems.v

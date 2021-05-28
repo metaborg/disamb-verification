@@ -35,6 +35,8 @@ Global Arguments right_pattern {_} _ _.
 Record disambiguation_patterns (T : Type) := mk_disambiguation_patterns {
   patterns : disambiguation_pattern T → Prop;
   patterns_decidable : ∀ q, Decision (patterns q);
+  left_pattern_well_formed : ∀ p1 p2, patterns (left_pattern p1 p2) → left_reorderable p1 p2;
+  right_pattern_well_formed : ∀ p1 p2, patterns (right_pattern p1 p2) → left_reorderable p2 p1;
 }.
 
 Global Existing Instances patterns_decidable.
@@ -130,33 +132,59 @@ Notation cfts := conflict_free_forest.
 Inductive disambiguation_rules_to_patterns {T} (PR : drules T) : disambiguation_pattern T → Prop :=
   | priority_pattern_right p1 p2 :
       p1 >> p2 ∠ PR →
+      left_reorderable p2 p1 →
       disambiguation_rules_to_patterns PR (right_pattern p1 p2)
   | priority_pattern_left p1 p2 :
       p1 >> p2 ∠ PR →
+      left_reorderable p1 p2 →
       disambiguation_rules_to_patterns PR (left_pattern p1 p2)
   | left_associativity_pattern p1 p2 :
       p1 lefta p2 ∠ PR →
+      left_reorderable p2 p1 →
       disambiguation_rules_to_patterns PR (right_pattern p1 p2)
   | right_associativity_pattern p1 p2 :
       p1 righta p2 ∠ PR →
+      left_reorderable p1 p2 →
       disambiguation_rules_to_patterns PR (left_pattern p1 p2).
 
 Global Instance disambiguation_rules_to_patterns_decidable {T} (PR : drules T) :
   ∀ q, Decision (disambiguation_rules_to_patterns PR q).
 Proof.
   intro q. destruct q as [p1 p2|p1 p2]; destruct (decide (p1 >> p2 ∠ PR)) as [Hprio|Hnotprio].
-  - left. auto using priority_pattern_left.
+  - destruct (decide (left_reorderable p1 p2)).
+    + left. auto using priority_pattern_left.
+    + right. intro. inv H; contradiction.
   - destruct (decide (p1 righta p2 ∠ PR)) as [Hrighta|Hnotrighta].
-    + left. auto using right_associativity_pattern.
+    + destruct (decide (left_reorderable p1 p2)).
+      * left. auto using right_associativity_pattern.
+      * right. intro. inv H; contradiction.
     + right. intro Hleftpattern.
       inv Hleftpattern; contradiction.
-  - left. auto using priority_pattern_right.
+  - destruct (decide (left_reorderable p2 p1)).
+    + left. auto using priority_pattern_right.
+    + right. intro. inv H; contradiction.
   - destruct (decide (p1 lefta p2 ∠ PR)) as [Hlefta|Hnotlefta].
-    + left. auto using left_associativity_pattern.
+    + destruct (decide (left_reorderable p2 p1)).
+      * left. auto using left_associativity_pattern.
+      * right. intro. inv H; contradiction.
     + right. intro Hrightpattern.
       inv Hrightpattern; contradiction.
 Qed.
 
+Lemma disambiguation_rules_to_pattern_left_pattern_well_formed {T} (PR : drules T) :
+  ∀ p1 p2, disambiguation_rules_to_patterns PR (left_pattern p1 p2) → left_reorderable p1 p2.
+Proof.
+  intros. inv H; auto.
+Qed.
+
+Lemma disambiguation_rules_to_pattern_right_pattern_well_formed {T} (PR : drules T) :
+  ∀ p1 p2, disambiguation_rules_to_patterns PR (right_pattern p1 p2) → left_reorderable p2 p1.
+Proof.
+  intros. inv H; auto.
+Qed.
+
 Definition drules_to_dpatts {T} (PR : drules T) : dpatts T := mk_disambiguation_patterns T
   (disambiguation_rules_to_patterns PR)
-  (disambiguation_rules_to_patterns_decidable PR).
+  (disambiguation_rules_to_patterns_decidable PR)
+  (disambiguation_rules_to_pattern_left_pattern_well_formed PR)
+  (disambiguation_rules_to_pattern_right_pattern_well_formed PR).

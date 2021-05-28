@@ -1,5 +1,6 @@
 From stdpp Require Export relations.
 From disamb Require Export MixfixGrammar.
+From disamb Require Import MyUtils.
 
 Inductive reorder_forest_left_up {T} (p1 : list (symbol T)) (ts1 : parse_forest T) : 
                                       parse_forest T → parse_forest T → Prop :=
@@ -30,3 +31,29 @@ Scheme reorder_step_tree_forest_rec := Induction for reorder_step_tree Sort Prop
 with reorder_step_forest_tree_rec := Induction for reorder_step_forest Sort Prop.
 
 Definition reorder_tree {T} := rtsc (@reorder_step_tree T).
+Definition reorder_forest {T} := rtsc (@reorder_step_forest T).
+
+Inductive left_reorderable {T} : production T → production T → Prop :=
+  | left_reorderable_one p :
+      left_reorderable [E] (E :: p)
+  | left_reorderable_cons X p1 p2 :
+      left_reorderable p1 p2 →
+      left_reorderable (X :: p1) p2.
+
+Global Instance left_reorderable_decidable {T} (p1 p2 : production T) :
+  Decision (left_reorderable p1 p2).
+Proof.
+  induction p1 as [|X p1].
+  - right. intro. inv H.
+  - destruct IHp1.
+    + left. constructor. assumption.
+    + destruct X.
+      * right. intro. inv H. contradiction.
+      * destruct p1 as [|X p1].
+        **destruct p2 as [|X p2].
+          ***right. intro. inv H. inv H3.
+          ***destruct X.
+            ****right. intro. inv H. inv H3.
+            ****left. constructor.
+        **right. intro. inv H. contradiction.
+Qed.

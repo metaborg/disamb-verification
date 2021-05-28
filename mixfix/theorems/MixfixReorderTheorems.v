@@ -128,4 +128,44 @@ Proof.
   destruct H; eapply reorder_step_well_formed in H; eapply H; eauto.
 Qed.
 
+Lemma reorder_forest_reorder_tree ts ts' p :
+  reorder_forest ts ts' → reorder_tree (node p ts) (node p ts').
+Proof.
+  intro Hreorder. induction Hreorder.
+  - apply rtc_refl.
+  - eapply rtc_l; eauto.
+    destruct H.
+    + apply sc_lr. constructor. assumption.
+    + apply sc_rl. constructor. assumption.
+Qed.
+
+Lemma reorder_head_tree_reorder_forest t t' ts :
+  reorder_tree t t' → reorder_forest (cons_forest t ts) (cons_forest t' ts).
+Proof.
+  intro Hreorder. induction Hreorder.
+  - apply rtc_refl.
+  - eapply rtc_l; eauto.
+    inv H.
+    + apply sc_lr. constructor. assumption.
+    + apply sc_rl. constructor. assumption.
+Qed.
+
+
+Lemma left_reorderable_nil_false p :
+  ¬ left_reorderable p [].
+Proof.
+  intro Hlr. induction p.
+  + inv Hlr.
+  + inv Hlr. auto.
+Qed.
+
+Lemma left_reorder_terminal_false p a :
+  ¬ left_reorderable p [terminal a].
+Proof.
+  intro Hlr.
+  induction p.
+  - inv Hlr.
+  - inv Hlr. auto.
+Qed.
+
 End ReorderTheorems.
