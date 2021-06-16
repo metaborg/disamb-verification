@@ -25,166 +25,162 @@ Notation "p1 'lefta' p2 '∠' PR" := (left_associativity PR p1 p2) (at level 50)
 Notation "p1 'righta' p2 '∠' PR" := (right_associativity PR p1 p2) (at level 51).
 Notation "p1 '>>' p2 '∠' PR" := (priority PR p1 p2) (at level 52).
 
-Inductive disambiguation_pattern (T : Type) :=
-  | left_pattern (p1 p2 : production T)
-  | right_pattern (p1 p2 : production T).
-
-Global Arguments left_pattern {_} _ _ .
-Global Arguments right_pattern {_} _ _.
-
-Record disambiguation_patterns (T : Type) := mk_disambiguation_patterns {
-  patterns : disambiguation_pattern T → Prop;
-  patterns_decidable : ∀ q, Decision (patterns q);
-  left_pattern_well_formed : ∀ p1 p2, patterns (left_pattern p1 p2) → left_reorderable p1 p2;
-  right_pattern_well_formed : ∀ p1 p2, patterns (right_pattern p1 p2) → left_reorderable p2 p1;
+Record conflict_rules (T : Type) := mk_conflict_rules {
+  conflict_left : production T → production T → Prop;
+  conflict_right : production T → production T → Prop;
+  conflict_left_decidable : RelDecision conflict_left;
+  conflict_right_decidable : RelDecision conflict_right;
+  conflict_left_well_formed : ∀ p1 p2, conflict_left p1 p2 → left_reorderable p2 p1;
+  conflict_right_well_formed : ∀ p1 p2, conflict_right p1 p2 → left_reorderable p1 p2;
 }.
 
-Global Existing Instances patterns_decidable.
+Global Arguments conflict_left {_} _ _ _.
+Global Arguments conflict_right {_} _ _ _.
+Global Existing Instances conflict_left_decidable.
+Global Existing Instances conflict_right_decidable.
 
-Global Arguments patterns {_} _ _.
-Global Arguments patterns_decidable {_} _.
 
-Notation dpatts := disambiguation_patterns.
+Notation crules := conflict_rules.
 
-Notation "'∠' q Q" := (Q.(patterns) q) (at level 52).
-Notation "p1 'CL' p2 '∠' Q" := (Q.(patterns) (left_pattern p1 p2)) (at level 54).
-Notation "p1 'CR' p2 '∠' Q" := (Q.(patterns) (right_pattern p1 p2)) (at level 53).
+Notation "p1 'CL' p2 '∠' Q" := (Q.(conflict_left) p1 p2) (at level 54).
+Notation "p1 'CR' p2 '∠' Q" := (Q.(conflict_right) p1 p2) (at level 53).
 
-Inductive leftmost_match {T} (p : production T) : parse_tree T → Prop :=
-  | leftmost_match_id ts :
-      leftmost_match p (node p ts)
-  | leftmost_match_deep p0 t ts :
-      leftmost_match p t →
-      leftmost_match p (node p0 (cons_forest t ts)).
+Inductive in_rightmost_branch {T} (p : production T) : parse_tree T → Prop :=
+  | in_rightmost_branch_root ts :
+      in_rightmost_branch p (node p ts)
+  | in_rightmost_branch_sub p0 ts :
+      in_rightmost_branch_forest p ts →
+      in_rightmost_branch p (node p0 ts)
 
-Notation "t 'Mlm' p" := (leftmost_match p t) (at level 55).
+with in_rightmost_branch_forest {T} (p : production T) : parse_forest T → Prop :=
+  | in_rightmost_branch_forest_last t :
+      in_rightmost_branch p t →
+      in_rightmost_branch_forest p (cons_forest t nil_forest)
+  | in_rightmost_branch_forest_cons t ts :
+      in_rightmost_branch_forest p ts →
+      in_rightmost_branch_forest p (cons_forest t ts).
 
-Inductive rightmost_match {T} (p : production T) : parse_tree T → Prop :=
-  | rightmost_match_id ts :
-      rightmost_match p (node p ts)
-  | rightmost_match_deep p0 ts :
-      rightmost_match_forest p ts →
-      rightmost_match p (node p0 ts)
+Scheme in_rightmost_branch_tree_forest := Induction for in_rightmost_branch Sort Prop
+with in_rightmost_branch_forest_tree := Induction for in_rightmost_branch_forest Sort Prop.
 
-with rightmost_match_forest {T} (p : production T) : parse_forest T → Prop :=
-  | rightmost_match_forest_last t :
-      rightmost_match p t →
-      rightmost_match_forest p (cons_forest t nil_forest)
-  | rightmost_match_forest_cons t ts :
-      rightmost_match_forest p ts →
-      rightmost_match_forest p (cons_forest t ts).
+Inductive in_leftmost_branch {T} (p : production T) : parse_tree T → Prop :=
+  | in_leftmost_branch_root ts :
+      in_leftmost_branch p (node p ts)
+  | in_leftmost_branch_sub p0 t ts :
+      in_leftmost_branch p t →
+      in_leftmost_branch p (node p0 (cons_forest t ts)).
 
-Scheme rightmost_match_tree_forest := Induction for rightmost_match Sort Prop
-with rightmost_match_forest_tree := Induction for rightmost_match_forest Sort Prop.
+Notation "p 'LM' t" := (in_leftmost_branch p t) (at level 55).
+Notation "p 'RM' t" := (in_rightmost_branch p t) (at level 56).
+Notation "p 'RMf' ts" := (in_rightmost_branch_forest p ts) (at level 56).
 
-Notation "t 'Mrm' p" := (rightmost_match p t) (at level 56).
-Notation "ts 'Mrmf' p" := (rightmost_match_forest p ts) (at level 57).
+Inductive in_left_neighborhood {T} (p : production T) : parse_tree T → Prop :=
+  | in_left_neighborhood_intro p0 t ts :
+      in_rightmost_branch p t →
+      in_left_neighborhood p (node p0 (cons_forest t ts)).
 
-Inductive conflict_right_forest {T} (p : production T) : parse_forest T → Prop :=
-  | conflict_right_forest_last t :
-      t Mlm p →
-      conflict_right_forest p (cons_forest t nil_forest)
-  | conflict_right_forest_cons t ts :
-      conflict_right_forest p ts →
-      conflict_right_forest p (cons_forest t ts).
+Inductive in_right_neighborhood_forest {T} (p : production T) : parse_forest T → Prop :=
+  | in_right_neighborhood_forest_last t :
+      in_leftmost_branch p t →
+      in_right_neighborhood_forest p (cons_forest t nil_forest)
+  | in_right_neighborhood_forest_cons t ts :
+      in_right_neighborhood_forest p ts →
+      in_right_neighborhood_forest p (cons_forest t ts).
 
-Notation crf := conflict_right_forest.
+Inductive in_right_neighborhood {T} (p : production T) : parse_tree T → Prop :=
+  | in_right_neighborhood_intro p0 ts :
+      in_right_neighborhood_forest p ts →
+      in_right_neighborhood p (node p0 ts).
 
-Inductive conflict_right {T} (Q : dpatts T) : parse_tree T → Prop :=
-  | conflict_right_app p1 p2 ts :
-      p1 CR p2 ∠ Q →
-      conflict_right_forest p2 ts →
-      conflict_right Q (node p1 ts).
+Notation "p 'NL' t" := (in_left_neighborhood p t) (at level 57).
+Notation "p 'NR' t" := (in_right_neighborhood p t) (at level 58).
+Notation "p 'NRf' ts" := (in_right_neighborhood_forest p ts) (at level 58).
 
-Notation cr := conflict_right.
-
-Inductive conflict_left {T} (Q : dpatts T) : parse_tree T → Prop :=
-  | conflict_left_app p1 p2 t ts :
-      p1 CL p2 ∠ Q →
-      t Mrm p2 →
-      conflict_left Q (node p1 (cons_forest t ts)).
-
-Notation cl := conflict_left.
-
-Inductive conflict_free_tree {T} (Q : dpatts T) : parse_tree T → Prop :=
+Inductive conflict_free {T} (Q : conflict_rules T) : parse_tree T → Prop :=
   | conflict_free_leaf a :
-      conflict_free_tree Q (leaf a)
-  | conflict_free_node p ts :
-      ¬ cl Q (node p ts) →
-      ¬ cr Q (node p ts) →
+      conflict_free Q (leaf a)
+  | conflict_free_node p1 ts :
+      (∀ p2, p1 CL p2 ∠ Q → ¬ p2 NL (node p1 ts)) →
+      (∀ p2, p1 CR p2 ∠ Q → ¬ p2 NR (node p1 ts)) →
       conflict_free_forest Q ts →
-      conflict_free_tree Q (node p ts)
+      conflict_free Q (node p1 ts)
 
-with conflict_free_forest {T} (Q : dpatts T) : parse_forest T → Prop :=
-  | conflict_free_nil_forest :
+with conflict_free_forest {T} (Q : conflict_rules T) : parse_forest T → Prop :=
+  | conflict_free_forest_nil :
       conflict_free_forest Q nil_forest
-  | conflict_free_cons_forest t ts :
-      conflict_free_tree Q t →
+  | conflict_free_forest_cons t ts :
+      conflict_free Q t →
       conflict_free_forest Q ts →
       conflict_free_forest Q (cons_forest t ts).
 
-Scheme conflict_free_tree_forest := Induction for conflict_free_tree Sort Prop
+Notation cf := conflict_free.
+Notation cff := conflict_free_forest.
+
+Scheme conflict_free_tree_forest := Induction for conflict_free Sort Prop
 with conflict_free_forest_tree := Induction for conflict_free_forest Sort Prop.
 
-Notation cft := conflict_free_tree.
-Notation cfts := conflict_free_forest.
-
-Inductive disambiguation_rules_to_patterns {T} (PR : drules T) : disambiguation_pattern T → Prop :=
+Inductive as_conflict_right_rule {T} (PR : drules T) : production T → production T → Prop :=
   | priority_pattern_right p1 p2 :
       p1 >> p2 ∠ PR →
-      left_reorderable p2 p1 →
-      disambiguation_rules_to_patterns PR (right_pattern p1 p2)
+      left_reorderable p1 p2 →
+      as_conflict_right_rule PR p1 p2
+  | left_associativity_right p1 p2 :
+      p1 lefta p2 ∠ PR →
+      left_reorderable p1 p2 →
+      as_conflict_right_rule PR p1 p2.
+
+Inductive as_conflict_left_rule {T} (PR : drules T) : production T → production T → Prop :=
   | priority_pattern_left p1 p2 :
       p1 >> p2 ∠ PR →
-      left_reorderable p1 p2 →
-      disambiguation_rules_to_patterns PR (left_pattern p1 p2)
-  | left_associativity_pattern p1 p2 :
-      p1 lefta p2 ∠ PR →
       left_reorderable p2 p1 →
-      disambiguation_rules_to_patterns PR (right_pattern p1 p2)
-  | right_associativity_pattern p1 p2 :
+      as_conflict_left_rule PR p1 p2
+  | right_associativity_left p1 p2 :
       p1 righta p2 ∠ PR →
-      left_reorderable p1 p2 →
-      disambiguation_rules_to_patterns PR (left_pattern p1 p2).
+      left_reorderable p2 p1 →
+      as_conflict_left_rule PR p1 p2.
 
-Global Instance disambiguation_rules_to_patterns_decidable {T} (PR : drules T) :
-  ∀ q, Decision (disambiguation_rules_to_patterns PR q).
+Global Instance as_conflict_right_rule_decidable {T} (PR : drules T) :
+  RelDecision (as_conflict_right_rule PR).
 Proof.
-  intro q. destruct q as [p1 p2|p1 p2]; destruct (decide (p1 >> p2 ∠ PR)) as [Hprio|Hnotprio].
-  - destruct (decide (left_reorderable p1 p2)).
-    + left. auto using priority_pattern_left.
-    + right. intro. inv H; contradiction.
-  - destruct (decide (p1 righta p2 ∠ PR)) as [Hrighta|Hnotrighta].
-    + destruct (decide (left_reorderable p1 p2)).
-      * left. auto using right_associativity_pattern.
-      * right. intro. inv H; contradiction.
-    + right. intro Hleftpattern.
-      inv Hleftpattern; contradiction.
-  - destruct (decide (left_reorderable p2 p1)).
+  intros p1 p2.
+  destruct (decide (left_reorderable p1 p2)) as [Hlr|Hnlr].
+  - destruct (decide (p1 >> p2 ∠ PR)) as [Hprio|Hnprio].
     + left. auto using priority_pattern_right.
-    + right. intro. inv H; contradiction.
-  - destruct (decide (p1 lefta p2 ∠ PR)) as [Hlefta|Hnotlefta].
-    + destruct (decide (left_reorderable p2 p1)).
-      * left. auto using left_associativity_pattern.
-      * right. intro. inv H; contradiction.
-    + right. intro Hrightpattern.
-      inv Hrightpattern; contradiction.
+    + destruct (decide (p1 lefta p2 ∠ PR)) as [Hlefta|Hnlefta].
+      * left. auto using left_associativity_right.
+      * right. intro. inv H; auto.
+  - right. intro. inv H; auto.
 Qed.
 
-Lemma disambiguation_rules_to_pattern_left_pattern_well_formed {T} (PR : drules T) :
-  ∀ p1 p2, disambiguation_rules_to_patterns PR (left_pattern p1 p2) → left_reorderable p1 p2.
+Global Instance as_conflict_left_rule_decidable {T} (PR : drules T) :
+  RelDecision (as_conflict_left_rule PR).
+Proof.
+  intros p1 p2.
+  destruct (decide (left_reorderable p2 p1)) as [Hrl|Hnrl].
+  - destruct (decide (p1 >> p2 ∠ PR)) as [Hprio|Hnprio].
+    + left. auto using priority_pattern_left.
+    + destruct (decide (p1 righta p2 ∠ PR)) as [Hlefta|Hnlefta].
+      * left. auto using right_associativity_left.
+      * right. intro. inv H; auto.
+  - right. intro. inv H; auto.
+Qed.
+
+Lemma as_conflict_right_rule_well_formed {T} (PR : drules T) :
+  ∀ p1 p2, as_conflict_right_rule PR p1 p2 → left_reorderable p1 p2.
 Proof.
   intros. inv H; auto.
 Qed.
 
-Lemma disambiguation_rules_to_pattern_right_pattern_well_formed {T} (PR : drules T) :
-  ∀ p1 p2, disambiguation_rules_to_patterns PR (right_pattern p1 p2) → left_reorderable p2 p1.
+Lemma as_conflict_left_rule_well_formed {T} (PR : drules T) :
+  ∀ p1 p2, as_conflict_left_rule PR p1 p2 → left_reorderable p2 p1.
 Proof.
   intros. inv H; auto.
 Qed.
 
-Definition drules_to_dpatts {T} (PR : drules T) : dpatts T := mk_disambiguation_patterns T
-  (disambiguation_rules_to_patterns PR)
-  (disambiguation_rules_to_patterns_decidable PR)
-  (disambiguation_rules_to_pattern_left_pattern_well_formed PR)
-  (disambiguation_rules_to_pattern_right_pattern_well_formed PR).
+Definition drules_to_crules {T} (PR : drules T) : crules T := mk_conflict_rules T
+  (as_conflict_left_rule PR)
+  (as_conflict_right_rule PR)
+  (as_conflict_left_rule_decidable PR)
+  (as_conflict_right_rule_decidable PR)
+  (as_conflict_left_rule_well_formed PR)
+  (as_conflict_right_rule_well_formed PR).
