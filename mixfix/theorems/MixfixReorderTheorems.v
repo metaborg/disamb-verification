@@ -1,4 +1,5 @@
 From disamb Require Export MixfixReorder.
+From disamb Require Export MixfixUtils.
 From disamb Require Import MyUtils.
 
 Section ReorderTheorems.
@@ -150,22 +151,31 @@ Proof.
     + apply sc_rl. constructor. assumption.
 Qed.
 
-
-Lemma left_reorderable_nil_false p :
-  ¬ left_reorderable p [].
+Lemma reorder_step_add_last p p1 t1s p1n t1ns ts :
+  reorder_step_tree (node p (cons_forest (node p1 (add_last t1s (node p1n t1ns))) ts))
+    (node p1 (add_last t1s (node p (cons_forest (node p1n t1ns) ts)))).
 Proof.
-  intro Hlr. induction p.
-  + inv Hlr.
-  + inv Hlr. auto.
+  constructor.
+  induction t1s; simpl.
+  - constructor.
+  - constructor. assumption.
 Qed.
 
-Lemma left_reorder_terminal_false p a :
-  ¬ left_reorderable p [terminal a].
+Lemma left_dangling_left_branching g p ts :
+  left_dangling p → wft g E (node p ts) → left_branching (node p ts).
 Proof.
-  intro Hlr.
-  induction p.
-  - inv Hlr.
-  - inv Hlr. auto.
+  intros Hld Hwf. inv Hwf. inv Hld. inv H2. inv H3. constructor. constructor.
 Qed.
+
+Lemma right_dangling_right_branching g p ts :
+  right_dangling p → wft g E (node p ts) → right_branching (node p ts).
+Proof.
+  intros Hld Hwf. inv Hwf. clear H1. constructor. induction H2.
+  - inv Hld.
+  - inv Hld.
+    + inv H2. inv H. constructor.
+    + constructor. auto.
+Qed.
+  
 
 End ReorderTheorems.

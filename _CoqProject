@@ -2,7 +2,9 @@
 
 MyUtils.v
 mixfix/MixfixGrammar.v
+mixfix/MixfixUtils.v
 mixfix/MixfixReorder.v
 mixfix/MixfixDisambiguation.v
 mixfix/MixfixRepair.v
+mixfix/theorems/MixfixUtilsTheorems.v
 mixfix/theorems/MixfixReorderTheorems.v

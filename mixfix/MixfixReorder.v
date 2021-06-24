@@ -33,27 +33,56 @@ with reorder_step_forest_tree_rec := Induction for reorder_step_forest Sort Prop
 Definition reorder_tree {T} := rtsc (@reorder_step_tree T).
 Definition reorder_forest {T} := rtsc (@reorder_step_forest T).
 
-Inductive left_reorderable {T} : production T → production T → Prop :=
-  | left_reorderable_one p :
-      left_reorderable [E] (E :: p)
-  | left_reorderable_cons X p1 p2 :
-      left_reorderable p1 p2 →
-      left_reorderable (X :: p1) p2.
+Inductive left_dangling {T} : production T → Prop :=
+  | left_dangling_intro p :
+      left_dangling (E :: p).
 
-Global Instance left_reorderable_decidable {T} (p1 p2 : production T) :
-  Decision (left_reorderable p1 p2).
+Inductive right_dangling {T} : production T → Prop :=
+  | right_dangling_one :
+      right_dangling [E]
+  | right_dangling_cons X p :
+      right_dangling p →
+      right_dangling (X :: p).
+
+Global Instance left_dangling_decidable {T} (p : production T) : Decision (left_dangling p).
 Proof.
-  induction p1 as [|X p1].
+  destruct p.
   - right. intro. inv H.
-  - destruct IHp1.
-    + left. constructor. assumption.
-    + destruct X.
-      * right. intro. inv H. contradiction.
-      * destruct p1 as [|X p1].
-        **destruct p2 as [|X p2].
-          ***right. intro. inv H. inv H3.
-          ***destruct X.
-            ****right. intro. inv H. inv H3.
-            ****left. constructor.
-        **right. intro. inv H. contradiction.
+  - destruct s.
+    + right. intro. inv H.
+    + left. constructor.
 Qed.
+
+Global Instance right_dangling_decidable {T} (p : production T) : Decision (right_dangling p).
+Proof.
+  induction p.
+  - right. intro. inv H.
+  - destruct IHp.
+    + left. constructor. assumption.
+    + destruct p.
+      * destruct a.
+        **right. intro. inv H. inv H1.
+        **left. constructor.
+      * right. intro. inv H. contradiction.
+Qed.
+
+Inductive left_branching_forest {T} : parse_forest T → Prop :=
+  | left_branching_forest_intro p1 t1s ts :
+      left_branching_forest (cons_forest (node p1 t1s) ts).
+
+Inductive left_branching {T} : parse_tree T → Prop :=
+  | left_branching_intro p ts :
+      left_branching_forest ts →
+      left_branching (node p ts).
+
+Inductive right_branching_forest {T} : parse_forest T → Prop :=
+  | right_branching_forest_last pn tns :
+      right_branching_forest (cons_forest (node pn tns) nil_forest)
+  | right_branching_forest_cons t ts :
+      right_branching_forest ts →
+      right_branching_forest (cons_forest t ts).
+
+Inductive right_branching {T} : parse_tree T → Prop :=
+  | right_branching_intro p ts :
+      right_branching_forest ts →
+      right_branching (node p ts).

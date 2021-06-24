@@ -1,26 +1,19 @@
 From disamb Require Export MixfixDisambiguation.
-
-Fixpoint add_last {T} (ts : parse_forest T) (tn : parse_tree T) :=
-  match ts with
-  | nil_forest => cons_forest tn nil_forest
-  | cons_forest t ts => cons_forest t (add_last ts tn)
-  end.
+From disamb Require Export MixfixUtils.
 
 Fixpoint repair_cr {T} (Q : crules T) (p : production T) (ts : parse_forest T) (tn : parse_tree T) :=
   match tn with
   | leaf a => (node p (add_last ts tn), false)
-  | node pn nil_forest => (node p (add_last ts tn), false)
-  | node pn (cons_forest tn1 tns) =>
+  | node pn tns => repair_cr_forest Q p pn ts tns
+  end
+
+with repair_cr_forest {T} (Q : crules T) (p pn : production T) (ts tns : parse_forest T) :=
+  match tns with
+  | nil_forest => (node p (add_last ts (node pn tns)), false)
+  | cons_forest tn1 tns =>
       let (tn1', b) := repair_cr Q p ts tn1 in
       if decide (b = true ∨ p CR pn ∠ Q) then (node pn (cons_forest tn1' tns), true)
-      else (node p (add_last ts tn), false)
-  end.
-
-Fixpoint split_last {T} (t : parse_tree T) (ts : parse_forest T) :=
-  match ts with
-  | nil_forest => (nil_forest, t)
-  | cons_forest t2 ts =>
-      let (ts', t') := split_last t ts in (cons_forest t2 ts', t')
+      else (node p (add_last ts (node pn (cons_forest tn1 tns))), false)
   end.
   
 Definition repair_cr_start {T} (Q : crules T) (t : parse_tree T) :=
