@@ -45,6 +45,8 @@ Notation crules := conflict_rules.
 Notation "p1 'CL' p2 '∠' Q" := (Q.(conflict_left) p1 p2) (at level 54).
 Notation "p1 'CR' p2 '∠' Q" := (Q.(conflict_right) p1 p2) (at level 53).
 
+Definition safe_crules {T} (Q : crules T) : Prop := ∀ p1 p2, ¬ (p1 CL p2 ∠ Q ∧ p2 CR p1 ∠ Q).
+
 Inductive in_rightmost_branch {T} (p : production T) : parse_tree T → Prop :=
   | in_rightmost_branch_root ts :
       in_rightmost_branch p (node p ts)
@@ -66,11 +68,17 @@ with in_rightmost_branch_forest_tree := Induction for in_rightmost_branch_forest
 Inductive in_leftmost_branch {T} (p : production T) : parse_tree T → Prop :=
   | in_leftmost_branch_root ts :
       in_leftmost_branch p (node p ts)
-  | in_leftmost_branch_sub p0 t ts :
+  | in_leftmost_branch_sub p0 ts :
+      in_leftmost_branch_forest p ts →
+      in_leftmost_branch p (node p0 ts)
+
+with in_leftmost_branch_forest {T} (p : production T) : parse_forest T → Prop :=
+  | in_leftmost_branch_forest_intro t ts :
       in_leftmost_branch p t →
-      in_leftmost_branch p (node p0 (cons_forest t ts)).
+      in_leftmost_branch_forest p (cons_forest t ts).
 
 Notation "p 'LM' t" := (in_leftmost_branch p t) (at level 55).
+Notation "p 'LMf' ts" := (in_leftmost_branch_forest p ts) (at level 55).
 Notation "p 'RM' t" := (in_rightmost_branch p t) (at level 56).
 Notation "p 'RMf' ts" := (in_rightmost_branch_forest p ts) (at level 56).
 
@@ -92,18 +100,27 @@ Inductive in_right_neighborhood {T} (p : production T) : parse_tree T → Prop :
       in_right_neighborhood_forest p ts →
       in_right_neighborhood p (node p0 ts).
 
-Notation "p 'NL' t" := (in_left_neighborhood p t) (at level 57).
-Notation "p 'NR' t" := (in_right_neighborhood p t) (at level 58).
-Notation "p 'NRf' ts" := (in_right_neighborhood_forest p ts) (at level 58).
+Notation "p 'LN' t" := (in_left_neighborhood p t) (at level 57).
+Notation "p 'RN' t" := (in_right_neighborhood p t) (at level 58).
+Notation "p 'RNf' ts" := (in_right_neighborhood_forest p ts) (at level 58).
+
+Definition left_neighborhood_conflict_free {T} (Q : conflict_rules T) p1 ts : Prop :=
+  ∀ p2, p1 CL p2 ∠ Q → ¬ p2 LN (node p1 ts).
+
+Definition right_neighborhood_conflict_free {T} (Q : conflict_rules T) p1 ts : Prop :=
+  ∀ p2, p1 CR p2 ∠ Q → ¬ p2 RN (node p1 ts).
+
+Notation lncf := left_neighborhood_conflict_free.
+Notation rncf := right_neighborhood_conflict_free.
 
 Inductive conflict_free {T} (Q : conflict_rules T) : parse_tree T → Prop :=
   | conflict_free_leaf a :
       conflict_free Q (leaf a)
-  | conflict_free_node p1 ts :
-      (∀ p2, p1 CL p2 ∠ Q → ¬ p2 NL (node p1 ts)) →
-      (∀ p2, p1 CR p2 ∠ Q → ¬ p2 NR (node p1 ts)) →
+  | conflict_free_node p ts :
+      lncf Q p ts →
+      rncf Q p ts →
       conflict_free_forest Q ts →
-      conflict_free Q (node p1 ts)
+      conflict_free Q (node p ts)
 
 with conflict_free_forest {T} (Q : conflict_rules T) : parse_forest T → Prop :=
   | conflict_free_forest_nil :

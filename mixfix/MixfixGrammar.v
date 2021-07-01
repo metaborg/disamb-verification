@@ -11,7 +11,15 @@ Notation E := nonterminal.
 
 Definition production (T : Type) := list (symbol T).
 
-Definition mixfixgrammar (T : Type) := production T → Prop.
+Record mixfixgrammar (T : Type) := mkMixfixgrammar {
+  productions : production T → Prop;
+  acyclic_productions : ¬ productions [E];
+}.
+
+Global Arguments productions {_} _ _.
+Global Arguments acyclic_productions {_} _.
+
+Notation prod := productions.
 
 Definition word (T : Type) := list T.
 
@@ -35,7 +43,7 @@ Inductive well_formed_parse_tree {T} (g : mixfixgrammar T) : symbol T → parse_
   | well_formed_leaf a :
       well_formed_parse_tree g (terminal a) (leaf a)
   | well_formed_node p ts :
-      g p →
+      prod g p →
       well_formed_parse_forest g p ts →
       well_formed_parse_tree g E (node p ts) 
 

@@ -39,7 +39,7 @@ Proof.
 Qed.
 
 Lemma reorder_forest_left_up_well_formed_1 g Xs1 p2 ts1 ts2 ts2' :
-  g (E :: Xs1) →
+  prod g (E :: Xs1) →
   wfts g Xs1 ts1 → wfts g p2 ts2 → reorder_forest_left_up (E :: Xs1) ts1 ts2 ts2' → wfts g p2 ts2'.
 Proof.
   intros Hp1 Hwfts1 Hwfts2 Hreorder. revert Hwfts2. revert p2.
@@ -52,7 +52,7 @@ Qed.
 
 Lemma reorder_forest_left_up_well_formed_2 g p1 p2 ts1 ts2 ts2' :
   wfts g p2 ts2' → reorder_forest_left_up p1 ts1 ts2 ts2' →
-  ∃ Xs1, p1 = E :: Xs1 ∧ g p1 ∧ wfts g Xs1 ts1 ∧ wfts g p2 ts2.
+  ∃ Xs1, p1 = E :: Xs1 ∧ prod g p1 ∧ wfts g Xs1 ts1 ∧ wfts g p2 ts2.
 Proof.
   intros Hwfts2' Hreorder. revert Hwfts2'. revert p2.
   induction Hreorder; intros p2 Hwfts2'. 
