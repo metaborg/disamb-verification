@@ -1,4 +1,5 @@
 From disamb Require Export MixfixRepair.
+From disamb Require Export MixfixUtilsTheorems.
 From disamb Require Import MyUtils.
 
 Section MixfixRepairConflictFree.
@@ -319,5 +320,81 @@ Proof.
         constructor; auto.
       }
 Qed.
+
+Lemma split_last_cf Q t ts tsh tn :
+  cf Q t →
+  cff Q ts →
+  split_last t ts = (tsh, tn) →
+  cff Q tsh ∧ cf Q tn.
+Proof.
+  intros Hcf Hcff.
+  revert Hcf. revert t tsh.
+  induction Hcff; simpl; intros.
+  - inv H.
+    split.
+    constructor.
+    assumption.
+  - destruct (split_last t ts) eqn:?.
+    inv H0.
+    apply IHHcff in Heqp; auto.
+    destruct Heqp.
+    split; auto.
+    constructor; assumption.
+Qed.
+
+
+Lemma repair_cr_start_conflict_free g X Q t :
+  safe_crules Q →
+  wft g X t →
+  match t with
+  | leaf a => True
+  | node p ts => lncf Q p ts ∧ cff Q ts
+  end → cf Q (repair_cr_start Q t).
+Proof.
+  intros.
+  inv H0; simpl.
+  - constructor.
+  - destruct H1.
+    destruct ts as [|t1 ts].
+    + constructor. {
+        intros ???.
+        inv H5.
+      } {
+        intros ???.
+        inv H5.
+        inv H7.
+      } {
+        constructor.
+      }
+    + inv H3.
+      inv H1.
+      destruct (split_last t1 ts) as [tsh tn] eqn:?.
+      destruct (repair_cr Q (X :: Xs) tsh tn) as [t' b] eqn:?.
+      eapply split_last_cf in Heqp as ?; eauto.
+      destruct H1.
+      destruct ts as [|t2 ts]; inv H8.
+      * inv Heqp.
+        inv H7.
+        **inv Heqp0.
+          constructor; auto. {
+            intros ???.
+            inv H7. inv H9. inv H8. inv H8.
+          } {
+            repeat constructor.
+          }
+        **exfalso.
+          eapply acyclic_productions; eauto.
+      * simpl in Heqp.
+        destruct (split_last t2 ts) as [tsh2 tnm1] eqn:?.
+        inv Heqp.
+        eapply split_last_wf in Heqp1 as ?; eauto.
+        destruct H4 as [Xn].
+        eapply repair_cr_conflict_free in Heqp0; eauto.
+        intros ???.
+        inv H9.
+        apply H0 with p2; auto.
+        constructor.
+        assumption.
+Qed.  
 
 End MixfixRepairConflictFree.
