@@ -8,3 +8,6 @@ mixfix/MixfixDisambiguation.v
 mixfix/MixfixRepair.v
 mixfix/theorems/MixfixUtilsTheorems.v
 mixfix/theorems/MixfixReorderTheorems.v
+mixfix/theorems/MixfixRepairReorder.v
+mixfix/theorems/MixfixRepairConflictFree.v
+mixfix/theorems/MixfixSafety.v

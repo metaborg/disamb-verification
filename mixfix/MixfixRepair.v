@@ -28,26 +28,34 @@ Definition repair_cr_start {T} (Q : crules T) (t : parse_tree T) :=
 Fixpoint repair_cl {T} (Q : crules T) (p : production T) (t1 : parse_tree T) (ts : parse_forest T) :=
   match t1 with
   | leaf a => repair_cr_start Q (node p (cons_forest t1 ts))
-  | node p1 nil_forest => repair_cr_start Q (node p (cons_forest t1 ts))
-  | node p1 (cons_forest t11 t1s) =>
-      match (repair_cl_forest Q p p1 ts t1s) with
-      | None => repair_cr_start Q (node p (cons_forest t1 ts))
+  | node p1 t1s => repair_cl_forest1 Q p p1 t1s ts
+  end
+
+with repair_cl_forest1 {T} (Q : crules T) (p p1 : production T) (t1s ts : parse_forest T) :=
+  match t1s with
+  | nil_forest => repair_cr_start Q (node p (cons_forest (node p1 t1s) ts))
+  | cons_forest t11 t1s =>
+      match (repair_cl_forest2 Q p p1 ts t1s) with
+      | None => repair_cr_start Q (node p (cons_forest (node p1 (cons_forest t11 t1s)) ts))
       | Some ts' => repair_cl Q p1 t11 ts'
       end
   end
 
-with repair_cl_forest {T} (Q : crules T) (p p1 : production T) (ts t1s : parse_forest T) : option (parse_forest T) :=
+with repair_cl_forest2 {T} (Q : crules T) (p p1 : production T) (ts t1s : parse_forest T) : option (parse_forest T) :=
   match t1s with
   | nil_forest => None
-  | cons_forest t1n nil_forest =>
-      match t1n with
-      | leaf a => None
-      | node p1n t1ns => Some (cons_forest (repair_cl Q p t1n ts) nil_forest)
-      end
   | cons_forest t1i t1s =>
-      match (repair_cl_forest Q p p1 ts t1s) with
-      | None => None
-      | Some t1s' => Some (cons_forest t1i t1s')
+      match t1s with
+      | nil_forest => 
+          match t1i with
+          | leaf a => None
+          | node p1n t1ns => Some (cons_forest (repair_cl Q p t1i ts) nil_forest)
+          end
+      | _ =>
+          match (repair_cl_forest2 Q p p1 ts t1s) with
+          | None => None
+          | Some t1s' => Some (cons_forest t1i t1s')
+          end
       end
   end.
 

@@ -25,6 +25,9 @@ Notation "p1 'lefta' p2 '∠' PR" := (left_associativity PR p1 p2) (at level 50)
 Notation "p1 'righta' p2 '∠' PR" := (right_associativity PR p1 p2) (at level 51).
 Notation "p1 '>>' p2 '∠' PR" := (priority PR p1 p2) (at level 52).
 
+Definition safe_drules {T} (PR : drules T) : Prop :=
+  ∀ p1 p2, ¬ ((p1 >> p2 ∠ PR ∨ p1 lefta p2 ∠ PR) ∧ (p2 >> p1 ∠ PR ∨ p2 righta p1 ∠ PR)).
+
 Record conflict_rules (T : Type) := mk_conflict_rules {
   conflict_left : production T → production T → Prop;
   conflict_right : production T → production T → Prop;
@@ -136,6 +139,9 @@ Notation cff := conflict_free_forest.
 Scheme conflict_free_tree_forest := Induction for conflict_free Sort Prop
 with conflict_free_forest_tree := Induction for conflict_free_forest Sort Prop.
 
+Definition crules_sentence {T} (g : mixfixgrammar T) (Q : crules T) w :=
+  ∃ t, wft g E t ∧ cf Q t ∧ yt t = w.
+
 Inductive as_conflict_right_rule {T} (PR : drules T) : production T → production T → Prop :=
   | priority_pattern_right p1 p2 :
       p1 >> p2 ∠ PR →
@@ -207,3 +213,5 @@ Definition drules_to_crules {T} (PR : drules T) : crules T := mk_conflict_rules 
   (as_conflict_right_rule_decidable PR)
   (as_conflict_left_rule_well_formed PR)
   (as_conflict_right_rule_well_formed PR).
+
+Notation drules_sentence g PR w := (crules_sentence g (drules_to_crules PR) w).

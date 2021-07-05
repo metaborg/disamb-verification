@@ -1,5 +1,6 @@
 From disamb Require Export MixfixRepair.
 From disamb Require Export MixfixUtilsTheorems.
+From disamb Require Import MixfixRepairReorder.
 From disamb Require Import MyUtils.
 
 Section MixfixRepairConflictFree.
@@ -342,7 +343,6 @@ Proof.
     constructor; assumption.
 Qed.
 
-
 Lemma repair_cr_start_conflict_free g X Q t :
   safe_crules Q →
   wft g X t →
@@ -395,6 +395,149 @@ Proof.
         apply H0 with p2; auto.
         constructor.
         assumption.
-Qed.  
+Qed.
+
+Lemma repair_cl_forest2_none_right_dangling g X1s Q p p1 ts t1s :
+  wfts g X1s t1s → repair_cl_forest2 Q p p1 ts t1s = None → ¬ right_dangling X1s.
+Proof.
+  revert X1s. induction t1s; intros ????.
+  - inv H. inv H1.
+  - inv H. simpl in *.
+    destruct t1s.
+    + destruct p0; inv H0. inv H5.
+      inv H1. inv H6. inv H0.
+    + destruct (repair_cl_forest2 Q p p1 ts (cons_forest p2 t1s)) eqn:?; inv H0.
+      apply IHt1s in H6 as ?; auto.
+      inv H1.
+      * inv H6.
+      * contradiction.
+Qed.
+
+Lemma rmf_right_dangling g Xs ts p :
+  wfts g Xs ts → p RMf ts → right_dangling Xs.
+Proof.
+  revert Xs. induction ts; intros.
+  - inv H0.
+  - inv H. inv H0.
+    + inv H5. inv H4. inv H1. constructor.
+    + constructor. apply IHts; auto.
+Qed.
+
+Lemma repair_cl_conflict_free g X Q p t1 ts :
+  safe_crules Q →
+  wft g X (node p (cons_forest t1 ts)) →
+  cf Q t1 →
+  cff Q ts →
+  cf Q (repair_cl Q p t1 ts).
+Proof.
+  intros Hsafe.
+  revert X p ts.
+  induction t1 using parse_tree_forest_rec with
+    (P0 := fun t1s => (∀ X p p1 ts,  wft g X (node p (cons_forest (node p1 t1s) ts)) →
+                                    cf Q (node p1 t1s) →
+                                    cff Q ts →
+                                    cf Q (repair_cl_forest1 Q p p1 t1s ts))
+                    ∧ (∀ Xs X1s p1 ts ts',   prod g (E :: Xs) →
+                                             wfts g Xs ts →
+                                             wfts g X1s t1s →
+                                             cff Q t1s →
+                                             cff Q ts →
+                                             repair_cl_forest2 Q (E :: Xs) p1 ts t1s = Some ts' →
+                                             cff Q ts'));
+    try split; intros.
+  - cbn [repair_cl].
+    eapply repair_cr_start_conflict_free; eauto.
+    split.
+    intros ???.
+    inv H3. inv H5.
+    constructor. constructor. assumption.
+  - rename p1 into p, p into p1, p0 into t1s.
+    simpl.
+    eapply IHt1; eauto.
+  - cbn [repair_cl_forest1].
+    eapply repair_cr_start_conflict_free; eauto.
+    split.
+    intros ???.
+    inv H3.
+    inv H. inv H8. rename X into X1. inv H6. inv H10.
+    inv H5.
+    apply conflict_left_well_formed in H2. destruct H2. inv H2.
+    inv H3.
+    constructor; assumption.
+  - inv H4.
+  - rename p0 into p, t1 into t11, p into t1s.
+    cbn [repair_cl_forest1].
+    destruct (repair_cl_forest2 Q p p1 ts t1s) as [ts'|] eqn:?.
+    + inv H. inv H6. rename X into X1. inv H4. inv H8. rename X into X11, Xs0 into X1s.
+      eapply IHt1. {
+        constructor; auto.
+        constructor; auto.
+        eapply repair_cl_forest_wf; eauto.
+      } {
+        inv H0. inv H10. assumption.
+      } {
+        inv H0. inv H10.
+        eapply IHt0; eauto.
+      }
+    + eapply repair_cr_start_conflict_free; eauto.
+      split. {
+        intros ???.
+        inv H3.
+        inv H. inv H8. inv H6. inv H10.
+        eapply repair_cl_forest2_none_right_dangling in Heqo; eauto.
+        apply conflict_left_well_formed in H2. destruct H2.
+        inv H5.
+        - inv H2.
+          + eapply acyclic_productions; eauto.
+          + contradiction.
+        - inv H4.
+          + inv H11. inv H6. inv H5.
+            eapply acyclic_productions; eauto.
+          + eapply rmf_right_dangling in H5; eauto.
+      }
+      constructor; eauto.
+  - rename t1 into t1i, p into t1s. simpl in H4.
+    destruct t1s as [|t1j t1ss].
+    + destruct t1i as [a1i|p1i t1is]. inv H4.
+      replace ts' with (cons_forest (repair_cl Q (E :: Xs) (node p1i t1is) ts) nil_forest); [|inv H4; reflexivity].
+      clear H4.
+      repeat try constructor.
+      inv H1. rename X into X1i. inv H8. inv H7.
+      inv H2.
+      eapply IHt1; eauto.
+      repeat (try constructor; try assumption).
+    + destruct (repair_cl_forest2 Q (E :: Xs) p1 ts (cons_forest t1j t1ss)) as [t1s'|] eqn:?; inv H4.
+      inv H1. rename X into X1i, Xs0 into X1s.
+      inv H2.
+      constructor; auto.
+      eapply IHt0; eauto.
+Qed.
+
+Lemma repair_cl_start_conflict_free g X Q p ts :
+  safe_crules Q →
+  wft g X (node p ts) →
+  cff Q ts →
+  cf Q (repair_cl_start Q p ts).
+Proof.
+  intros. destruct ts; simpl.
+  - constructor. intros ???. inv H3. intros ???. inv H3. inv H5. constructor.
+  - inv H1. eapply repair_cl_conflict_free; eauto.
+Qed.
+
+Lemma repair_conflict_free g Q X t :
+  safe_crules Q →
+  wft g X t →
+  cf Q (repair Q t).
+Proof.
+  intro Hsafe. revert X.
+  induction t using parse_tree_forest_rec with
+  (P0 := fun ts => ∀ p, wfts g p ts → cff Q (repair_forest Q ts)); intros.
+  - simpl. constructor.
+  - simpl. inv H. eapply repair_cl_start_conflict_free; eauto.
+    constructor; eauto.
+    apply repair_forest_wf; auto.
+  - simpl. constructor.
+  - simpl. inv H. constructor; eauto.
+Qed.
 
 End MixfixRepairConflictFree.
