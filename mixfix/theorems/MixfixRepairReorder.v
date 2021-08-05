@@ -276,7 +276,7 @@ Proof.
   - simpl. inv H. erewrite <- repair_cl_start_preserves_yield; eauto.
     constructor; eauto. apply repair_forest_wf; auto.
   - simpl. inv H. erewrite <- IHt; eauto. erewrite IHt0; eauto.
-Qed. 
+Qed.
 
 (* Lemma repair_cl_reorder g p t1 ts Q :
   wft g E (node p (cons_forest t1 ts)) → reorder_tree (node p (cons_forest t1 ts)) (repair_cl Q p t1 ts).
