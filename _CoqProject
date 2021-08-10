@@ -6,6 +6,7 @@ mixfix/MixfixUtils.v
 mixfix/MixfixReorder.v
 mixfix/MixfixDisambiguation.v
 mixfix/MixfixRepair.v
+mixfix/MixfixRepair2.v
 mixfix/theorems/MixfixUtilsTheorems.v
 mixfix/theorems/MixfixReorderTheorems.v
 mixfix/theorems/MixfixRepairReorder.v

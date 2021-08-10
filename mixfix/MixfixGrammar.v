@@ -39,6 +39,9 @@ Global Arguments cons_forest {_} _ _.
 Scheme parse_tree_forest_rec := Induction for parse_tree Sort Prop
 with parse_forest_tree_rec := Induction for parse_forest Sort Prop.
 
+Scheme parse_tree_forest_rec_set := Induction for parse_tree Sort Set
+with parse_forest_tree_rec_set := Induction for parse_forest Sort Set.
+
 Inductive well_formed_parse_tree {T} (g : mixfixgrammar T) : symbol T → parse_tree T → Prop :=
   | well_formed_leaf a :
       well_formed_parse_tree g (terminal a) (leaf a)
