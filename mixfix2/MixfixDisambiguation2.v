@@ -1,5 +1,5 @@
 From disamb Require Import MyUtils.
-From disamb Require Export MixfixReorder.
+From disamb Require Export MixfixReorder2.
 
 Record disambiguation_rules (T : Type) := mkDisambiguation_rules {
   priority : production T → production T → Prop;
@@ -53,67 +53,42 @@ Definition complete_crules {T} (Q : crules T) : Prop := ∀ p1 p2,
   left_dangling p1 → right_dangling p2 → p1 CL p2 ∠ Q ∨ p2 CR p1 ∠ Q.
 
 Inductive in_rightmost_branch {T} (p : production T) : parse_tree T → Prop :=
-  | in_rightmost_branch_root ts :
-      in_rightmost_branch p (node p ts)
-  | in_rightmost_branch_sub p0 ts :
-      in_rightmost_branch_forest p ts →
-      in_rightmost_branch p (node p0 ts)
-
-with in_rightmost_branch_forest {T} (p : production T) : parse_forest T → Prop :=
-  | in_rightmost_branch_forest_last t :
-      in_rightmost_branch p t →
-      in_rightmost_branch_forest p (cons_forest t nil_forest)
-  | in_rightmost_branch_forest_cons t ts :
-      in_rightmost_branch_forest p ts →
-      in_rightmost_branch_forest p (cons_forest t ts).
-
-Scheme in_rightmost_branch_tree_forest := Induction for in_rightmost_branch Sort Prop
-with in_rightmost_branch_forest_tree := Induction for in_rightmost_branch_forest Sort Prop.
+  | in_rightmost_branch_root t1 τ tn :
+      in_rightmost_branch p (large_node p t1 τ tn)
+      (*Note: We don't check for small_nodes, because disambiguation rules involving them are nonsensical.*)
+  | in_rightmost_branch_sub p0 t1 τ tn :
+      in_rightmost_branch p tn →
+      in_rightmost_branch p (large_node p0 t1 τ tn).
 
 Inductive in_leftmost_branch {T} (p : production T) : parse_tree T → Prop :=
-  | in_leftmost_branch_root ts :
-      in_leftmost_branch p (node p ts)
-  | in_leftmost_branch_sub p0 ts :
-      in_leftmost_branch_forest p ts →
-      in_leftmost_branch p (node p0 ts)
-
-with in_leftmost_branch_forest {T} (p : production T) : parse_forest T → Prop :=
-  | in_leftmost_branch_forest_intro t ts :
-      in_leftmost_branch p t →
-      in_leftmost_branch_forest p (cons_forest t ts).
+  | in_leftmost_branch_root t1 τ tn :
+      in_leftmost_branch p (large_node p t1 τ tn)
+      (*Note: We don't check for small_nodes, because disambiguation rules involving them are nonsensical.*)
+  | in_leftmost_branch_sub p0 t1 τ tn :
+      in_leftmost_branch p t1 →
+      in_leftmost_branch p (large_node p0 t1 τ tn).
 
 Notation "p 'LM' t" := (in_leftmost_branch p t) (at level 55).
-Notation "p 'LMf' ts" := (in_leftmost_branch_forest p ts) (at level 55).
 Notation "p 'RM' t" := (in_rightmost_branch p t) (at level 56).
-Notation "p 'RMf' ts" := (in_rightmost_branch_forest p ts) (at level 56).
 
 Inductive in_left_neighborhood {T} (p : production T) : parse_tree T → Prop :=
-  | in_left_neighborhood_intro p0 t ts :
-      in_rightmost_branch p t →
-      in_left_neighborhood p (node p0 (cons_forest t ts)).
-
-Inductive in_right_neighborhood_forest {T} (p : production T) : parse_forest T → Prop :=
-  | in_right_neighborhood_forest_last t :
-      in_leftmost_branch p t →
-      in_right_neighborhood_forest p (cons_forest t nil_forest)
-  | in_right_neighborhood_forest_cons t ts :
-      in_right_neighborhood_forest p ts →
-      in_right_neighborhood_forest p (cons_forest t ts).
+  | in_left_neighborhood_intro p0 t1 τ tn :
+      in_rightmost_branch p t1 →
+      in_left_neighborhood p (large_node p0 t1 τ tn).
 
 Inductive in_right_neighborhood {T} (p : production T) : parse_tree T → Prop :=
-  | in_right_neighborhood_intro p0 ts :
-      in_right_neighborhood_forest p ts →
-      in_right_neighborhood p (node p0 ts).
+  | in_right_neighborhood_intro p0 t1 τ tn :
+      in_leftmost_branch p tn →
+      in_right_neighborhood p (large_node p0 t1 τ tn).
 
 Notation "p 'LN' t" := (in_left_neighborhood p t) (at level 57).
 Notation "p 'RN' t" := (in_right_neighborhood p t) (at level 58).
-Notation "p 'RNf' ts" := (in_right_neighborhood_forest p ts) (at level 58).
 
-Definition left_neighborhood_conflict_free {T} (Q : conflict_rules T) p1 ts : Prop :=
-  ∀ p2, p1 CL p2 ∠ Q → ¬ p2 LN (node p1 ts).
+Definition left_neighborhood_conflict_free {T} (Q : conflict_rules T) p1 t1 τ tn : Prop :=
+  ∀ p2, p1 CL p2 ∠ Q → ¬ p2 LN (large_node p1 t1 τ tn).
 
-Definition right_neighborhood_conflict_free {T} (Q : conflict_rules T) p1 ts : Prop :=
-  ∀ p2, p1 CR p2 ∠ Q → ¬ p2 RN (node p1 ts).
+Definition right_neighborhood_conflict_free {T} (Q : conflict_rules T) p1 t1 τ tn : Prop :=
+  ∀ p2, p1 CR p2 ∠ Q → ¬ p2 RN (large_node p1 t1 τ tn).
 
 Notation lncf := left_neighborhood_conflict_free.
 Notation rncf := right_neighborhood_conflict_free.
@@ -121,25 +96,29 @@ Notation rncf := right_neighborhood_conflict_free.
 Inductive conflict_free {T} (Q : conflict_rules T) : parse_tree T → Prop :=
   | conflict_free_leaf a :
       conflict_free Q (leaf a)
-  | conflict_free_node p ts :
-      lncf Q p ts →
-      rncf Q p ts →
-      conflict_free_forest Q ts →
-      conflict_free Q (node p ts)
+  | conflict_free_small_node p opt_a :
+      conflict_free Q (small_node p opt_a)
+  | conflict_free_large_node p t1 τ tn :
+      lncf Q p t1 τ tn →
+      rncf Q p t1 τ tn →
+      conflict_free Q t1 →
+      conflict_free_list Q τ →
+      conflict_free Q tn →
+      conflict_free Q (large_node p t1 τ tn)
 
-with conflict_free_forest {T} (Q : conflict_rules T) : parse_forest T → Prop :=
-  | conflict_free_forest_nil :
-      conflict_free_forest Q nil_forest
-  | conflict_free_forest_cons t ts :
+with conflict_free_list {T} (Q : conflict_rules T) : parse_list T → Prop :=
+  | conflict_free_nil :
+      conflict_free_list Q parse_nil
+  | conflict_free__cons t ts :
       conflict_free Q t →
-      conflict_free_forest Q ts →
-      conflict_free_forest Q (cons_forest t ts).
+      conflict_free_list Q ts →
+      conflict_free_list Q (parse_cons t ts).
 
 Notation cf := conflict_free.
-Notation cff := conflict_free_forest.
+Notation cfl := conflict_free_list.
 
-Scheme conflict_free_tree_forest := Induction for conflict_free Sort Prop
-with conflict_free_forest_tree := Induction for conflict_free_forest Sort Prop.
+Scheme conflict_free_tree_list := Induction for conflict_free Sort Prop
+with conflict_free_list_tree := Induction for conflict_free_list Sort Prop.
 
 Definition crules_sentence {T} (g : mixfixgrammar T) (Q : crules T) w :=
   ∃ t, wft g E t ∧ cf Q t ∧ yt t = w.
