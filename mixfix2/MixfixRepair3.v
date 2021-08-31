@@ -22,9 +22,11 @@ Qed.
 
 Fixpoint repair_cr {T} (Q : crules T) (p : production T)
     (t1 : parse_tree T) (τ : parse_list T) (tn : parse_tree T) :=
-  if decide (rncf Q p t1 τ tn) then large_node p t1 τ tn else
   match tn with
-  | large_node pn tn1 τn tnn => large_node pn (repair_cr Q p t1 τ tn1) τn tnn 
+  | large_node pn tn1 τn tnn =>
+      if decide (rncf Q p t1 τ tn)
+      then large_node p t1 τ tn
+      else large_node pn (repair_cr Q p t1 τ tn1) τn tnn
   | _ => (large_node p t1 τ tn)
   end.
 
@@ -49,9 +51,11 @@ Qed.
 
 Fixpoint repair_top {T} (Q : crules T) (p : production T)
     (t1 : parse_tree T) (τ : parse_list T) (tn: parse_tree T) :=
-  if decide (lncf Q p t1 τ tn) then repair_cr Q p t1 τ tn else
   match t1 with
-  | large_node p1 t11 τ1 t1n => repair_top Q p1 t11 τ1 (repair_top Q p t1n τ tn)
+  | large_node p1 t11 τ1 t1n =>
+      if decide (lncf Q p t1 τ tn)
+      then repair_cr Q p t1 τ tn
+      else repair_top Q p1 t11 τ1 (repair_top Q p t1n τ tn)
   | _ => repair_cr Q p t1 τ tn
   end.
 

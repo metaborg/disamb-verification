@@ -10,21 +10,17 @@ Implicit Types (t : parse_tree T) (ts τ : parse_list T) (p : production T) (X :
 Lemma conflict_free_repair_cr Q p t1 τ tn :
   cf Q (large_node p t1 τ tn) → repair_cr Q p t1 τ tn = large_node p t1 τ tn.
 Proof.
-  intro. destruct tn as [an1|pn opt_an1|pn tn1 τn tnn]; simpl.
-  - destruct (decide (rncf Q p t1 τ (leaf an1))); auto.
-  - destruct (decide (rncf Q p t1 τ (small_node pn opt_an1))); auto.
-  - destruct (decide (rncf Q p t1 τ (large_node pn tn1 τn tnn))); auto.
-    destruct n. inv H. assumption.
+  intro. destruct tn as [an1|pn opt_an1|pn tn1 τn tnn]; auto.
+  simpl. destruct (decide (rncf Q p t1 τ (large_node pn tn1 τn tnn))); auto.
+  destruct n. inv H. assumption.
 Qed.
 
 Lemma conflict_free_repair_top Q p t1 τ tn :
   cf Q (large_node p t1 τ tn) → repair_top Q p t1 τ tn = large_node p t1 τ tn.
 Proof.
-  intro. destruct t1 as [a11|p1 opt_a11|p1 t11 τ1 t1n]; simpl.
-  - destruct (decide (lncf Q p (leaf a11) τ tn)); auto using conflict_free_repair_cr.
-  - destruct (decide (lncf Q p (small_node p1 opt_a11) τ tn)); auto using conflict_free_repair_cr.
-  - destruct (decide (lncf Q p (large_node p1 t11 τ1 t1n) τ tn)); auto using conflict_free_repair_cr.
-    destruct n. inv H. assumption.
+  intro. destruct t1 as [a11|p1 opt_a11|p1 t11 τ1 t1n]; simpl; auto using conflict_free_repair_cr.
+  destruct (decide (lncf Q p (large_node p1 t11 τ1 t1n) τ tn)); auto using conflict_free_repair_cr.
+  destruct n. inv H. assumption.
 Qed.
 
 Lemma conflict_free_repair Q t :

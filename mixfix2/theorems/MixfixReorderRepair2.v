@@ -12,31 +12,19 @@ Implicit Types (t : parse_tree T) (ts τ : parse_list T) (p : production T) (X :
 Lemma repair_cr_leftmost_match Q p t1 τ tn :
   p LM repair_cr Q p t1 τ tn.
 Proof.
-  induction tn as [an|pn opt_an|pn pn1 ? τn pnn]; simpl.
-  - destruct (decide (rncf Q p t1 τ (leaf an))).
-    + constructor.
-    + destruct n. intros ???. inv H0. inv H2.
-  - destruct (decide (rncf Q p t1 τ (small_node pn opt_an))).
-    + constructor.
-    + destruct n. intros ???. inv H0. inv H2.
-  - destruct (decide (rncf Q p t1 τ (large_node pn pn1 τn pnn))).
-    + constructor.
-    + constructor. assumption.
+  induction tn as [an|pn opt_an|pn pn1 ? τn pnn]; simpl; try constructor.
+  destruct (decide (rncf Q p t1 τ (large_node pn pn1 τn pnn))).
+  - constructor.
+  - constructor. assumption.
 Qed.
 
 Lemma repair_cr_leftmost_match_2 Q px p t1 τ tn :
   px LM t1 → px LM repair_cr Q p t1 τ tn.
 Proof.
-  intros. induction tn as [an|pn opt_an|pn pn1 ? τn pnn]; simpl.
-  - destruct (decide (rncf Q p t1 τ (leaf an))).
-    + constructor. assumption.
-    + constructor. assumption.
-  - destruct (decide (rncf Q p t1 τ (small_node pn opt_an))).
-    + constructor. assumption.
-    + constructor. assumption.
-  - destruct (decide (rncf Q p t1 τ (large_node pn pn1 τn pnn))).
-    + constructor. assumption.
-    + constructor. auto.
+  intros. induction tn as [an|pn opt_an|pn pn1 ? τn pnn]; simpl; try constructor; auto.
+  destruct (decide (rncf Q p t1 τ (large_node pn pn1 τn pnn))).
+  - constructor. assumption.
+  - constructor. auto.
 Qed.
 
 Lemma repair_cr_assoc Q p1 t11 τ1 p2 t21 τ2 t22 :
@@ -46,40 +34,30 @@ Lemma repair_cr_assoc Q p1 t11 τ1 p2 t21 τ2 t22 :
   repair_cr Q p1 t11 τ1 (repair_cr Q p2 t21 τ2 t22) = repair_cr Q p2 (large_node p1 t11 τ1 t21) τ2 t22.
 Proof.
   intros. induction t22 as [a22|p22 opt_a22|p22 t221 ? τ22 t22n]; intros; simpl.
-  - destruct (decide (rncf Q p2 t21 τ2 (leaf a22))).
-    + destruct (decide (rncf Q p2 (large_node p1 t11 τ1 t21) τ2 (leaf a22))).
-      * simpl. destruct (decide (rncf Q p1 t11 τ1 (large_node p2 t21 τ2 (leaf a22)))).
-        **exfalso. unfold complete_crules in H. apply H with (p2 := p1) in H1; eauto.
-          destruct H1; auto. eapply r1; eauto. constructor. constructor.
-        **destruct t21 as [a21|p21 opt_a21|p21 t211 τ21 t21n]; simpl.
-          ***destruct (decide (rncf Q p1 t11 τ1 (leaf a21))); auto.
-          ***destruct (decide (rncf Q p1 t11 τ1 (small_node p21 opt_a21))); auto.
-          ***destruct (decide (rncf Q p1 t11 τ1 (large_node p21 t211 τ21 t21n))); auto.
-            exfalso. apply n0. intros ???. inv H5. eapply H3; eauto.
-      * destruct n. intros ???. inv H5. inv H7.
-    + destruct n. intros ???. inv H5. inv H7.
-  - destruct (decide (rncf Q p2 t21 τ2 (small_node p22 opt_a22))).
-    + destruct (decide (rncf Q p2 (large_node p1 t11 τ1 t21) τ2 (small_node p22 opt_a22))).
-      * simpl. destruct (decide (rncf Q p1 t11 τ1 (large_node p2 t21 τ2 (small_node p22 opt_a22)))).
-        **exfalso. unfold complete_crules in H. apply H with (p2 := p1) in H1; eauto.
-          destruct H1; auto. eapply r1; eauto. constructor. constructor.
-        **destruct t21 as [a21|p21 opt_a21|p21 t211 τ21 t21n]; simpl.
-          ***destruct (decide (rncf Q p1 t11 τ1 (leaf a21))); auto.
-          ***destruct (decide (rncf Q p1 t11 τ1 (small_node p21 opt_a21))); auto.
-          ***destruct (decide (rncf Q p1 t11 τ1 (large_node p21 t211 τ21 t21n))); auto.
-            exfalso. apply n0. intros ???. inv H5. eapply H3; eauto.
-      * destruct n. intros ???. inv H5. inv H7.
-    + destruct n. intros ???. inv H5. inv H7.
+  - destruct (decide (rncf Q p2 (large_node p1 t11 τ1 t21) τ2 (leaf a22))).
+      + destruct (decide (rncf Q p1 t11 τ1 (large_node p2 t21 τ2 (leaf a22)))).
+        * exfalso. unfold complete_crules in H. apply H with (p2 := p1) in H1; eauto.
+          destruct H1; auto. eapply r0; eauto. constructor. constructor.
+        * destruct t21 as [a21|p21 opt_a21|p21 t211 τ21 t21n]; simpl; auto.
+          destruct (decide (rncf Q p1 t11 τ1 (large_node p21 t211 τ21 t21n))); auto.
+          exfalso. apply n0. intros ???. inv H5. eapply H3; eauto.
+      + destruct n. intros ???. inv H5. inv H7.
+  - destruct (decide (rncf Q p2 (large_node p1 t11 τ1 t21) τ2 (small_node p22 opt_a22))).
+      + destruct (decide (rncf Q p1 t11 τ1 (large_node p2 t21 τ2 (small_node p22 opt_a22)))).
+        * exfalso. unfold complete_crules in H. apply H with (p2 := p1) in H1; eauto.
+          destruct H1; auto. eapply r0; eauto. constructor. constructor.
+        * destruct t21 as [a21|p21 opt_a21|p21 t211 τ21 t21n]; simpl; auto.
+          destruct (decide (rncf Q p1 t11 τ1 (large_node p21 t211 τ21 t21n))); auto.
+          exfalso. apply n0. intros ???. inv H5. eapply H3; eauto.
+      + destruct n. intros ???. inv H5. inv H7.
   - destruct (decide (rncf Q p2 t21 τ2 (large_node p22 t221 τ22 t22n))).
     + destruct (decide (rncf Q p2 (large_node p1 t11 τ1 t21) τ2 (large_node p22 t221 τ22 t22n))).
       * simpl. destruct (decide (rncf Q p1 t11 τ1 (large_node p2 t21 τ2 (large_node p22 t221 τ22 t22n)))).
         **exfalso. unfold complete_crules in H. apply H with (p2 := p1) in H1; eauto.
           destruct H1; auto. eapply r1; eauto. constructor. constructor.
-        **destruct t21 as [a21|p21 opt_a21|p21 t211 τ21 t21n]; simpl.
-          ***destruct (decide (rncf Q p1 t11 τ1 (leaf a21))); auto.
-          ***destruct (decide (rncf Q p1 t11 τ1 (small_node p21 opt_a21))); auto.
-          ***destruct (decide (rncf Q p1 t11 τ1 (large_node p21 t211 τ21 t21n))); auto.
-            exfalso. apply n0. intros ???. inv H5. eapply H3; eauto.
+        **destruct t21 as [a21|p21 opt_a21|p21 t211 τ21 t21n]; auto.
+          simpl. destruct (decide (rncf Q p1 t11 τ1 (large_node p21 t211 τ21 t21n))); auto.
+          exfalso. apply n0. intros ???. inv H5. eapply H3; eauto.
       * destruct n. intros ???. inv H5.
         eapply r; eauto. constructor. assumption.
     + destruct (decide (rncf Q p2 (large_node p1 t11 τ1 t21) τ2 (large_node p22 t221 τ22 t22n))).
@@ -97,29 +75,25 @@ Lemma repair_cr_assoc2 Q p1 t11 τ1 p2 p21 t211 τ21 t21n τ2 t22 :
   repair_cr Q p2 (large_node p21 (repair_cr Q p1 t11 τ1 t211) τ21 t21n) τ2 t22.
 Proof.
   intro. induction t22 as [a22|p22 opt_a22|p22 t221 ? τ22 t22n]; intros; simpl.
-  - destruct (decide (rncf Q p2 (large_node p21 t211 τ21 t21n) τ2 (leaf a22))).
-    + destruct (decide (rncf Q p2 (large_node p21 (repair_cr Q p1 t11 τ1 t211) τ21 t21n) τ2 (leaf a22))).
-      * simpl. destruct (decide (rncf Q p1 t11 τ1 (large_node p2 (large_node p21 t211 τ21 t21n) τ2 (leaf a22)))).
-        **exfalso. destruct H0.
-          ***eapply r1; eauto. repeat constructor.
-          ***destruct H0 as [p]. inv H0. eapply r1; eauto. repeat constructor. assumption.
-        **destruct (decide (rncf Q p1 t11 τ1 (large_node p21 t211 τ21 t21n))); auto.
+  - destruct (decide (rncf Q p2 (large_node p21 (repair_cr Q p1 t11 τ1 t211) τ21 t21n) τ2 (leaf a22))).
+    + simpl. destruct (decide (rncf Q p1 t11 τ1 (large_node p2 (large_node p21 t211 τ21 t21n) τ2 (leaf a22)))).
+      * exfalso. destruct H0.
+        **eapply r0; eauto. repeat constructor.
+        **destruct H0 as [p]. inv H0. eapply r0; eauto. repeat constructor. assumption.
+      * destruct (decide (rncf Q p1 t11 τ1 (large_node p21 t211 τ21 t21n))); auto.
           exfalso. destruct H0.
-          ***eapply r1; eauto. repeat constructor.
-          ***destruct H0 as [p]. inv H0. eapply r1; eauto. repeat constructor. assumption.
-      * destruct n. intros ???. inv H2. inv H4.
+        **eapply r0; eauto. repeat constructor.
+        **destruct H0 as [p]. inv H0. eapply r0; eauto. repeat constructor. assumption.
     + destruct n. intros ???. inv H2. inv H4.
-  - destruct (decide (rncf Q p2 (large_node p21 t211 τ21 t21n) τ2 (small_node p22 opt_a22))).
-    + destruct (decide (rncf Q p2 (large_node p21 (repair_cr Q p1 t11 τ1 t211) τ21 t21n) τ2 (small_node p22 opt_a22))).
-      * simpl. destruct (decide (rncf Q p1 t11 τ1 (large_node p2 (large_node p21 t211 τ21 t21n) τ2 (small_node p22 opt_a22)))).
-        **exfalso. destruct H0.
-          ***eapply r1; eauto. repeat constructor.
-          ***destruct H0 as [p]. inv H0. eapply r1; eauto. repeat constructor. assumption.
-        **destruct (decide (rncf Q p1 t11 τ1 (large_node p21 t211 τ21 t21n))); auto.
-          exfalso. destruct H0.
-          ***eapply r1; eauto. repeat constructor.
-          ***destruct H0 as [p]. inv H0. eapply r1; eauto. repeat constructor. assumption.
-      * destruct n. intros ???. inv H2. inv H4.
+  - destruct (decide (rncf Q p2 (large_node p21 (repair_cr Q p1 t11 τ1 t211) τ21 t21n) τ2 (small_node p22 opt_a22))).
+    + simpl. destruct (decide (rncf Q p1 t11 τ1 (large_node p2 (large_node p21 t211 τ21 t21n) τ2 (small_node p22 opt_a22)))).
+      * exfalso. destruct H0.
+        **eapply r0; eauto. repeat constructor.
+        **destruct H0 as [p]. inv H0. eapply r0; eauto. repeat constructor. assumption.
+      * destruct (decide (rncf Q p1 t11 τ1 (large_node p21 t211 τ21 t21n))); auto.
+        exfalso. destruct H0.
+        **eapply r0; eauto. repeat constructor.
+        **destruct H0 as [p]. inv H0. eapply r0; eauto. repeat constructor. assumption.
     + destruct n. intros ???. inv H2. inv H4.
   - destruct (decide (rncf Q p2 (large_node p21 t211 τ21 t21n) τ2 (large_node p22 t221 τ22 t22n))).
     + destruct (decide (rncf Q p2 (large_node p21 (repair_cr Q p1 t11 τ1 t211) τ21 t21n) τ2 (large_node p22 t221 τ22 t22n))).
@@ -167,34 +141,20 @@ Lemma repair_top_repair_cr_assoc g X Q p1 t11 τ1 p2 t21 τ2 t22 :
 Proof.
   intro. revert X p1 t11 τ1 p2 τ2 t22. induction t21 as [a21|p21 opt_a21|p21 t211 ? τ21 t21n];
     intros ??????? HR HL Hwf ?; simpl.
-  - destruct (decide (lncf Q p2 (leaf a21) τ2 t22)).
-    + destruct (decide (rncf Q p1 t11 τ1 (leaf a21))).
-      * simpl. destruct (decide (lncf Q p2 (large_node p1 t11 τ1 (leaf a21)) τ2 t22)).
-        **rewrite repair_cr_assoc; auto.
-          ***intro. eapply l0; eauto. constructor. constructor.
-          ***intros ???. inv H2.
-        **destruct (decide (lncf Q p2 (leaf a21) τ2 t22)); try contradiction.
-          destruct t11 as [a11|p11 opt_a11|p11 t111 τ11 t11n]; simpl.
-          ***destruct (decide (lncf Q p1 (leaf a11) τ1 (repair_cr Q p2 (leaf a21) τ2 t22))); auto.
-          ***destruct (decide (lncf Q p1 (small_node p11 opt_a11) τ1 (repair_cr Q p2 (leaf a21) τ2 t22))); auto.
-          ***destruct (decide (lncf Q p1 (large_node p11 t111 τ11 t11n) τ1 (repair_cr Q p2 (leaf a21) τ2 t22))); auto.
-            exfalso. apply n0. intros ???. inv H2. eapply H0; eauto.
-      * destruct n. intros ???. inv H2. inv H4.
-    + destruct n. intros ???. inv H2. inv H4.
-  - destruct (decide (lncf Q p2 (small_node p21 opt_a21) τ2 t22)).
-    + destruct (decide (rncf Q p1 t11 τ1 (small_node p21 opt_a21))).
-      * simpl. destruct (decide (lncf Q p2 (large_node p1 t11 τ1 (small_node p21 opt_a21)) τ2 t22)).
-        **rewrite repair_cr_assoc; auto.
-          ***intro. eapply l0; eauto. constructor. constructor.
-          ***intros ???. inv H2.
-        **destruct (decide (lncf Q p2 (small_node p21 opt_a21) τ2 t22)); try contradiction.
-          destruct t11 as [a11|p11 opt_a11|p11 t111 τ11 t11n]; simpl.
-          ***destruct (decide (lncf Q p1 (leaf a11) τ1 (repair_cr Q p2 (small_node p21 opt_a21) τ2 t22))); auto.
-          ***destruct (decide (lncf Q p1 (small_node p11 opt_a11) τ1 (repair_cr Q p2 (small_node p21 opt_a21) τ2 t22))); auto.
-          ***destruct (decide (lncf Q p1 (large_node p11 t111 τ11 t11n) τ1 (repair_cr Q p2 (small_node p21 opt_a21) τ2 t22))); auto.
-            exfalso. apply n0. intros ???. inv H2. eapply H0; eauto.
-      * destruct n. intros ???. inv H2. inv H4.
-    + destruct n. intros ???. inv H2. inv H4.
+  - destruct (decide (lncf Q p2 (large_node p1 t11 τ1 (leaf a21)) τ2 t22)).
+    + rewrite repair_cr_assoc; auto.
+      * intro. eapply l; eauto. constructor. constructor.
+      * intros ???. inv H2.
+    + destruct t11 as [a11|p11 opt_a11|p11 t111 τ11 t11n]; simpl; auto.
+      * destruct (decide (lncf Q p1 (large_node p11 t111 τ11 t11n) τ1 (repair_cr Q p2 (leaf a21) τ2 t22))); auto.
+        exfalso. apply n0. intros ???. inv H2. eapply H0; eauto.
+  - destruct (decide (lncf Q p2 (large_node p1 t11 τ1 (small_node p21 opt_a21)) τ2 t22)).
+    + rewrite repair_cr_assoc; auto.
+      * intro. eapply l; eauto. constructor. constructor.
+      * intros ???. inv H2.
+    + destruct t11 as [a11|p11 opt_a11|p11 t111 τ11 t11n]; simpl; auto.
+      * destruct (decide (lncf Q p1 (large_node p11 t111 τ11 t11n) τ1 (repair_cr Q p2 (small_node p21 opt_a21) τ2 t22))); auto.
+        exfalso. apply n0. intros ???. inv H2. eapply H0; eauto.
   - destruct (decide (lncf Q p2 (large_node p21 t211 τ21 t21n) τ2 t22)).
     + destruct (decide (rncf Q p1 t11 τ1 (large_node p21 t211 τ21 t21n))).
       * simpl. destruct (decide (lncf Q p2 (large_node p1 t11 τ1 (large_node p21 t211 τ21 t21n)) τ2 t22)).
@@ -202,11 +162,9 @@ Proof.
           ***intro. eapply l0; eauto. constructor. constructor.
           ***intros ???. eapply r; eauto. constructor. assumption.
         **destruct (decide (lncf Q p2 (large_node p21 t211 τ21 t21n) τ2 t22)); try contradiction.
-          destruct t11 as [a11|p11 opt_a11|p11 t111 τ11 t11n]; simpl.
-          ***destruct (decide (lncf Q p1 (leaf a11) τ1 (repair_cr Q p2 (large_node p21 t211 τ21 t21n) τ2 t22))); auto.
-          ***destruct (decide (lncf Q p1 (small_node p11 opt_a11) τ1 (repair_cr Q p2 (large_node p21 t211 τ21 t21n) τ2 t22))); auto.
-          ***destruct (decide (lncf Q p1 (large_node p11 t111 τ11 t11n) τ1 (repair_cr Q p2 (large_node p21 t211 τ21 t21n) τ2 t22))); auto.
-            exfalso. apply n0. intros ???. inv H2. eapply H0; eauto.
+          destruct t11 as [a11|p11 opt_a11|p11 t111 τ11 t11n]; simpl; auto.
+          destruct (decide (lncf Q p1 (large_node p11 t111 τ11 t11n) τ1 (repair_cr Q p2 (large_node p21 t211 τ21 t21n) τ2 t22))); auto.
+          exfalso. apply n0. intros ???. inv H2. eapply H0; eauto.
       * simpl. destruct (decide (lncf Q p2 (large_node p21 (repair_cr Q p1 t11 τ1 t211) τ21 t21n) τ2 t22)).
         **rewrite repair_cr_assoc2; auto. apply not_rfncf_exists_match in n. destruct n as [px]. inv H1.
           inv H3; auto. right. eauto.
@@ -216,11 +174,9 @@ Proof.
         **exfalso. apply n. intros ???. inv H2. eapply l; eauto. constructor. constructor. assumption.
         **destruct (decide (lncf Q p2 (large_node p21 t211 τ21 t21n) τ2 t22)).
           ***exfalso. apply n. intros ???. inv H2. eapply l; eauto. constructor. assumption.
-          ***destruct t11 as [a11|p11 opt_a11|p11 t111 τ11 t11n]; simpl.
-            ****destruct (decide (lncf Q p1 (leaf a11) τ1 (repair_top Q p21 t211 τ21 (repair_top Q p2 t21n τ2 t22)))); auto.
-            ****destruct (decide (lncf Q p1 (small_node p11 opt_a11) τ1 (repair_top Q p21 t211 τ21 (repair_top Q p2 t21n τ2 t22)))); auto.
-            ****destruct (decide (lncf Q p1 (large_node p11 t111 τ11 t11n) τ1 (repair_top Q p21 t211 τ21 (repair_top Q p2 t21n τ2 t22)))); auto.
-              exfalso. apply n2. intros ???. inv H2. eapply H0; eauto.
+          ***destruct t11 as [a11|p11 opt_a11|p11 t111 τ11 t11n]; simpl; auto.
+            destruct (decide (lncf Q p1 (large_node p11 t111 τ11 t11n) τ1 (repair_top Q p21 t211 τ21 (repair_top Q p2 t21n τ2 t22)))); auto.
+            exfalso. apply n2. intros ???. inv H2. eapply H0; eauto.
       * simpl. destruct (decide (lncf Q p2 (large_node p21 (repair_cr Q p1 t11 τ1 t211) τ21 t21n) τ2 t22)).
         **exfalso. apply n. intros ???. inv H2. eapply l; eauto. constructor. inv H4; constructor. assumption.
         **inv Hwf. erewrite IHt21_1; eauto. inv H7; try constructor. exfalso.
@@ -236,16 +192,8 @@ Lemma repair_top_assoc g X Q p1 t11 τ1 p2 t21 τ2 t22 :
 Proof.
   intro. revert X p1 τ1 p2 t21 τ2 t22. induction t11 as [a11|p11 opt_a11|p11 t111 ? τ11 t11n];
     intros ??????? HL HR Hwft; simpl.
-  - destruct (decide (lncf Q p1 (leaf a11) τ1 (repair_top Q p2 t21 τ2 t22))).
-    + destruct (decide (lncf Q p1 (leaf a11) τ1 t21)).
-      * inv Hwft. inv H8. erewrite repair_top_repair_cr_assoc; eauto. intros ???. inv H1.
-      * destruct n. intros ???. inv H1. inv H3.
-    + destruct n. intros ???. inv H1. inv H3.
-  - destruct (decide (lncf Q p1 (small_node p11 opt_a11) τ1 (repair_top Q p2 t21 τ2 t22))).
-    + destruct (decide (lncf Q p1 (small_node p11 opt_a11) τ1 t21)).
-      * inv Hwft. inv H8. erewrite repair_top_repair_cr_assoc; eauto. intros ???. inv H1.
-      * destruct n. intros ???. inv H1. inv H3.
-    + destruct n. intros ???. inv H1. inv H3.
+  - inv Hwft. inv H8. erewrite repair_top_repair_cr_assoc; eauto. intros ???. inv H1.
+  - inv Hwft. inv H8. erewrite repair_top_repair_cr_assoc; eauto. intros ???. inv H1.
   - destruct (decide (lncf Q p1 (large_node p11 t111 τ11 t11n) τ1 (repair_top Q p2 t21 τ2 t22))).
     + destruct (decide (lncf Q p1 (large_node p11 t111 τ11 t11n) τ1 t21)).
       * inv Hwft. inv H8. erewrite repair_top_repair_cr_assoc; eauto. intros ???. eapply l0; eauto.
