@@ -19,7 +19,11 @@ mixfix2/MixfixReorder2.v
 mixfix2/MixfixDisambiguation2.v
 mixfix2/MixfixRepair3.v
 mixfix2/theorems/MixfixReorderWellformed.v
+mixfix2/theorems/MixfixReorderYield.v
 mixfix2/theorems/MixfixRepairWellformed.v
 mixfix2/theorems/MixfixConflictFreeRepair.v
 mixfix2/theorems/MixfixReorderRepair2.v
 mixfix2/theorems/MixfixCompleteness.v
+mixfix2/theorems/MixfixRepairConflictFree2.v
+mixfix2/theorems/MixfixRepairReorder2.v
+mixfix2/theorems/MixfixSafety2.v

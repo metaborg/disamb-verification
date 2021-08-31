@@ -37,4 +37,13 @@ Proof.
   - inv H. constructor; auto.
 Qed.
 
+Lemma reorder_well_formed g X t1 t2 :
+  wft g X t1 → reorder t1 t2 → wft g X t2.
+Proof.
+  intros. induction H0; auto.
+  apply IHrtc. inv H0.
+  - eapply reorder_step_well_formed; eauto.
+  - eapply reorder_step_well_formed_2; eauto.
+Qed.
+
 End MixfixReorderWellformed.
