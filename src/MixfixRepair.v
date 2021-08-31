@@ -1,4 +1,4 @@
-From disamb Require Export MixfixDisambiguation2.
+From disamb Require Export MixfixDisambiguation.
 From disamb Require Import MyUtils.
 
 Global Instance right_neighborhood_conflict_free_decidable {T} (Q : crules T) p t1 τ tn :

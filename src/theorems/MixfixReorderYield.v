@@ -1,4 +1,4 @@
-From disamb Require Export MixfixReorder2.
+From disamb Require Export MixfixReorder.
 From disamb Require Import MyUtils.
 
 Section MixfixReorderYield.

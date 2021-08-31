@@ -1,4 +1,4 @@
-From disamb Require Export MixfixRepair3.
+From disamb Require Export MixfixRepair.
 From disamb Require Import MyUtils.
 
 Section MixfixRepairWellformed.

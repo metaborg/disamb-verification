@@ -1,0 +1,17 @@
+-Q . disamb
+
+MyUtils.v
+
+MixfixGrammar.v
+MixfixReorder.v
+MixfixDisambiguation.v
+MixfixRepair.v
+theorems/MixfixReorderWellformed.v
+theorems/MixfixReorderYield.v
+theorems/MixfixRepairWellformed.v
+theorems/MixfixConflictFreeRepair.v
+theorems/MixfixReorderRepair.v
+theorems/MixfixCompleteness.v
+theorems/MixfixRepairConflictFree.v
+theorems/MixfixRepairReorder.v
+theorems/MixfixSafety.v

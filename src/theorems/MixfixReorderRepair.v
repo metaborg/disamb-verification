@@ -1,9 +1,9 @@
-From disamb Require Export MixfixRepair3.
+From disamb Require Export MixfixRepair.
 From disamb Require Import MyUtils.
 From disamb Require Import MixfixRepairWellformed.
 From disamb Require Import MixfixReorderWellformed.
 
-Section MixfixReorderRepair2.
+Section MixfixReorderRepair.
 
 Context {T : Type}.
 Implicit Types (t : parse_tree T) (ts τ : parse_list T) (p : production T) (X : symbol T)
@@ -252,4 +252,4 @@ Proof.
     rewrite <- IHrtc; auto. symmetry. erewrite reorder_step_repair; eauto.
 Qed.
 
-End MixfixReorderRepair2.
+End MixfixReorderRepair.

@@ -1,5 +1,5 @@
-From disamb Require Export MixfixRepair3.
-From disamb Require Import MyUtils MixfixRepairReorder2 MixfixRepairConflictFree2
+From disamb Require Export MixfixRepair.
+From disamb Require Import MyUtils MixfixRepairReorder MixfixRepairConflictFree
                            MixfixReorderWellformed MixfixReorderYield.
 
 Section MixfixReorderSafety.

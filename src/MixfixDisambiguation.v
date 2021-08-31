@@ -1,5 +1,5 @@
 From disamb Require Import MyUtils.
-From disamb Require Export MixfixReorder2.
+From disamb Require Export MixfixReorder.
 
 Record disambiguation_rules (T : Type) := mkDisambiguation_rules {
   priority : production T → production T → Prop;

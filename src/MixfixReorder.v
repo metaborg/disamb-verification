@@ -1,5 +1,5 @@
 From stdpp Require Export relations.
-From disamb Require Export MixfixGrammar2.
+From disamb Require Export MixfixGrammar.
 From disamb Require Import MyUtils.
 
 

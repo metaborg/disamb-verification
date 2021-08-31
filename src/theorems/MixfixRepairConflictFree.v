@@ -1,7 +1,7 @@
-From disamb Require Export MixfixRepair3.
+From disamb Require Export MixfixRepair.
 From disamb Require Import MyUtils.
 
-Section MixfixRepairConflictFree2.
+Section MixfixRepairConflictFree.
 
 Context {T : Type}.
 Implicit Types (t : parse_tree T) (ts τ : parse_list T) (p : production T) (X : symbol T)
@@ -72,4 +72,4 @@ Proof.
   - constructor; auto.
 Qed.
 
-End MixfixRepairConflictFree2.
+End MixfixRepairConflictFree.

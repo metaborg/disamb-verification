@@ -1,8 +1,8 @@
-From disamb Require Export MixfixRepair3.
+From disamb Require Export MixfixRepair.
 From disamb Require Import MyUtils.
 From disamb Require Import MixfixRepairWellformed.
 
-Section MixfixRepairReorder2.
+Section MixfixRepairReorder.
 
 Context {T : Type}.
 Implicit Types (t : parse_tree T) (ts τ : parse_list T) (p : production T) (X : symbol T)
@@ -125,4 +125,4 @@ Proof.
     apply reorder_list_tail. eapply IHt0. eassumption.
 Qed.
 
-End MixfixRepairReorder2.
+End MixfixRepairReorder.
