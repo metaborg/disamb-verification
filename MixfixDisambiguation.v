@@ -48,6 +48,11 @@ Notation crules := conflict_rules.
 Notation "p1 'CL' p2 '∠' Q" := (Q.(conflict_left) p1 p2) (at level 54).
 Notation "p1 'CR' p2 '∠' Q" := (Q.(conflict_right) p1 p2) (at level 53).
 
+Record subset_crules {T} (g : mixfixgrammar T) (Q : crules T) := mk_subset_crules {
+  conflict_left_productions : ∀ p1 p2, p1 CL p2 ∠ Q → g p1 ∧ g p2;
+  conflict_right_productions: ∀ p1 p2, p1 CR p2 ∠ Q → g p1 ∧ g p2;
+}.
+
 Definition safe_crules {T} (Q : crules T) : Prop := ∀ p1 p2, ¬ (p1 CL p2 ∠ Q ∧ p2 CR p1 ∠ Q).
 Definition complete_crules {T} (Q : crules T) : Prop := ∀ p1 p2,
   left_dangling p1 → right_dangling p2 → p1 CL p2 ∠ Q ∨ p2 CR p1 ∠ Q.

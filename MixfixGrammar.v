@@ -95,3 +95,73 @@ Notation yt t := (yield_tree t).
 Notation yts ts := (yield_list ts).
 
 Definition sentence {T} (g : mixfixgrammar T) w := ∃ t, wft g E t ∧ yt t = w.
+
+Inductive atomic_symbol_list {T} : list (symbol T) → Prop :=
+  | atomic_nil :
+      atomic_symbol_list []
+  | atomic_cons a σ :
+      atomic_symbol_list σ →
+      atomic_symbol_list ((terminal a) :: σ).
+
+Inductive atomic_production {T} : production T → Prop :=
+  | atomic_small_production opt_a :
+      atomic_production (small_production opt_a)
+  | atomic_large_production a1 σ an :
+      atomic_symbol_list σ →
+      atomic_production (large_production (terminal a1) σ (terminal an)).
+
+Inductive atomic_parse_list {T} : parse_list T → Prop :=
+  | atomic_parse_nil :
+      atomic_parse_list parse_nil
+  | atomic_parse_cons a τ :
+      atomic_parse_list τ →
+      atomic_parse_list (parse_cons (leaf a) τ).
+
+Inductive atomic_parse_tree {T} : parse_tree T → Prop :=
+  | atomic_small_node p opt_a :
+      atomic_parse_tree (small_node p opt_a)
+  | atomic_large_node p a1 τ an :
+      atomic_parse_list τ →
+      atomic_parse_tree (large_node p (leaf a1) τ (leaf an)).
+
+Fixpoint atomic_symbol_list_to_atomic_parse_list {T} (σ : list (symbol T)) : option (parse_list T) :=
+  match σ with
+  | [] => Some parse_nil
+  | (terminal a) :: σ =>
+      match atomic_symbol_list_to_atomic_parse_list σ with
+      | None => None
+      | Some τ => Some (parse_cons (leaf a) τ)
+      end
+  | _ => None
+  end.
+
+Fixpoint atomic_production_to_atomic_parse_tree {T} (p : production T) : option (parse_tree T) :=
+  match p with
+  | small_production opt_a => Some (small_node p opt_a)
+  | large_production (terminal a1) σ (terminal an) =>
+      match atomic_symbol_list_to_atomic_parse_list σ with
+      | None => None
+      | Some τ => Some (large_node p (leaf a1) τ (leaf an))
+      end
+  | _ => None
+  end.
+
+Definition inject_tree_in_symbol {T} (X : symbol T) (t : parse_tree T) : parse_tree T :=
+  match X with
+  | terminal a => leaf a
+  | E => t
+  end.
+
+Fixpoint inject_tree_in_symbol_list {T} (σ : list (symbol T)) (t : parse_tree T) : parse_list T :=
+  match σ with
+  | [] => parse_nil
+  | X :: σ => parse_cons (inject_tree_in_symbol X t) (inject_tree_in_symbol_list σ t)
+  end.
+
+Definition inject_tree_in_production {T} (p : production T) (t : parse_tree T) : parse_tree T :=
+  match p with
+  | small_production opt_a => small_node p opt_a
+  | large_production X1 σ Xn => large_node p (inject_tree_in_symbol X1 t)
+                                             (inject_tree_in_symbol_list σ t)
+                                             (inject_tree_in_symbol Xn t)
+  end.
