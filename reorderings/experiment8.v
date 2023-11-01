@@ -2,22 +2,20 @@ From stdpp Require Export list.
 From stdpp Require Export relations.
 Load "Lib/StrongInduction".
 
-Section Experiment7.
+Section Experiment8.
 
 Ltac inv H := inversion H; clear H; subst.
 
 Inductive production Terminal :=
-  | AtomicProduction : Terminal → production Terminal
-  | InfixProduction : option Terminal → production Terminal
+  | ClosedProduction : Terminal → list Terminal → production Terminal
+  | InfixProduction : Terminal → production Terminal
   | PrefixProduction : Terminal → production Terminal
-  | PostfixProduction : Terminal → production Terminal
-  | ClosedProduction : Terminal → Terminal → production Terminal.
+  | PostfixProduction : Terminal → production Terminal.
 
-Global Arguments AtomicProduction {_} _.
+Global Arguments ClosedProduction {_} _ _.
 Global Arguments InfixProduction {_} _.
 Global Arguments PrefixProduction {_} _.
 Global Arguments PostfixProduction {_} _.
-Global Arguments ClosedProduction {_} _ _.
 
 Record grammar := mkGrammar {
   Terminal : Type;
@@ -30,11 +28,10 @@ Implicit Types a b c o l : T.
 Implicit Types oa ob : option T.
 Notation P := (Productions g).
 Implicit Types p : production T.
-Notation AtomP a := (P (AtomicProduction a)).
-Notation InP oa := (P (InfixProduction oa)).
+Notation ClosedP ahead acons := (P (ClosedProduction ahead acons)).
+Notation InP a := (P (InfixProduction a)).
 Notation PreP a := (P (PrefixProduction a)).
 Notation PostP a := (P (PostfixProduction a)).
-Notation ClosedP a1 a2 := (P (ClosedProduction a1 a2)).
 
 
 Definition word := list T.
@@ -42,78 +39,107 @@ Definition word := list T.
 Implicit Types w : word.
 
 Inductive parse_tree :=
-  | AtomicNode : T → parse_tree
-  | InfixNode : parse_tree → option T → parse_tree → parse_tree
+  | ClosedNode : T → parse_list → parse_tree
+  | InfixNode : parse_tree → T → parse_tree → parse_tree
   | PrefixNode : T → parse_tree → parse_tree
   | PostfixNode : parse_tree → T → parse_tree
-  | ClosedNode : T → parse_tree → T → parse_tree.
+with parse_list :=
+  | NilNode : parse_list
+  | ConsNode : parse_tree → T → parse_list → parse_list.
 
 Notation PT := parse_tree.
 Implicit Types t : PT.
-Notation "'AN' a" := (AtomicNode a) (at level 3).
-Notation "[ t1 ; oa ; t2 ]" := (InfixNode t1 oa t2).
-Notation "[ a ; t2 ]" := (PrefixNode a t2).
-Notation "[| t1 ; a ]" := (PostfixNode t1 a).
-Notation "[( a1 ; t ; a2 )]" := (ClosedNode a1 t a2).
+Notation PL := parse_list.
+Implicit Types τ : PL.
+
+Scheme parse_tree_list_rec := Induction for parse_tree Sort Prop
+with parse_list_tree_rec := Induction for parse_list Sort Prop.
+
+Notation CN := ClosedNode.
+Notation IN := InfixNode.
+Notation PeN := PrefixNode.
+Notation PoN := PostfixNode.
+Notation ϵ := NilNode.
+Notation CoN := ConsNode.
 
 Inductive well_formed_parse_tree : PT → Prop :=
-  | WellFormedAtomicNode a :
-      AtomP a →
-      well_formed_parse_tree (AN a)
-  | WellFormedInfixNode t1 oa t2 :
-      InP oa →
+  | WellFormedClosedNode ah ac τ :
+      ClosedP ah ac →
+      well_formed_parse_list ac τ →
+      well_formed_parse_tree (CN ah τ)
+  | WellFormedInfixNode t1 a t2 :
+      InP a →
       well_formed_parse_tree t1 →
       well_formed_parse_tree t2 →
-      well_formed_parse_tree [t1; oa; t2]
+      well_formed_parse_tree (IN t1 a t2)
   | WellFormedPrefixNode a t2 :
       PreP a →
       well_formed_parse_tree t2 →
-      well_formed_parse_tree [a; t2]
+      well_formed_parse_tree (PeN a t2)
   | WellFormedPostfixNode t1 a :
       PostP a →
       well_formed_parse_tree t1 →
-      well_formed_parse_tree [|t1; a]
-  | WellFormedClosedNode a1 t a2 :
-      ClosedP a1 a2 →
+      well_formed_parse_tree (PoN t1 a)
+with well_formed_parse_list : list T → PL → Prop :=
+  | WellFormedNilNode :
+      well_formed_parse_list [] ϵ
+  | WellFormedConsNode a ac t τ :
       well_formed_parse_tree t →
-      well_formed_parse_tree [(a1; t; a2)].
+      well_formed_parse_list ac τ →
+      well_formed_parse_list (a :: ac) (CoN t a τ).
+
+Scheme well_formed_parse_tree_list_rec := Induction for well_formed_parse_tree Sort Prop
+with well_formed_parse_list_tree_rec := Induction for well_formed_parse_list Sort Prop.      
 
 Notation wf t := (well_formed_parse_tree t).
 
 Fixpoint yield t : word :=
   match t with
-  | AN a => [a]
-  | [t1; (Some a); t2] => yield t1 ++ a :: yield t2
-  | [t1; None; t2] => yield t1 ++ yield t2
-  | [a; t2] => a :: yield t2
-  | [|t1; a] => yield t1 ++ [a]
-  | [(a1; t; a2)] => a1 :: yield t ++ [a2]
+  | CN a τ => a :: yield_list τ
+  | IN t1 a t2 => yield t1 ++ a :: yield t2
+  | PeN a t => a :: yield t
+  | PoN t a => yield t ++ [a]
+  end
+with yield_list τ : word :=
+  match τ with
+  | ϵ => []
+  | CoN t a τ => yield t ++ a :: yield_list τ
   end.
 
 Inductive reorder_step : PT → PT → Prop :=
-  | ReorderStepInfix t1 t2 t3 oa ob :
-      reorder_step [[t1; oa; t2]; ob; t3] [t1; oa; [t2; ob; t3]]
-  | ReorderStepInfixPrefix t1 t2 a ob :
-      reorder_step [[a; t1]; ob; t2] [a; [t1; ob; t2]]
-  | ReorderStepInfixPostfix t1 t2 oa b :
-      reorder_step [t1; oa; [|t2; b]] [|[t1; oa; t2]; b]
+  | ReorderStepInfix t1 t2 t3 a b :
+      reorder_step (IN (IN t1 a t2) b t3) (IN t1 a (IN t2 b t3))
+  | ReorderStepInfixPrefix t1 t2 a b :
+      reorder_step (IN (PeN a t1) b t2) (PeN a (IN t1 b t2))
+  | ReorderStepInfixPostfix t1 t2 a b :
+      reorder_step (IN t1 a (PoN t2 b)) (PoN (IN t1 a t2) b)
   | ReorderStepPrefixPostfix t a b :
-      reorder_step [a; [|t; b]] [|[a; t]; b]
-  | ReorderStepInfixSubtree1 t1 oa t2 t1' :
+      reorder_step (PeN a (PoN t b)) (PoN (PeN a t) b)
+  | ReorderStepInfixSubtree1 t1 a t2 t1' :
       reorder_step t1 t1' →
-      reorder_step [t1; oa; t2] [t1'; oa; t2]
-  | ReorderStepInfixSubtree2 t1 oa t2 t2' :
+      reorder_step (IN t1 a t2) (IN t1' a t2)
+  | ReorderStepInfixSubtree2 t1 a t2 t2' :
       reorder_step t2 t2' →
-      reorder_step [t1; oa; t2] [t1; oa; t2']
+      reorder_step (IN t1 a t2) (IN t1 a t2')
   | ReorderStepPrefixSubtree a t2 t2' :
       reorder_step t2 t2' →
-      reorder_step [a; t2] [a; t2']
+      reorder_step (PeN a t2) (PeN a t2')
   | ReorderStepPostfixSubtree a t1 t1' :
       reorder_step t1 t1' →
-      reorder_step [|t1; a] [|t1'; a]
-  | ReorderStepClosedSubtree a1 t a2 t' :
+      reorder_step (PoN t1 a) (PoN t1' a)
+  | ReorderStepClosedSubtree a τ τ' :
+      reorder_step_list τ τ' →
+      reorder_step (CN a τ) (CN a τ')
+with reorder_step_list : PL → PL → Prop :=
+  | ReorderStepConsSubtree1 t t' a τ :
       reorder_step t t' →
-      reorder_step [(a1; t; a2)] [(a1; t'; a2)].
+      reorder_step_list (CoN t a τ) (CoN t' a τ)
+  | ReorderStepConsSubtree2 t a τ τ' :
+      reorder_step_list τ τ' →
+      reorder_step_list (CoN t a τ) (CoN t a τ').
+
+Scheme reorder_step_tree_list_rec := Induction for reorder_step Sort Prop
+with reorder_step_list_tree_rec := Induction for reorder_step_list Sort Prop.
 
 Notation "t1 ---> t2" := (reorder_step t1 t2) (at level 75).
 Notation "t1 ⟶ t2" := (reorder_step t1 t2) (at level 75).
@@ -124,7 +150,7 @@ Definition reorder := rtsc (reorder_step).
 Notation "t1 <--->* t2" := (reorder t1 t2) (at level 76).
 Notation "t1 ⟷* t2" := (reorder t1 t2) (at level 76).
 
-Lemma reorder_infix_subtree1 t1 oa t2 t1' :
+(* Lemma reorder_infix_subtree1 t1 oa t2 t1' :
   t1 ⟷* t1' →
   [t1; oa; t2] ⟷* [t1'; oa; t2].
 Proof.
@@ -187,13 +213,14 @@ Proof.
       * apply sc_lr. apply ReorderStepClosedSubtree. eassumption.
       * apply sc_rl. apply ReorderStepClosedSubtree. eassumption.
     + assumption.
-Qed.
+Qed. *)
 
 Inductive yield_struct : word → PT → Prop :=
-  | AtomicYieldStruct  l w t :
-      AtomP l →
+  | ClosedYieldStruct :
+      ClosedP ah ac →
+      interleaving ac wi 
       yield_some_struct (AN l) w t →
-      yield_struct (l :: w) t
+      yield_struct (ah :: wi ++ wt) t'
   | PrefixYieldStruct  o w t :
       PreP o →
       yield_struct w t →
