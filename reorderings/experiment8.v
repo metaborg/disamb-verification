@@ -92,6 +92,7 @@ Scheme well_formed_parse_tree_list_rec := Induction for well_formed_parse_tree S
 with well_formed_parse_list_tree_rec := Induction for well_formed_parse_list Sort Prop.      
 
 Notation wf t := (well_formed_parse_tree t).
+Notation wfl := well_formed_parse_list.
 
 Fixpoint yield t : word :=
   match t with
@@ -150,6 +151,12 @@ Definition reorder := rtsc (reorder_step).
 Notation "t1 <--->* t2" := (reorder t1 t2) (at level 76).
 Notation "t1 ⟷* t2" := (reorder t1 t2) (at level 76).
 
+Notation "τ1 ----> τ2" := (reorder_step_list τ1 τ2) (at level 75).
+
+Definition reorder_list := rtsc (reorder_step_list).
+
+Notation "τ1 ---->* τ2" := (reorder_list τ1 τ2) (at level 76).
+
 (* Lemma reorder_infix_subtree1 t1 oa t2 t1' :
   t1 ⟷* t1' →
   [t1; oa; t2] ⟷* [t1'; oa; t2].
@@ -161,15 +168,15 @@ Proof.
       * apply sc_lr. apply ReorderStepInfixSubtree1. assumption.
       * apply sc_rl. apply ReorderStepInfixSubtree1. assumption.
     + assumption.
-Qed.
+Qed. *)
 
-Lemma reorder_infix_subtree2 t1 oa t2 t2' :
+Lemma reorder_infix_subtree2 t1 a t2 t2' :
   t2 ⟷* t2' →
-  [t1; oa; t2] ⟷* [t1; oa; t2'].
+  (IN t1 a t2) ⟷* (IN t1 a t2').
 Proof.
   intro. induction H.
   - apply rtc_refl.
-  - apply rtc_l with [t1; oa; y].
+  - apply rtc_l with (IN t1 a y).
     + inv H. 
       * apply sc_lr. apply ReorderStepInfixSubtree2. assumption.
       * apply sc_rl. apply ReorderStepInfixSubtree2. assumption.
@@ -178,18 +185,18 @@ Qed.
 
 Lemma reorder_prefix_subtree o t2 t2' :
   t2 ⟷* t2' →
-  [o; t2] ⟷* [o; t2'].
+  (PeN o t2) ⟷* (PeN o t2').
 Proof.
   intro. induction H.
   - apply rtc_refl.
-  - apply rtc_l with [o; y].
+  - apply rtc_l with (PeN o y).
     + inv H.
       * apply sc_lr. apply ReorderStepPrefixSubtree. assumption.
       * apply sc_rl. apply ReorderStepPrefixSubtree. assumption.
     + assumption.
 Qed.
 
-Lemma reorder_postfix_subtree t1 o t1' :
+(* Lemma reorder_postfix_subtree t1 o t1' :
   t1 ⟷* t1' →
   [|t1; o] ⟷* [|t1'; o].
 Proof.
@@ -200,9 +207,9 @@ Proof.
       * apply sc_lr. apply ReorderStepPostfixSubtree. assumption.
       * apply sc_rl. apply ReorderStepPostfixSubtree. assumption.
     + assumption.
-Qed.
+Qed. *)
 
-Lemma reorder_closed_subtree a1 t a2 t' :
+(* Lemma reorder_closed_subtree a1 t a2 t' :
   t ⟷* t' →
   [(a1; t; a2)] ⟷* [(a1; t'; a2)].
 Proof.
@@ -216,376 +223,153 @@ Proof.
 Qed. *)
 
 Inductive yield_struct : word → PT → Prop :=
-  | ClosedYieldStruct :
+  | ClosedYieldStruct ah ac wi τ wt t :
       ClosedP ah ac →
-      interleaving ac wi 
-      yield_some_struct (AN l) w t →
-      yield_struct (ah :: wi ++ wt) t'
-  | PrefixYieldStruct  o w t :
+      interleaving ac wi τ →
+      yield_some_struct (CN ah τ) wt t →
+      yield_struct (ah :: wi ++ wt) t
+  | PrefixYieldStruct o w t :
       PreP o →
       yield_struct w t →
-      yield_struct (o :: w) [o; t]
-  | ClosedYieldStruct a1 a2 w wt t t' :
-      ClosedP a1 a2 →
-      yield_struct w t →
-      yield_some_struct [(a1; t; a2)] wt t' →
-      yield_struct (a1 :: w ++ a2 :: wt) t'
+      yield_struct (o :: w) (PeN o t)
+
+with interleaving : list T → word → PL → Prop :=
+  | NilInterleave :
+      interleaving [] [] ϵ
+  | ConsInterleave w1 t ac τ ah w2 :
+      yield_struct w1 t →
+      interleaving ac w2 τ →
+      interleaving (ah :: ac) (w1 ++ ah :: w2) (CoN t ah τ)
 
 with yield_some_struct : PT → word → PT → Prop :=
   | NilYieldStruct t :
       yield_some_struct t [] t
-  | InfixSomeYieldStruct t1 o t2 w :
-      InP (Some o) →
+  | InfixYieldStruct t1 o t2 w :
+      InP o →
       yield_struct w t2 →
-      yield_some_struct t1 (o :: w) [t1; Some o; t2]
-  | InfixNoneYieldStruct t1 t2 w :
-      InP None →
-      yield_struct w t2 →
-      yield_some_struct t1 w [t1; None; t2]
+      yield_some_struct t1 (o :: w) (IN t1 o t2)
   | PostfixYieldStruct o w t1 t :
       PostP o →
-      yield_some_struct [|t1; o] w t →
+      yield_some_struct (PoN t1 o) w t →
       yield_some_struct t1 (o :: w) t.
 
-Notation ys w t := (yield_struct w t).
-Notation yss t w u := (yield_some_struct t w u).
+Notation ys := yield_struct.
+Notation yss := yield_some_struct.
+Notation il := interleaving.
 
 Inductive post_tree : PT → Prop :=
-  | AtomicPostTree l :
-      AtomP l →
-      post_tree AN l
+  | ClosedPostTree a τ :
+      post_tree (CN a τ)
   | PostfixPostTree t a :
-      PostP a →
       post_tree t →
-      post_tree [|t; a].
+      post_tree (PoN t a).
+
 
 Lemma yield_struct_infix_sound w1 t1 w2 t2 a :
-  (ys w1 t1 → ys w2 t2 → InP (Some a) →
-  ∃ t', ys (w1 ++ a :: w2) t' ∧ [t1; Some a; t2] ⟷* t')
-  ∧
-  (∀ ti, yss ti w1 t1 → ys w2 t2 → InP (Some a) →
-  ∃ t', yss ti (w1 ++ a :: w2) t' ∧ [t1; Some a; t2] ⟷* t').
+  ys w1 t1 → ys w2 t2 → InP a →
+  ∃ t', ys (w1 ++ a :: w2) t' ∧ (IN t1 a t2) ⟷* t'
+with
+  yield_some_struct_infix_sound ti w1 t1 w2 t2 a :
+  yss ti w1 t1 → ys w2 t2 → InP a →
+  ∃ t', yss ti (w1 ++ a :: w2) t' ∧ (IN t1 a t2) ⟷* t'.
 Proof.
-  remember (length w1) as n. revert Heqn. revert w1 t1. strong induction n.
-  intros. destruct w1 as [ | a0 w1]; split; intros.
-  - inv H0.
-  - inv H0.
-    + simpl.
-      exists [t1; Some a; t2]. split.
-      * apply InfixSomeYieldStruct; assumption.
-      * apply rtc_refl.
-    + inv H4.
-  - simpl in *.
-    inv H0.
-    + specialize H with (length w1) w1 t1. destruct H; auto.
-      apply H0 in H7; auto.
-      destruct H7 as [t']. destruct H3.
-      exists t'. split; auto.
-      apply AtomicYieldStruct; auto.
-    + specialize H with (length w1) w1 t. destruct H; auto.
-      apply H in H7; auto.
-      destruct H7 as [t']. destruct H3.
-      exists [a0; t']. split.
+  - intros. inv H.
+    + simplify_list_eq. edestruct yield_some_struct_infix_sound; eauto.
+      rename x into t'. destruct H.
+      exists t'. split; eauto. eapply ClosedYieldStruct; eauto.
+    + simpl. specialize yield_struct_infix_sound with w t w2 t2 a.
+      destruct yield_struct_infix_sound; auto. rename x into t'.
+      exists (PeN o t'). inv H. split.
       * apply PrefixYieldStruct; auto.
-      * apply rtc_l with [a0; [t; Some a; t2]].
+      * eapply rtc_l.
         **apply sc_lr. apply ReorderStepInfixPrefix.
         **apply reorder_prefix_subtree. assumption.
-    + simplify_list_eq. specialize H with (length wt) wt t1. destruct H; auto. {
-        rewrite app_length. simpl. lia.
-      }
-      apply H0 in H8; auto. inv H8. inv H3.
-      eexists. split; eauto.
-      eapply ClosedYieldStruct; eauto.
-  - simpl in *.
-    inv H0.
-    + specialize H with (length w1) w1 t3. destruct H; auto.
-      apply H in H8; auto.
-      destruct H8 as [t']. destruct H3.
-      exists [ti; Some a0; t']. split.
-      * apply InfixSomeYieldStruct; auto.
-      * apply rtc_l with [ti; Some a0; [t3; Some a; t2]].
-        **apply sc_lr. apply ReorderStepInfix.
-        **apply reorder_infix_subtree2; assumption.
-    + inv H4.
-      * specialize H with (length w1) w1 t3. destruct H; auto.
-        apply H0 in H8; auto.
-        destruct H8 as [t']. destruct H4.
-        exists [ti; None; t']. split.
-        **apply InfixNoneYieldStruct; auto. apply AtomicYieldStruct; auto.
-        **apply rtc_l with [ti; None; [t3; Some a; t2]].
-          ***apply sc_lr. apply ReorderStepInfix.
-          ***apply reorder_infix_subtree2; assumption.
-      * specialize H with (length w1) w1 t. destruct H; auto.
-        apply H in H8; auto.
-        destruct H8. destruct H4.
-        exists [ti; None; [a0; x]]. split.
-        **apply InfixNoneYieldStruct; auto. apply PrefixYieldStruct; auto.
-        **apply rtc_l with [ti; None; [[a0; t]; Some a; t2]].
-          ***apply sc_lr. apply ReorderStepInfix.
-          ***apply reorder_infix_subtree2.
-            apply rtc_l with [a0; [t; Some a; t2]].
-            ****apply sc_lr. apply ReorderStepInfixPrefix.
-            ****apply reorder_prefix_subtree. assumption.
-      * simplify_list_eq.
-        specialize H with (length wt) wt t3. destruct H; auto. {
-          rewrite app_length. simpl. lia.
-        }
-        apply H0 in H9; auto. inv H9. inv H4.
-        eexists. split.
-        **apply InfixNoneYieldStruct; auto. eapply ClosedYieldStruct; eauto.
-        **eapply rtc_l.
-          ***apply sc_lr. apply ReorderStepInfix.
-          ***apply reorder_infix_subtree2. assumption.
-    + specialize H with (length w1) w1 t1. destruct H; auto.
-      apply H0 in H8; auto.
-      destruct H8 as [t']. destruct H3.
-      exists t'. split; auto.
-      apply PostfixYieldStruct; auto.
-Qed.
-
-Lemma yield_struct_app_sound w1 t1 w2 t2 :
-  (ys w1 t1 → ys w2 t2 → InP None →
-  ∃ t', ys (w1 ++ w2) t' ∧ [t1; None; t2] ⟷* t')
-  ∧
-  (∀ ti, yss ti w1 t1 → ys w2 t2 → InP None →
-  ∃ t', yss ti (w1 ++ w2) t' ∧ [t1; None; t2] ⟷* t').
-Proof.
-  remember (length w1) as n. revert Heqn. revert w1 t1. strong induction n.
-  intros. destruct w1 as [ | a0 w1]; split; intros.
-  - inv H0.
-  - inv H0.
-    + simpl.
-      exists [t1; None; t2]. split.
-      * apply InfixNoneYieldStruct; assumption.
+  - intros. inv H.
+    + simpl. exists (IN t1 a t2). split.
+      * apply InfixYieldStruct; auto.
       * apply rtc_refl.
-    + inv H4.
-  - simpl in *.
-    inv H0.
-    + specialize H with (length w1) w1 t1. destruct H; auto.
-      apply H0 in H7; auto.
-      destruct H7 as [t']. destruct H3.
-      exists t'. split; auto.
-      apply AtomicYieldStruct; auto.
-    + specialize H with (length w1) w1 t. destruct H; auto.
-      apply H in H7; auto.
-      destruct H7 as [t']. destruct H3.
-      exists [a0; t']. split.
-      * apply PrefixYieldStruct; auto.
-      * apply rtc_l with [a0; [t; None; t2]].
-        **apply sc_lr. apply ReorderStepInfixPrefix.
-        **apply reorder_prefix_subtree. assumption.
-    + simplify_list_eq. specialize H with (length wt) wt t1. destruct H; auto. {
-        rewrite app_length. simpl. lia.
-      }
-      apply H0 in H8; auto. inv H8. inv H3.
-      eexists. split; eauto.
-      eapply ClosedYieldStruct; eauto.
-  - simpl in *.
-    inv H0.
-    + specialize H with (length w1) w1 t3. destruct H; auto.
-      apply H in H8; auto.
-      destruct H8 as [t']. destruct H3.
-      exists [ti; Some a0; t']. split.
-      * apply InfixSomeYieldStruct; auto.
-      * apply rtc_l with [ti; Some a0; [t3; None; t2]].
+    + simpl. specialize yield_struct_infix_sound with w t3 w2 t2 a.
+      destruct yield_struct_infix_sound; eauto. rename x into t'. inv H.
+      exists (IN ti o t'). split.
+      * apply InfixYieldStruct; auto.
+      * eapply rtc_l.
         **apply sc_lr. apply ReorderStepInfix.
-        **apply reorder_infix_subtree2; assumption.
-    + inv H4.
-      * specialize H with (length w1) w1 t3. destruct H; auto.
-        apply H0 in H8; auto.
-        destruct H8 as [t']. destruct H4.
-        exists [ti; None; t']. split.
-        **apply InfixNoneYieldStruct; auto. apply AtomicYieldStruct; auto.
-        **apply rtc_l with [ti; None; [t3; None; t2]].
-          ***apply sc_lr. apply ReorderStepInfix.
-          ***apply reorder_infix_subtree2; assumption.
-      * specialize H with (length w1) w1 t. destruct H; auto.
-        apply H in H8; auto.
-        destruct H8. destruct H4.
-        exists [ti; None; [a0; x]]. split.
-        **apply InfixNoneYieldStruct; auto. apply PrefixYieldStruct; auto.
-        **apply rtc_l with [ti; None; [[a0; t]; None; t2]].
-          ***apply sc_lr. apply ReorderStepInfix.
-          ***apply reorder_infix_subtree2.
-            apply rtc_l with [a0; [t; None; t2]].
-            ****apply sc_lr. apply ReorderStepInfixPrefix.
-            ****apply reorder_prefix_subtree. assumption.
-      * simplify_list_eq.
-        specialize H with (length wt) wt t3. destruct H; auto. {
-          rewrite app_length. simpl. lia.
-        }
-        apply H0 in H9; auto. inv H9. inv H4.
-        eexists. split.
-        **apply InfixNoneYieldStruct; auto. eapply ClosedYieldStruct; eauto.
-        **eapply rtc_l.
-          ***apply sc_lr. apply ReorderStepInfix.
-          ***apply reorder_infix_subtree2. assumption.
-    + specialize H with (length w1) w1 t1. destruct H; auto.
-      apply H0 in H8; auto.
-      destruct H8 as [t']. destruct H3.
-      exists t'. split; auto.
-      apply PostfixYieldStruct; auto.
+        **apply reorder_infix_subtree2. assumption.
+    + simpl. edestruct yield_some_struct_infix_sound; eauto. inv H.
+      rename x into t'. exists t'. split; auto. apply PostfixYieldStruct; auto.
 Qed.
 
 Lemma yield_struct_postfix_sound w1 t1 a :
-  (ys w1 t1 → PostP a →
-  ∃ t', ys (w1 ++ [a]) t' ∧ [|t1; a] ⟷* t') ∧
-  (∀ ti, yss ti w1 t1 → PostP a →
-  ∃ t', yss ti (w1 ++ [a]) t' ∧ [|t1; a] ⟷* t').
+  ys w1 t1 → PostP a →
+  ∃ t', ys (w1 ++ [a]) t' ∧ (PoN t1 a) ⟷* t'
+with yield_some_struct_postfix_sound ti w1 t1 a :
+  yss ti w1 t1 → PostP a →
+  ∃ t', yss ti (w1 ++ [a]) t' ∧ (PoN t1 a) ⟷* t'.
 Proof.
-  remember (length w1) as n. revert Heqn. revert w1 t1. strong induction n.
-  intros. destruct w1 as [ | a0 w1]; split; intros.
-  - inv H0.
-  - inv H0.
-    + simpl.
-      exists [|t1; a]. split.
+  - intros. inv H.
+    + simplify_list_eq. edestruct yield_some_struct_postfix_sound; eauto.
+      rename x into t'. inv H. exists t'. split; eauto. eapply ClosedYieldStruct; eauto.
+    + simpl. edestruct yield_struct_postfix_sound; eauto. inv H.
+      rename x into t'. exists (PeN o t'). split.
+      * apply PrefixYieldStruct; auto.
+      * (* [[o t] a] ---> [o [t a]] ---> [o t'] *) admit.
+  - intros. inv H.
+    + simpl. exists (PoN t1 a). split.
       * apply PostfixYieldStruct; auto. apply NilYieldStruct.
       * apply rtc_refl.
-    + inv H3.
-  - simpl in *.
-    inv H0.
-    + specialize H with (length w1) w1 t1. destruct H; auto.
-      apply H0 in H6; auto.
-      destruct H6 as [t']. destruct H2.
-      exists t'. split; auto.
-      apply AtomicYieldStruct; auto.
-    + specialize H with (length w1) w1 t. destruct H; auto.
-      apply H in H6; auto.
-      destruct H6 as [t']. destruct H2.
-      exists [a0; t']. split.
-      * apply PrefixYieldStruct; auto.
-      * apply rtc_l with [a0; [|t; a]].
-        **apply sc_rl. apply ReorderStepPrefixPostfix.
-        **apply reorder_prefix_subtree. assumption.
-    + simplify_list_eq. specialize H with (length wt) wt t1. destruct H; auto. {
-        rewrite app_length. simpl. lia.
-      }
-      apply H0 in H7; auto. inv H7. inv H2.
-      eexists. split; eauto.
-      eapply ClosedYieldStruct; eauto.
-  - simpl in *.
-    inv H0.
-    + specialize H with (length w1) w1 t2. destruct H; auto.
-      apply H in H7; auto.
-      destruct H7 as [t']. destruct H2.
-      exists [ti; Some a0; t']. split.
-      * apply InfixSomeYieldStruct; auto.
-      * apply rtc_l with [ti; Some a0; [|t2; a]].
-        **apply sc_rl. apply ReorderStepInfixPostfix.
-        **apply reorder_infix_subtree2; assumption.
-    + inv H3.
-      * specialize H with (length w1) w1 t2. destruct H; auto.
-        apply H0 in H7; auto.
-        destruct H7 as [t']. destruct H3.
-        exists [ti; None; t']. split.
-        **apply InfixNoneYieldStruct; auto. apply AtomicYieldStruct; auto.
-        **apply rtc_l with [ti; None; [|t2; a]].
-          ***apply sc_rl. apply ReorderStepInfixPostfix.
-          ***apply reorder_infix_subtree2; assumption.
-      * specialize H with (length w1) w1 t. destruct H; auto.
-        apply H in H7; auto.
-        destruct H7. destruct H3.
-        exists [ti; None; [a0; x]]. split.
-        **apply InfixNoneYieldStruct; auto. apply PrefixYieldStruct; auto.
-        **apply rtc_l with [ti; None; [|[a0; t]; a]].
-          ***apply sc_rl. apply ReorderStepInfixPostfix.
-          ***apply reorder_infix_subtree2.
-            apply rtc_l with [a0; [|t; a]].
-            ****apply sc_rl. apply ReorderStepPrefixPostfix.
-            ****apply reorder_prefix_subtree. assumption.
-      * simplify_list_eq.
-        specialize H with (length wt) wt t2. destruct H; auto. {
-          rewrite app_length. simpl. lia.
-        }
-        apply H0 in H8; auto. inv H8. inv H3.
-        eexists. split.
-        **apply InfixNoneYieldStruct; auto. eapply ClosedYieldStruct; eauto.
-        **eapply rtc_l.
-          ***apply sc_rl. apply ReorderStepInfixPostfix.
-          ***apply reorder_infix_subtree2. assumption.
-    + specialize H with (length w1) w1 t1. destruct H; auto.
-      apply H0 in H7; auto.
-      destruct H7 as [t']. destruct H2.
-      exists t'. split; auto.
-      apply PostfixYieldStruct; auto.
-Qed.
+    + simpl. edestruct yield_struct_postfix_sound; eauto. inv H. rename x into t'.
+      exists (IN ti o t'). split.
+      * apply InfixYieldStruct; auto.
+      * (* [[ti o t2] a]  ---> [ti o [t2 a]]  ---> [ti o t'] *) admit. 
+    + simpl. specialize yield_some_struct_postfix_sound with (PoN ti o) w t1 a.
+      destruct yield_some_struct_postfix_sound; auto. inv H. rename x into t'.
+      exists t'. split; auto. apply PostfixYieldStruct; auto.
+Admitted.
 
 Lemma yield_struct_sound t :
-  wf t → exists t', ys (yield t) t' ∧ t ⟷* t'.
+  wf t → exists t', ys (yield t) t' ∧ t ⟷* t'
+with interleave_sound ac τ :
+  wfl ac τ → exists τ', il ac (yield_list τ) τ' ∧ τ ---->* τ'.
 Proof.
-  intro. induction H.
-  - exists AN a. simpl. split.
-    + apply AtomicYieldStruct; try assumption.
-      apply NilYieldStruct.
-    + apply rtc_refl.
-  - simpl.
-    destruct IHwell_formed_parse_tree1 as [t1']. destruct H2.
-    destruct IHwell_formed_parse_tree2 as [t2']. destruct H4.
-    destruct oa as [a|].
-    + apply yield_struct_infix_sound with (yield t1) t1' (yield t2) t2' a in H2 as ?; auto.
-      destruct H6 as [t]. destruct H6.
+  - intros. inv H.
+    + simpl. apply interleave_sound in H1. destruct H1 as [τ']. inv H.
+      exists (CN ah τ'). split.
+      * assert (yield_list τ = yield_list τ ++ []). {
+          simplify_list_eq. reflexivity.
+        }
+        rewrite H. eapply ClosedYieldStruct; eauto. apply NilYieldStruct.
+      *(* Trivial reordering *) admit.
+    + simpl. apply yield_struct_sound in H1. apply yield_struct_sound in H2.
+      destruct H1 as [t1']. destruct H2 as [t2'].
+      inv H. inv H1.
+      apply yield_struct_infix_sound with (yield t1) t1' (yield t2) t2' a in H2; auto.
+      destruct H2 as [t]. inv H1.
       exists t. split; auto.
-      apply rtc_transitive with [t1'; Some a; t2].
-      * apply reorder_infix_subtree1. assumption.
-      * apply rtc_transitive with [t1'; Some a; t2']; auto.
-        apply reorder_infix_subtree2. assumption.
-    + apply yield_struct_app_sound with (yield t1) t1' (yield t2) t2' in H2 as ?; auto.
-      destruct H6 as [t]. destruct H6.
-      eexists. split; eauto.
-      eapply rtc_transitive.
-      * apply reorder_infix_subtree1. eassumption.
-      * eapply rtc_transitive.
-        **apply reorder_infix_subtree2. eassumption.
-        **assumption.
-  - destruct IHwell_formed_parse_tree as [t2']. destruct H1.
-    simpl.
-    exists [a; t2']. split.
-    + apply PrefixYieldStruct; auto.
-    + apply reorder_prefix_subtree. assumption.
-  - destruct IHwell_formed_parse_tree as [t1']. destruct H1.
-    simpl.
-    apply yield_struct_postfix_sound with (yield t1) t1' a in H1; auto.
-    destruct H1 as [t']. destruct H1.
-    exists t'. split; auto.
-    apply rtc_transitive with [|t1'; a]; auto.
-    apply reorder_postfix_subtree. assumption.
-  - destruct IHwell_formed_parse_tree as [t']. destruct H1.
-    simpl.
-    exists [(a1; t'; a2)]. split.
-    + eapply ClosedYieldStruct; eauto.
-      apply NilYieldStruct.
-    + apply reorder_closed_subtree. assumption.
-Qed.
+      (* Trivial reordering *) admit.
+    + simpl. apply yield_struct_sound in H1. destruct H1 as [t2']. inv H.
+      exists (PeN a t2'). split.
+      * apply PrefixYieldStruct; auto.
+      * (* Trivial reordering*) admit.
+    + simpl. apply yield_struct_sound in H1. destruct H1 as [t1']. inv H.
+      apply yield_struct_postfix_sound with (yield t1) t1' a in H1; auto.
+      destruct H1 as [t']. inv H.
+      exists t'. split; auto. (*Trivial reordering*) admit.
+  - intros. inv H.
+    + simpl. exists ϵ. split.
+      * apply NilInterleave.
+      * apply rtc_refl.
+    + simpl. edestruct yield_struct_sound; eauto. rename x into t'. inv H.
+      edestruct interleave_sound; eauto. rename x into τ'. inv H.
+      exists (CoN t' a τ'). split.
+      * apply ConsInterleave; auto.
+      * (* Trivial reordering*) admit.
+Admitted.
 
-Definition InfixSomeProduction a := InfixProduction (Some a).
 
-Definition overlap (PType1 PType2 : T → production T) : Prop :=
-  ∃ a, Productions g (PType1 a) ∧ Productions g (PType2 a).
-
-Record harmless_overlap := mkHarmlessOverlap {
-  harmless1 : overlap AtomicProduction PostfixProduction →
-              overlap PostfixProduction InfixSomeProduction → False;
-  harmless2 : overlap AtomicProduction PostfixProduction →
-              overlap AtomicProduction PrefixProduction → False;
-  harmless3 : overlap PrefixProduction InfixSomeProduction →
-              overlap PostfixProduction InfixSomeProduction → False;
-  harmless4 : overlap PrefixProduction InfixSomeProduction →
-              overlap AtomicProduction PrefixProduction → False;
-  harmless5 : Productions g (InfixProduction None) →
-              overlap AtomicProduction InfixSomeProduction → False;
-  harmless6 : Productions g (InfixProduction None) →
-              overlap AtomicProduction PrefixProduction → False;
-  harmless7 : Productions g (InfixProduction None) →
-              overlap AtomicProduction PostfixProduction → False;
-  harmless8 : Productions g (InfixProduction None) →
-              overlap InfixSomeProduction PrefixProduction → False;
-  harmless9 : Productions g (InfixProduction None) →
-              overlap InfixSomeProduction PostfixProduction → False;
-  harmless10 : Productions g (InfixProduction None) →
-              overlap PrefixProduction PostfixProduction → False;
+Record overlap := mkHarmlessOverlap {
 }.
 
-Lemma yield_struct_closed_deterministic a b1 b2 v1 v2 w1 w2 tv tw (*tiv tv2*) :
+(* Lemma yield_struct_closed_deterministic a b1 b2 v1 v2 w1 w2 tv tw (*tiv tv2*) :
   harmless_overlap →
   ClosedP a b1 → ClosedP a b2 → v1 ++ b1 :: v2 = w1 ++ b2 :: w2 → (* yss tiv v2 tv2 → *)
   (ys v1 tv → ys w1 tw → v1 = w1) ∧
@@ -706,15 +490,21 @@ Proof.
     + destruct H with (length w) a b1 b2 w v2 w0 w2 tv t; auto.
       inv H9. inv H11. eauto.
     + admit. (*TODO open closed + postfix (+ assumptions)*)
-Admitted.
+Admitted. *)
 
 Lemma yield_struct_deterministic w t1 t2 :
-  harmless_overlap →
-  (ys w t1 → ys w t2 → t1 = t2) ∧
-  (∀ ti, yss ti w t1 → yss ti w t2 → t1 = t2) ∧
-  ((overlap PostfixProduction InfixSomeProduction ∨ overlap AtomicProduction PrefixProduction) →
-    ∀ ti, ys w t1 → yss ti w t2 → False).
+  ¬ overlap → ys w t1 → ys w t2 → t1 = t2
+with yield_some_struct_deterministic ti w t1 t2 :
+  ¬ overlap → yss ti w t1 → yss ti w t2 → t1 = t2.
 Proof.
+  - intros. inv H0; simpl in *.
+    + inv H1.
+      * 
+    +
+    +
+    +
+
+
   intro Hharmless. assert (Hharmless' := Hharmless).
   inv Hharmless'. unfold overlap in *. unfold InfixSomeProduction in *.
   remember (length w) as n. revert Heqn. revert w t1 t2.
