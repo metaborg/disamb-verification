@@ -157,18 +157,18 @@ Definition reorder_list := rtsc (reorder_step_list).
 
 Notation "τ1 ---->* τ2" := (reorder_list τ1 τ2) (at level 76).
 
-(* Lemma reorder_infix_subtree1 t1 oa t2 t1' :
+Lemma reorder_infix_subtree1 t1 a t2 t1' :
   t1 ⟷* t1' →
-  [t1; oa; t2] ⟷* [t1'; oa; t2].
+  (IN t1 a t2) ⟷* (IN t1' a t2).
 Proof.
   intro. induction H.
   - apply rtc_refl.
-  - apply rtc_l with [y; oa; t2].
+  - apply rtc_l with (IN y a t2).
     + inv H. 
       * apply sc_lr. apply ReorderStepInfixSubtree1. assumption.
       * apply sc_rl. apply ReorderStepInfixSubtree1. assumption.
     + assumption.
-Qed. *)
+Qed.
 
 Lemma reorder_infix_subtree2 t1 a t2 t2' :
   t2 ⟷* t2' →
@@ -196,22 +196,22 @@ Proof.
     + assumption.
 Qed.
 
-(* Lemma reorder_postfix_subtree t1 o t1' :
+Lemma reorder_postfix_subtree t1 o t1' :
   t1 ⟷* t1' →
-  [|t1; o] ⟷* [|t1'; o].
+  (PoN t1 o) ⟷* (PoN t1' o).
 Proof.
   intro. induction H.
   - apply rtc_refl.
-  - apply rtc_l with [|y; o].
+  - apply rtc_l with (PoN y o).
     + inv H.
       * apply sc_lr. apply ReorderStepPostfixSubtree. assumption.
       * apply sc_rl. apply ReorderStepPostfixSubtree. assumption.
     + assumption.
-Qed. *)
+Qed.
 
 (* Lemma reorder_closed_subtree a1 t a2 t' :
   t ⟷* t' →
-  [(a1; t; a2)] ⟷* [(a1; t'; a2)].
+  (CN a1 t a2) ⟷* (CN a1 t' a2).
 Proof.
   intro. induction H.
   - apply rtc_refl.
@@ -499,7 +499,11 @@ with yield_some_struct_deterministic ti w t1 t2 :
 Proof.
   - intros. inv H0; simpl in *.
     + inv H1.
-      * 
+      * assert (ac0 = ac). { admit. (* By no operator overlap *) }
+        subst.
+        simplify_list_eq.
+
+      * admit. (* Overlap between ah (both Pre and Closed) *)
     +
     +
     +
