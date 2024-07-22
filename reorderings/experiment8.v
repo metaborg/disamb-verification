@@ -365,230 +365,161 @@ Proof.
       * (* Trivial reordering*) admit.
 Admitted.
 
+Inductive closed_op a : Prop :=
+  | ClosedOpHead ac :
+      ClosedP a ac →
+      closed_op a
+  | ClosedOpTail ah ac :
+      ClosedP ah ac →
+      a ∈ ac →
+      closed_op a.
 
-Record overlap := mkHarmlessOverlap {
+Inductive tail ac : list T → Prop :=
+  | TailHead :
+      tail ac ac
+  | TailTail a ac1 :
+      tail ac ac1 →
+      tail ac (a :: ac1).
+
+Inductive closed_tail ac : Prop :=
+  | ClosedTail ah ac2 :
+      ClosedP ah ac2 →
+      tail ac ac2 →
+      closed_tail ac.
+
+Lemma tail_subset a ac1 ac2 :
+  a ∈ ac1 → tail ac1 ac2 → a ∈ ac2.
+Proof.
+  intros. induction H0; auto.
+  right. auto.
+Qed.
+
+Lemma tail_cons a ac1 ac2 :
+  tail (a :: ac1) ac2 → tail ac1 ac2.
+Proof.
+  intro. induction H.
+  - apply TailTail. apply TailHead.
+  - apply TailTail. assumption.
+Qed.
+
+Lemma tail_trans ac1 ac2 ac3 :
+  tail ac1 ac2 → tail ac2 ac3 → tail ac1 ac3.
+Proof.
+  intro. revert ac3. induction H; intros; auto.
+  apply IHtail. eapply tail_cons; eauto.
+Qed.
+
+Record noOverlap := mkNoOverlap {
+  overlap1 : ∀ a ac1 ac2, ClosedP a ac1 → ClosedP a ac2 → ac1 = ac2;
+  overlap2 : ∀ a, closed_op a → InP a → False;
+  overlap3 : ∀ a, closed_op a → PreP a → False;
+  overlap4 : ∀ a, closed_op a → PostP a → False;
+  overlap5 : ∀ a, InP a → PreP a → False;
+  overlap6 : ∀ a, InP a → PostP a → False;
+  overlap7 : ∀ a, PreP a → PostP a → False;
 }.
 
-(* Lemma yield_struct_closed_deterministic a b1 b2 v1 v2 w1 w2 tv tw (*tiv tv2*) :
-  harmless_overlap →
-  ClosedP a b1 → ClosedP a b2 → v1 ++ b1 :: v2 = w1 ++ b2 :: w2 → (* yss tiv v2 tv2 → *)
-  (ys v1 tv → ys w1 tw → v1 = w1) ∧
-  (∀ ti1 ti2, yss ti1 v1 tv → yss ti2 w1 tw → v1 = w1) ∧
-  ((overlap PostfixProduction InfixSomeProduction ∨ overlap AtomicProduction PrefixProduction) →
-      ∀ ti, ys v1 tv → yss ti w1 tw → False) ∧
-  ((overlap PostfixProduction InfixSomeProduction ∨ overlap AtomicProduction PrefixProduction) →
-      ∀ ti, yss ti v1 tv → ys w1 tw → False).
+Hypothesis NO : noOverlap.
+
+Lemma ys_closed_deterministic w11 w12 w21 w22 a t1 t2 :
+  closed_op a →
+  w11 ++ a :: w12 = w21 ++ a :: w22 →
+  ys w11 t1 →
+  ys w21 t2 →
+  w11 = w21
+with yss_closed_deterministic w11 w12 w21 w22 a t1 t2 ti1 ti2 :
+  closed_op a →
+  w11 ++ a :: w12 = w21 ++ a :: w22 →
+  yss ti1 w11 t1 →
+  yss ti2 w21 t2 →
+  w11 = w21
+with il_closed_deterministic w11 w12 w21 w22 ac τ1 τ2 :
+  closed_tail ac →
+  w11 ++ w12 = w21 ++ w22 →
+  il ac w11 τ1 →
+  il ac w21 τ2 →
+  w11 = w21.
 Proof.
-  intro Hharmless. inv Hharmless. unfold overlap in *. unfold InfixSomeProduction in *.
-  remember (length v1) as n. revert Heqn. revert a b1 b2 v1 v2 w1 w2 tv tw (*tiv tv2*). strong induction n.
-  intros. (* rename H3 into Hv2 .*) split; try split; try split; intros.
-  - inv H3; inv H4.
-    + simplify_list_eq. edestruct H with (b1 := b1) (b2 := b2) (v1 := w) (w1 := w0); eauto. inv H8. erewrite H9; eauto.
-    + simplify_list_eq. exfalso.
-      edestruct H with (b1 := b1) (b2 := b2) (v1 := w) (w1 := w0); eauto. inv H8. inv H10. eauto.
-    + simplify_list_eq. admit. (* TODO open closed + atomic overlap *)
-    + simplify_list_eq. exfalso. 
-      edestruct H with (b1 := b1) (b2 := b2) (v1 := w) (w1 := w0); eauto. inv H8. inv H10. eauto.
-    + simplify_list_eq.
-      edestruct H with (b1 := b1) (b2 := b2) (v1 := w) (w1 := w0); eauto. inv H8. erewrite H2; eauto.
-    + simplify_list_eq. admit. (* TODO open closed + prefix overlap *)
-    + simplify_list_eq. admit. (* TODO open closed + atomic overlap *)
-    + simplify_list_eq. admit. (* TODO open closed + prefix overlap *)
-    + simplify_list_eq.
-      
-      edestruct H with (n := length w) (b1 := a2) (b2 := a3) (v1 := w) (w1 := w0); eauto. {
-        rewrite app_length. simpl. lia.
-      }
-      eapply H2 in H6; eauto. subst.
-      simplify_list_eq.
-      edestruct H with (length wt) a b1 b2 wt v2 wt0 w2 tv tw; auto. {
-        rewrite app_length. simpl. lia.
-      }
-      inv H11. erewrite H12; eauto. 
-  - inv H3; inv H4.
-    + reflexivity.
-    + simplify_list_eq. exfalso. admit. (* TODO close closed + infix overlap *)
-    + simplify_list_eq. exfalso. inv H5.
-      * simplify_list_eq. admit. (*TODO close closed + atomic overlap + infix none*)
-      * simplify_list_eq. admit. (*TODO close closed + prefix overlap + infix none*)
-      * simplify_list_eq. admit. (*TODO open closed + close closed + infix none*)
-    + exfalso. simplify_list_eq. admit. (*TODO close closed + postfix*)
-    + exfalso. simplify_list_eq. admit. (*TODO close closed + infix*)
-    + simplify_list_eq.
-      destruct H with (length w) a b1 b2 w v2 w0 w2 t2 t0; auto. rewrite H2; auto.
-    + simpl in *. exfalso. inv H7.
-      * simplify_list_eq.
-        destruct H with (length w) a b1 b2 w v2 w0 w2 t2 t0; auto. inv H9. inv H11. eauto.
-      * simplify_list_eq. eauto.
-      * simplify_list_eq. admit. (*TODO open closed + infix + infix none*)
-    + simplify_list_eq. exfalso.
-      destruct H with (length w) a b1 b2 w v2 w0 w2 t2 tw; auto. inv H8. inv H10. eauto.
-    + exfalso. simplify_list_eq. inv H6.
-      * simplify_list_eq. admit. (*TODO close closed + atomic + infix none*)
-      * simplify_list_eq. admit. (*TODO close closed + prefix + infix none*)
-      * simplify_list_eq. admit. (*TODO open closed + close closed + infix none*)
-    + exfalso. simplify_list_eq. inv H6.
-      * simplify_list_eq. eauto.
-      * simplify_list_eq. eauto.
-      * simplify_list_eq. admit. (*TODO open close + infix + infix none*)
-    + inv H6; inv H7; simplify_list_eq.
-      * destruct H with (length w) a b1 b2 w v2 w0 w2 t2 t0; auto. inv H10.
-        erewrite H11; eauto.
-      * exfalso. eauto.
-      * exfalso. admit. (*TODO open close + atomic + infix none*)
-      * exfalso. eauto.
-      * destruct H with (length w) a b1 b2 w v2 w0 w2 t t1; auto. rewrite H2; auto.
-      * exfalso. admit. (*TODO: open close + prefix + infix none*)
-      * exfalso. admit. (*TODO: open close + atomic + infix none*)
-      * exfalso. admit. (*TODO: open close + prefix + infix none*)
-      * edestruct H with (n := length w) (b1 := a2) (b2 := a3) (v1 := w) (w1 := w0); eauto. {
-          rewrite app_length. simpl. lia.
-        }
-        eapply H2 in H8; eauto. subst. simplify_list_eq.
-        edestruct H with (length wt) a b1 b2 wt v2 wt0 w2 t2 t0; auto. {
-          rewrite app_length. simpl. lia.
-        }
-        inv H13. erewrite H14; eauto.
-    + exfalso. inv H6; simplify_list_eq; eauto.
-      admit. (*TODO open close + postfix + infix none*)
-    + exfalso. simplify_list_eq. admit. (* TODO close closed + postfix *)
-    + exfalso. simplify_list_eq.
-      destruct H with (length w) a b1 b2 w v2 w0 w2 tv t2; auto.
-      inv H8. inv H10. eauto.
-    + exfalso. inv H7; simplify_list_eq; eauto.
-      admit. (*TODO open closed + postfix + infix none*)
-    + simplify_list_eq.
-      destruct H with (length w) a b1 b2 w v2 w0 w2 tv tw; auto.
-      inv H8. erewrite H9; eauto.
-  - inv H4; inv H5; simplify_list_eq.
-    + admit. (*TODO close closed + atomic*)
-    + destruct H with (length w) a b1 b2 w v2 w0 w2 tv t2; auto.
-      inv H9. inv H11. eauto.
-    + inv H3; eauto. inv H5. inv H3. eauto.
-    + inv H3; eauto.
-    + admit. (*TODO close closed + prefix (+ assumptions)*)
-    + inv H3; eauto.
-    + inv H3; eauto. inv H5. inv H3; eauto.
-    + destruct H with (length w) a b1 b2 w v2 w0 w2 t tw; auto.
-      inv H9. inv H11. eauto.
-    + admit. (*TODO open closed + close closed (+ assumptions)*)
-    + admit. (*TODO open closed + infix (+ assumptions)*)
-    + inv H3; eauto. inv H5. inv H3. eauto.
-    + admit. (*TODO open closed + postfix (+ assumptions)*)
-  - inv H4; inv H5; simplify_list_eq.
-    + admit. (*TODO close closed + atomic (+ assumptions)*)
-    + admit. (*TODO close closed + prefix (+ assumptions)*)
-    + admit. (*TODO open closed + close closed (+ assumptions)*)
-    + destruct H with (length w) a b1 b2 w v2 w0 w2 t2 tw; auto.
-      inv H9. inv H11. eauto.
-    + inv H3; eauto.
-    + admit. (*TODO open closed + infix (+ assumptions)*)
-    + inv H3; eauto. inv H5. inv H3; eauto.
-    + inv H3; eauto. inv H5. inv H3; eauto.
-    + inv H3; eauto. inv H5. inv H3; eauto.
-    + inv H3; eauto.
-    + destruct H with (length w) a b1 b2 w v2 w0 w2 tv t; auto.
-      inv H9. inv H11. eauto.
-    + admit. (*TODO open closed + postfix (+ assumptions)*)
-Admitted. *)
+  - intros HC. intros. inv H0; inv H1.
+    + eapply overlap1 in H2; eauto. subst.
+      rewrite <- app_assoc in H1. rewrite <- app_assoc in H1.
+      eapply il_closed_deterministic with (w11 := wi) (w21 := wi0) in H3 as ?;
+      eauto using ClosedTail, TailHead.
+      subst. inv H1.
+      eapply yss_closed_deterministic with (w11 := wt) (w21 := wt0) in H4; eauto.
+      subst. auto. 
+    + exfalso. eapply overlap3 with (a := o); eauto.
+      eapply ClosedOpHead; eauto.
+    + exfalso. eapply overlap3 with (a := ah); eauto.
+      eapply ClosedOpHead; eauto.
+    + eapply ys_closed_deterministic with (w11 := w) (w21 := w0) in H3; eauto.
+      subst. auto.
+  - intros. inv H1; inv H2; auto.
+    + exfalso. eauto using overlap2. 
+    + exfalso. eauto using overlap4.
+    + exfalso. eauto using overlap2.
+    + eapply ys_closed_deterministic with (w11 := w) (w21 := w0) in H4; eauto.
+      subst. auto.
+    + exfalso. eauto using overlap6.
+    + exfalso. eauto using overlap4.
+    + exfalso. eauto using overlap6.
+    + eapply yss_closed_deterministic with (w11 := w) (w21 := w0) in H4; eauto.
+      subst. auto.
+  - intros. inv H1; inv H2; auto.
+    rewrite <- app_assoc in H0. rewrite <- app_assoc in H0. simpl in H0.
+    assert (closed_op ah). {
+      inv H.
+      eapply ClosedOpTail; eauto.
+      eapply tail_subset; eauto.
+      left.
+    }
+    eapply ys_closed_deterministic with (w11 := w1) (w21 := w0) in H3; eauto.
+    subst. inv H0.
+    assert (closed_tail ac0). {
+      inv H.
+      eapply ClosedTail; eauto.
+      eapply tail_cons; eauto.
+    }
+    eapply il_closed_deterministic with (w11 := w2) (w21 := w3) in H4; eauto.
+    subst. auto.
+Qed.
 
-Lemma yield_struct_deterministic w t1 t2 :
-  ¬ overlap → ys w t1 → ys w t2 → t1 = t2
-with yield_some_struct_deterministic ti w t1 t2 :
-  ¬ overlap → yss ti w t1 → yss ti w t2 → t1 = t2.
+Lemma ys_deterministic w t1 t2 :
+  ys w t1 → ys w t2 → t1 = t2
+with yss_deterministic ti w t1 t2 :
+  yss ti w t1 → yss ti w t2 → t1 = t2
+with il_deterministic ac w τ1 τ2 :
+  closed_tail ac → il ac w τ1 → il ac w τ2 → τ1 = τ2. 
 Proof.
-  - intros. inv H0; simpl in *.
-    + inv H1.
-      * assert (ac0 = ac). { admit. (* By no operator overlap *) }
-        subst.
-        simplify_list_eq.
-
-      * admit. (* Overlap between ah (both Pre and Closed) *)
-    +
-    +
-    +
-
-
-  intro Hharmless. assert (Hharmless' := Hharmless).
-  inv Hharmless'. unfold overlap in *. unfold InfixSomeProduction in *.
-  remember (length w) as n. revert Heqn. revert w t1 t2.
-  strong induction n; intros. split; [intros|split; intros].
-  - inv H0; inv H1; simpl in *.
-    + specialize H with (length w0) w0 t1 t2.
-      destruct H; auto. destruct H0. erewrite H0; eauto.
-    + exfalso. specialize H with (length w0) w0 t t1.
-      destruct H; auto. inv H0. eauto.
-    + exfalso. admit. (* TODO open closed + atomic overlap *)
-    + exfalso. specialize H with (length w0) w0 t t2.
-      destruct H; auto. inv H0. eauto.
-    + specialize H with (length w0) w0 t t0. destruct H; auto. rewrite H; auto.
-    + exfalso. admit. (* TODO open closed + prefix overlap *)
-    + exfalso. admit. (* TODO open closed + atomic overlap*)
-    + exfalso. admit. (* TODO open closed + prefix overlap *)
-    + eapply yield_struct_closed_deterministic in H5 as ?; eauto.
-      inv H0. erewrite H1 in *; eauto. simplify_list_eq.
-      clear H1 H8.
-      destruct H with (length w0) w0 t t0; auto. {
-        rewrite app_length. simpl. lia.
-      }
-      rewrite H0 in *; auto.
-      clear H0 H1.
-      destruct H with (length wt) wt t1 t2; auto. {
-        rewrite app_length. simpl. lia.
-      }
-      inv H1. eapply H5; eauto.
-  - inv H0; inv H1; simpl in *.
-    + reflexivity.
-    + inv H2.
-    + destruct H with (length w0) w0 t3 t0; auto. rewrite H0; auto.
-    + exfalso. inv H4; simpl in *.
-      * eauto.
-      * eauto.
-      * admit. (*TODO open closed + infix + infix none*)
-    + exfalso. destruct H with (length w0) w0 t3 t2; auto.
-      inv H1. eauto.
-    + inv H3.
-    + exfalso. inv H3; simpl in *; eauto.
-      admit. (*TODO open closed + infix + infix none*)
-    + inv H3; inv H4; simpl in *.
-      * destruct H with (length w0) w0 t3 t0; auto.
-        inv H4. erewrite H6; eauto.
-      * exfalso. eauto.
-      * exfalso. admit. (*TODO open closed + atomic + infix none*)
-      * exfalso. eauto.
-      * destruct H with (length w0) w0 t t1; auto. rewrite H3; auto.
-      * exfalso. admit. (*TODO open closed + prefix + infix none*)
-      * exfalso. admit. (*TODO open closed + atomic + infix none*)
-      * exfalso. admit. (*TODO open closed + prefix + infix none*)
-      * eapply yield_struct_closed_deterministic in H7 as ?; eauto.
-        inv H3. erewrite H4 in *; eauto. simplify_list_eq.
-        clear H4 H10.
-        destruct H with (length w0) w0 t t1; auto. {
-          rewrite app_length. simpl. lia.
-        }
-        rewrite H3 in *; auto. clear H3 H4.
-        destruct H with (length wt) wt t3 t0; auto. {
-          rewrite app_length. simpl. lia.
-        }
-        inv H4. erewrite H7; eauto.
-    + exfalso. inv H3; eauto.
-      admit. (*TODO open closed + postfix + infix none*)
-    + exfalso. destruct H with (length w0) w0 t3 t1; auto.
-      inv H1. eauto.
-    + exfalso. inv H4; eauto.
-      admit. (*TODO open closed + postfix + infix none*)
-    + destruct H with (length w0) w0 t1 t2; auto. inv H1. eapply H4; eauto.
-  - inv H1; inv H2; simpl in *; eauto.
-    + destruct H with (length w0) w0 t3 t1; auto. inv H2. eauto.
-    + inv H0; eauto. inv H2. inv H0; eauto.
-    + inv H0; eauto.
-    + inv H0; eauto.
-    + inv H0; eauto. inv H2. inv H0; eauto.
-    + destruct H with (length w0) w0 t t2; auto. inv H2. eauto.
-    + admit. (*TODO open closed + infix*)
-    + inv H0; eauto. inv H2. inv H0; eauto.
-    + admit. (*TODO open closed + postfix*)
-Admitted.
+  - intros. inv H; inv H0.
+    + eapply overlap1 in H1; eauto. subst.
+      assert (closed_tail ac). { eapply ClosedTail; eauto. apply TailHead. }
+      eapply il_closed_deterministic in H2 as ?; eauto. subst.
+      inv H4.
+      eapply il_deterministic in H2 as ?; eauto. subst.
+      eapply yss_deterministic in H3; eauto.
+    + exfalso. eauto using overlap3, ClosedOpHead.
+    + exfalso. eauto using overlap3, ClosedOpHead.
+    + eapply ys_deterministic in H2; eauto. subst. auto.
+  - intros. inv H; inv H0.
+    + auto.
+    + eapply ys_deterministic in H2; eauto. subst. auto.
+    + exfalso. eauto using overlap6.
+    + exfalso. eauto using overlap6.
+    + eapply yss_deterministic with (t2 := t2) in H2; assumption.
+  - intros. inv H0; inv H1; auto.
+    assert (closed_op ah). {
+      inv H. eapply ClosedOpTail; eauto.
+      eapply tail_subset; eauto. left.
+    }
+    eapply ys_closed_deterministic in H2 as ?; eauto. subst.
+    inv H5.
+    eapply ys_deterministic in H2; eauto. subst.
+    assert (closed_tail ac0). {
+      inv H. eapply ClosedTail; eauto using tail_cons.
+    }
+    eapply il_deterministic in H3; eauto. subst. auto.
+Qed.
 
 Lemma rtsc_symmetry {A} (R : relation A) (x y : A) :
   rtsc R x y → rtsc R y x.
@@ -603,16 +534,16 @@ Proof.
 Qed.
 
 Lemma yield_reorder t1 t2 :
-  harmless_overlap →
+  ¬ overlap →
   wf t1 → wf t2 → yield t1 = yield t2 → t1 ⟷* t2.
 Proof.
-  intro Hharmless. intros.
+  intro HOverlap. intros.
   apply yield_struct_sound in H. destruct H as [t1']. destruct H.
   apply yield_struct_sound in H0. destruct H0 as [t2']. destruct H0.
-  rewrite H1 in H. apply yield_struct_deterministic with (yield t2) t1' t2' in H; auto.
+  rewrite H1 in H. apply ys_deterministic with (yield t2) t1' t2' in H; auto.
   subst.
   apply rtc_transitive with t2'; auto.
   apply rtsc_symmetry. assumption.
 Qed.
 
-End Experiment7.
+End Experiment8.
