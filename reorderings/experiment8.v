@@ -1,6 +1,5 @@
 From stdpp Require Export list.
 From stdpp Require Export relations.
-Load "Lib/StrongInduction".
 
 Section Experiment8.
 
@@ -155,7 +154,7 @@ Notation "τ1 ----> τ2" := (reorder_step_list τ1 τ2) (at level 75).
 
 Definition reorder_list := rtsc (reorder_step_list).
 
-Notation "τ1 ---->* τ2" := (reorder_list τ1 τ2) (at level 76).
+Notation "τ1 <---->* τ2" := (reorder_list τ1 τ2) (at level 76).
 
 Lemma reorder_infix_subtree1 t1 a t2 t1' :
   t1 ⟷* t1' →
@@ -209,18 +208,44 @@ Proof.
     + assumption.
 Qed.
 
-(* Lemma reorder_closed_subtree a1 t a2 t' :
-  t ⟷* t' →
-  (CN a1 t a2) ⟷* (CN a1 t' a2).
+Lemma reorder_closed_subtree a τ τ' :
+  τ <---->* τ' →
+  (CN a τ) ⟷* (CN a τ').
 Proof.
   intro. induction H.
   - apply rtc_refl.
-  - eapply rtc_l.
+  - apply rtc_l with (CN a y).
     + inv H.
-      * apply sc_lr. apply ReorderStepClosedSubtree. eassumption.
-      * apply sc_rl. apply ReorderStepClosedSubtree. eassumption.
+      * apply sc_lr. apply ReorderStepClosedSubtree. assumption.
+      * apply sc_rl. apply ReorderStepClosedSubtree. assumption.
     + assumption.
-Qed. *)
+Qed.
+
+Lemma reorder_cons_subtree1 t t' a τ :
+  t ⟷* t' →
+  (CoN t a τ) <---->* (CoN t' a τ).
+Proof.
+  intro. induction H.
+  - apply rtc_refl.
+  - apply rtc_l with (CoN y a τ).
+    + inv H.
+      * apply sc_lr. apply ReorderStepConsSubtree1. assumption.
+      * apply sc_rl. apply ReorderStepConsSubtree1. assumption.
+    + assumption.
+Qed.
+
+Lemma reorder_cons_subtree2 t a τ τ' :
+  τ <---->* τ' →
+  (CoN t a τ) <---->* (CoN t a τ').
+Proof.
+  intro. induction H.
+  - apply rtc_refl.
+  - apply rtc_l with (CoN t a y).
+    + inv H.
+      * apply sc_lr. apply ReorderStepConsSubtree2. assumption.
+      * apply sc_rl. apply ReorderStepConsSubtree2. assumption.
+    + assumption.
+Qed.
 
 Inductive yield_struct : word → PT → Prop :=
   | ClosedYieldStruct ah ac wi τ wt t :
@@ -312,7 +337,9 @@ Proof.
     + simpl. edestruct yield_struct_postfix_sound; eauto. inv H.
       rename x into t'. exists (PeN o t'). split.
       * apply PrefixYieldStruct; auto.
-      * (* [[o t] a] ---> [o [t a]] ---> [o t'] *) admit.
+      * eapply rtc_transitive. apply rtc_once.
+        apply sc_rl. apply ReorderStepPrefixPostfix.
+        apply reorder_prefix_subtree. assumption.
   - intros. inv H.
     + simpl. exists (PoN t1 a). split.
       * apply PostfixYieldStruct; auto. apply NilYieldStruct.
@@ -320,16 +347,18 @@ Proof.
     + simpl. edestruct yield_struct_postfix_sound; eauto. inv H. rename x into t'.
       exists (IN ti o t'). split.
       * apply InfixYieldStruct; auto.
-      * (* [[ti o t2] a]  ---> [ti o [t2 a]]  ---> [ti o t'] *) admit. 
+      * eapply rtc_transitive. apply rtc_once.
+        apply sc_rl. apply ReorderStepInfixPostfix.
+        apply reorder_infix_subtree2. assumption.
     + simpl. specialize yield_some_struct_postfix_sound with (PoN ti o) w t1 a.
       destruct yield_some_struct_postfix_sound; auto. inv H. rename x into t'.
       exists t'. split; auto. apply PostfixYieldStruct; auto.
-Admitted.
+Qed.
 
 Lemma yield_struct_sound t :
   wf t → exists t', ys (yield t) t' ∧ t ⟷* t'
 with interleave_sound ac τ :
-  wfl ac τ → exists τ', il ac (yield_list τ) τ' ∧ τ ---->* τ'.
+  wfl ac τ → exists τ', il ac (yield_list τ) τ' ∧ τ <---->* τ'.
 Proof.
   - intros. inv H.
     + simpl. apply interleave_sound in H1. destruct H1 as [τ']. inv H.
@@ -338,22 +367,29 @@ Proof.
           simplify_list_eq. reflexivity.
         }
         rewrite H. eapply ClosedYieldStruct; eauto. apply NilYieldStruct.
-      *(* Trivial reordering *) admit.
+      * apply reorder_closed_subtree. assumption.
     + simpl. apply yield_struct_sound in H1. apply yield_struct_sound in H2.
       destruct H1 as [t1']. destruct H2 as [t2'].
       inv H. inv H1.
       apply yield_struct_infix_sound with (yield t1) t1' (yield t2) t2' a in H2; auto.
       destruct H2 as [t]. inv H1.
       exists t. split; auto.
-      (* Trivial reordering *) admit.
+      eapply rtc_transitive.
+      apply reorder_infix_subtree1; eauto.
+      eapply rtc_transitive.
+      apply reorder_infix_subtree2; eauto.
+      assumption.
     + simpl. apply yield_struct_sound in H1. destruct H1 as [t2']. inv H.
       exists (PeN a t2'). split.
       * apply PrefixYieldStruct; auto.
-      * (* Trivial reordering*) admit.
+      * eauto using reorder_prefix_subtree.
     + simpl. apply yield_struct_sound in H1. destruct H1 as [t1']. inv H.
       apply yield_struct_postfix_sound with (yield t1) t1' a in H1; auto.
       destruct H1 as [t']. inv H.
-      exists t'. split; auto. (*Trivial reordering*) admit.
+      exists t'. split; auto.
+      eapply rtc_transitive.
+      eapply reorder_postfix_subtree; eauto.
+      assumption.
   - intros. inv H.
     + simpl. exists ϵ. split.
       * apply NilInterleave.
@@ -362,8 +398,10 @@ Proof.
       edestruct interleave_sound; eauto. rename x into τ'. inv H.
       exists (CoN t' a τ'). split.
       * apply ConsInterleave; auto.
-      * (* Trivial reordering*) admit.
-Admitted.
+      * eapply rtc_transitive.
+        eapply reorder_cons_subtree1; eauto.
+        eapply reorder_cons_subtree2; eauto.
+Qed.
 
 Inductive closed_op a : Prop :=
   | ClosedOpHead ac :
@@ -496,14 +534,14 @@ Proof.
       assert (closed_tail ac). { eapply ClosedTail; eauto. apply TailHead. }
       eapply il_closed_deterministic in H2 as ?; eauto. subst.
       inv H4.
-      eapply il_deterministic in H2 as ?; eauto. subst.
-      eapply yss_deterministic in H3; eauto.
+      eapply il_deterministic with (τ2 := τ0) in H2 as ?; eauto. subst.
+      eapply yss_deterministic with (t2 := t2) in H3; eauto.
     + exfalso. eauto using overlap3, ClosedOpHead.
     + exfalso. eauto using overlap3, ClosedOpHead.
-    + eapply ys_deterministic in H2; eauto. subst. auto.
+    + eapply ys_deterministic with (t2 := t0) in H2; eauto. subst. auto.
   - intros. inv H; inv H0.
     + auto.
-    + eapply ys_deterministic in H2; eauto. subst. auto.
+    + eapply ys_deterministic with (t2 := t0) in H2; eauto. subst. auto.
     + exfalso. eauto using overlap6.
     + exfalso. eauto using overlap6.
     + eapply yss_deterministic with (t2 := t2) in H2; assumption.
@@ -514,11 +552,11 @@ Proof.
     }
     eapply ys_closed_deterministic in H2 as ?; eauto. subst.
     inv H5.
-    eapply ys_deterministic in H2; eauto. subst.
+    eapply ys_deterministic with (t2 := t0) in H2; eauto. subst.
     assert (closed_tail ac0). {
       inv H. eapply ClosedTail; eauto using tail_cons.
     }
-    eapply il_deterministic in H3; eauto. subst. auto.
+    eapply il_deterministic with (τ2 := τ0) in H3; eauto. subst. auto.
 Qed.
 
 Lemma rtsc_symmetry {A} (R : relation A) (x y : A) :
@@ -534,10 +572,9 @@ Proof.
 Qed.
 
 Lemma yield_reorder t1 t2 :
-  ¬ overlap →
   wf t1 → wf t2 → yield t1 = yield t2 → t1 ⟷* t2.
 Proof.
-  intro HOverlap. intros.
+  intros.
   apply yield_struct_sound in H. destruct H as [t1']. destruct H.
   apply yield_struct_sound in H0. destruct H0 as [t2']. destruct H0.
   rewrite H1 in H. apply ys_deterministic with (yield t2) t1' t2' in H; auto.
