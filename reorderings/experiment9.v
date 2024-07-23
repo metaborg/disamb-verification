@@ -428,13 +428,22 @@ Proof.
 Qed.
 
 Inductive closed_op a : Prop :=
-  | ClosedOpHead ac :
+  (* | ClosedOpHead ac :
       ClosedP a ac →
-      closed_op a
+      closed_op a *)
   | ClosedOpTail ah ac :
       ClosedP ah ac →
       a ∈ ac →
       closed_op a.
+
+Inductive infix_op a : Prop :=
+  (* | InfixOpHead ac :
+      InP a ac →
+      infix_op a *)
+  | InfixOpTail ah ac :
+      InP ah ac →
+      a ∈ ac →
+      infix_op a.
 
 Inductive tail ac : list T → Prop :=
   | TailHead :
@@ -448,6 +457,12 @@ Inductive closed_tail ac : Prop :=
       ClosedP ah ac2 →
       tail ac ac2 →
       closed_tail ac.
+
+Inductive infix_tail ac : Prop :=
+  | InfixTail ah ac2 :
+      InP ah ac2 →
+      tail ac ac2 →
+      infix_tail ac.
 
 Lemma tail_subset a ac1 ac2 :
   a ∈ ac1 → tail ac1 ac2 → a ∈ ac2.
@@ -471,79 +486,115 @@ Proof.
   apply IHtail. eapply tail_cons; eauto.
 Qed.
 
+Inductive mixfix_op a : Prop :=
+  | MixfixOpClosed :
+      closed_op a →
+      mixfix_op a
+  | MixfixOpInfix :
+      infix_op a →
+      mixfix_op a.
+
+Inductive mixfix_tail ac : Prop :=
+  | MixfixTailClosed :
+      closed_tail ac →
+      mixfix_tail ac
+  | MixfixTailInfix :
+      infix_tail ac →
+      mixfix_tail ac.
+
+Create HintDb ops.
+Hint Constructors closed_op infix_op tail closed_tail infix_tail mixfix_op mixfix_tail : ops.
+
+
 Record noOverlap := mkNoOverlap {
-  (* overlap1 : ∀ a ac1 ac2, ClosedP a ac1 → ClosedP a ac2 → ac1 = ac2;
-  overlap2 : ∀ a, closed_op a → InP a → False;
-  overlap3 : ∀ a, closed_op a → PreP a → False;
-  overlap4 : ∀ a, closed_op a → PostP a → False;
-  overlap5 : ∀ a, InP a → PreP a → False;
-  overlap6 : ∀ a, InP a → PostP a → False;
-  overlap7 : ∀ a, PreP a → PostP a → False; *)
+  overlap1 : ∀ a ac1 ac2, ClosedP a ac1 → ClosedP a ac2 → ac1 = ac2;
+  overlap2 : ∀ a ac1 ac2, ClosedP a ac1 → InP a ac2 → False;
+  overlap3 : ∀ a ac, ClosedP a ac → PreP a → False;
+  overlap4 : ∀ a ac, ClosedP a ac → PostP a → False;
+  overlap5 : ∀ a ac, closed_op a → InP a ac → False; 
+  overlap6 : ∀ a, closed_op a → infix_op a → False;
+  overlap7 : ∀ a, closed_op a → PreP a → False;
+  overlap8 : ∀ a, closed_op a → PostP a → False;
+  overlap9 : ∀ a ac1 ac2, InP a ac1 → InP a ac2 → ac1 = ac2;
+  overlap10 : ∀ a ac, InP a ac → infix_op a → False;
+  overlap11 : ∀ a ac, InP a ac → PreP a → False;
+  overlap12 : ∀ a ac, InP a ac → PostP a → False;
+  overlap13 : ∀ a, infix_op a → PreP a → False;
+  overlap14 : ∀ a, infix_op a → PostP a → False;
+  overlap15 : ∀ a, PreP a → PostP a → False;
 }.
+
+Create HintDb overlap.
+Hint Resolve overlap1 overlap2 overlap3 overlap4 overlap5 overlap6 overlap7 overlap8
+  overlap9 overlap10 overlap11 overlap12 overlap13 overlap14 overlap15 : overlap.
 
 Hypothesis NO : noOverlap.
 
 Lemma ys_closed_deterministic w11 w12 w21 w22 a t1 t2 :
-  closed_op a →
+  mixfix_op a →
   w11 ++ a :: w12 = w21 ++ a :: w22 →
   ys w11 t1 →
   ys w21 t2 →
   w11 = w21
 with yss_closed_deterministic w11 w12 w21 w22 a t1 t2 ti1 ti2 :
-  closed_op a →
+  mixfix_op a →
   w11 ++ a :: w12 = w21 ++ a :: w22 →
   yss ti1 w11 t1 →
   yss ti2 w21 t2 →
   w11 = w21
 with il_closed_deterministic w11 w12 w21 w22 ac τ1 τ2 :
-  closed_tail ac →
+  mixfix_tail ac →
   w11 ++ w12 = w21 ++ w22 →
   il ac w11 τ1 →
   il ac w21 τ2 →
   w11 = w21.
 Proof.
-  - intros HC. intros. inv H0; inv H1.
-    + assert (ac = ac0). admit. subst.
+  - intros HM. intros. inv H0; inv H1.
+    + eapply overlap1 in H2 as ?; eauto. subst.
       rewrite <- app_assoc in H1. rewrite <- app_assoc in H1.
       eapply il_closed_deterministic with (w11 := wi) (w21 := wi0) in H3 as ?;
-      eauto using ClosedTail, TailHead.
+      eauto; [|inv HM; eauto with ops].
       subst. inv H1.
       eapply yss_closed_deterministic with (w11 := wt) (w21 := wt0) in H4; eauto.
       subst. auto. 
-    + admit.
-    + admit.
+    + exfalso. eauto with overlap.
+    + exfalso. eauto with overlap.
     + eapply ys_closed_deterministic with (w11 := w) (w21 := w0) in H3; eauto.
       subst. auto.
   - intros. inv H1; inv H2; auto.
-    + admit. 
-    + admit.
-    + admit.
+    + exfalso. inv H; eauto with overlap. 
+    + exfalso. inv H; eauto with overlap.
+    + exfalso. inv H; eauto with overlap.
     + repeat rewrite <- app_assoc in H2.
-
-(* BOOKMARK *)
-
-
-      eapply ys_closed_deterministic with (w11 := w) (w21 := w0) in H4; eauto.
-      subst. auto.
-    + exfalso. eauto using overlap6.
-    + exfalso. eauto using overlap4.
-    + exfalso. eauto using overlap6.
+      eapply overlap9 in H3 as ?; eauto. subst.
+      eapply il_closed_deterministic with (w11 := wi) (w21 := wi0) in H4 as ?; eauto with ops.
+      subst. inv H2.
+      eapply ys_closed_deterministic with (w11 := wt) (w21 := wt0) in H5 as ?; eauto.
+      subst. reflexivity.
+    + exfalso. eauto with overlap.
+    + exfalso. inv H; eauto with overlap.
+    + exfalso. eauto with overlap.
     + eapply yss_closed_deterministic with (w11 := w) (w21 := w0) in H4; eauto.
-      subst. auto.
+      subst. reflexivity.
   - intros. inv H1; inv H2; auto.
     rewrite <- app_assoc in H0. rewrite <- app_assoc in H0. simpl in H0.
-    assert (closed_op ah). {
+    assert (mixfix_op ah). {
       inv H.
-      eapply ClosedOpTail; eauto.
-      eapply tail_subset; eauto.
-      left.
+      - inv H1. eapply MixfixOpClosed.
+        eapply ClosedOpTail; eauto.
+        eapply tail_subset; eauto.
+        left.
+      - inv H1. eapply MixfixOpInfix.
+        eapply InfixOpTail; eauto.
+        eapply tail_subset; eauto.
+        left.
     }
     eapply ys_closed_deterministic with (w11 := w1) (w21 := w0) in H3; eauto.
     subst. inv H0.
-    assert (closed_tail ac0). {
+    assert (mixfix_tail ac0). {
       inv H.
-      eapply ClosedTail; eauto.
-      eapply tail_cons; eauto.
+      - inv H0; eauto using tail_cons with ops.
+      - inv H0; eauto using tail_cons with ops.
     }
     eapply il_closed_deterministic with (w11 := w2) (w21 := w3) in H4; eauto.
     subst. auto.
@@ -554,34 +605,47 @@ Lemma ys_deterministic w t1 t2 :
 with yss_deterministic ti w t1 t2 :
   yss ti w t1 → yss ti w t2 → t1 = t2
 with il_deterministic ac w τ1 τ2 :
-  closed_tail ac → il ac w τ1 → il ac w τ2 → τ1 = τ2. 
+  mixfix_tail ac → il ac w τ1 → il ac w τ2 → τ1 = τ2. 
 Proof.
   - intros. inv H; inv H0.
-    + eapply overlap1 in H1; eauto. subst.
-      assert (closed_tail ac). { eapply ClosedTail; eauto. apply TailHead. }
+    + eapply overlap1 in H1 as ?; eauto. subst.
+      assert (mixfix_tail ac). { eauto with ops. }
       eapply il_closed_deterministic in H2 as ?; eauto. subst.
       inv H4.
       eapply il_deterministic with (τ2 := τ0) in H2 as ?; eauto. subst.
       eapply yss_deterministic with (t2 := t2) in H3; eauto.
-    + exfalso. eauto using overlap3, ClosedOpHead.
-    + exfalso. eauto using overlap3, ClosedOpHead.
+    + exfalso. eauto with overlap.
+    + exfalso. eauto with overlap.
     + eapply ys_deterministic with (t2 := t0) in H2; eauto. subst. auto.
   - intros. inv H; inv H0.
     + auto.
-    + eapply ys_deterministic with (t2 := t0) in H2; eauto. subst. auto.
-    + exfalso. eauto using overlap6.
-    + exfalso. eauto using overlap6.
+    + eapply overlap9 in H1 as ?; eauto. subst.
+      eapply il_closed_deterministic in H4 as ?; eauto with ops.
+      subst. inv H4.
+      eapply il_deterministic with (τ2 := τ0) in H2 as ?; eauto with ops.
+      subst.
+      eapply ys_deterministic with (t2 := t0) in H3; eauto.
+      subst. reflexivity.
+    + exfalso. eauto with overlap.
+    + exfalso. eauto with overlap.
     + eapply yss_deterministic with (t2 := t2) in H2; assumption.
   - intros. inv H0; inv H1; auto.
-    assert (closed_op ah). {
-      inv H. eapply ClosedOpTail; eauto.
-      eapply tail_subset; eauto. left.
+    assert (mixfix_op ah). {
+      inv H.
+      - inv H0. apply MixfixOpClosed.
+        eapply ClosedOpTail; eauto.
+        eapply tail_subset; eauto. left.
+      - inv H0. apply MixfixOpInfix.
+        eapply InfixOpTail; eauto.
+        eapply tail_subset; eauto. left.
     }
     eapply ys_closed_deterministic in H2 as ?; eauto. subst.
     inv H5.
     eapply ys_deterministic with (t2 := t0) in H2; eauto. subst.
-    assert (closed_tail ac0). {
-      inv H. eapply ClosedTail; eauto using tail_cons.
+    assert (mixfix_tail ac0). {
+      inv H.
+      - inv H1. eauto using tail_cons with ops.
+      - inv H1. eauto using tail_cons with ops. 
     }
     eapply il_deterministic with (τ2 := τ0) in H3; eauto. subst. auto.
 Qed.
@@ -610,4 +674,4 @@ Proof.
   apply rtsc_symmetry. assumption.
 Qed.
 
-End Experiment8.
+End Experiment9.
