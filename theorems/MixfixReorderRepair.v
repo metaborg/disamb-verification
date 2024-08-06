@@ -28,7 +28,7 @@ Proof.
 Qed.
 
 Lemma repair_cr_assoc Q p1 t11 τ1 p2 t21 τ2 t22 :
-  complete_crules Q → right_dangling p1 → left_dangling p2 →
+  complete_crules Q → right_recursive p1 → left_recursive p2 →
   ¬ p2 CL p1 ∠ Q →
   (∀ p, p1 CR p ∠ Q → ¬ p LM t21) →
   repair_cr Q p1 t11 τ1 (repair_cr Q p2 t21 τ2 t22) = repair_cr Q p2 (large_node p1 t11 τ1 t21) τ2 t22.
@@ -135,7 +135,7 @@ Proof.
 Qed.
 
 Lemma repair_top_repair_cr_assoc g X Q p1 t11 τ1 p2 t21 τ2 t22 :
-  complete_crules Q → right_dangling p1 → left_dangling p2 → wft g X t21 →
+  complete_crules Q → right_recursive p1 → left_recursive p2 → wft g X t21 →
   (∀ p, p1 CL p ∠ Q → ¬ p RM t11) →
   repair_cr Q p1 t11 τ1 (repair_top Q p2 t21 τ2 t22) = repair_top Q p2 (repair_cr Q p1 t11 τ1 t21) τ2 t22.
 Proof.
@@ -187,7 +187,7 @@ Qed.
 
 Lemma repair_top_assoc g X Q p1 t11 τ1 p2 t21 τ2 t22 :
   complete_crules Q →
-  right_dangling p1 → left_dangling p2 → wft g X (large_node p1 t11 τ1 (large_node p2 t21 τ2 t22)) →
+  right_recursive p1 → left_recursive p2 → wft g X (large_node p1 t11 τ1 (large_node p2 t21 τ2 t22)) →
   repair_top Q p1 t11 τ1 (repair_top Q p2 t21 τ2 t22) = repair_top Q p2 (repair_top Q p1 t11 τ1 t21) τ2 t22.
 Proof.
   intro. revert X p1 τ1 p2 t21 τ2 t22. induction t11 as [a11|p11 opt_a11|p11 t111 ? τ11 t11n];

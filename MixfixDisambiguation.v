@@ -33,8 +33,8 @@ Record conflict_rules (T : Type) := mk_conflict_rules {
   conflict_right : production T → production T → Prop;
   conflict_left_decidable : RelDecision conflict_left;
   conflict_right_decidable : RelDecision conflict_right;
-  conflict_left_well_formed : ∀ p1 p2, conflict_left p1 p2 → left_dangling p1 ∧ right_dangling p2;
-  conflict_right_well_formed : ∀ p1 p2, conflict_right p1 p2 → right_dangling p1 ∧ left_dangling p2;
+  conflict_left_well_formed : ∀ p1 p2, conflict_left p1 p2 → left_recursive p1 ∧ right_recursive p2;
+  conflict_right_well_formed : ∀ p1 p2, conflict_right p1 p2 → right_recursive p1 ∧ left_recursive p2;
 }.
 
 Global Arguments conflict_left {_} _ _ _.
@@ -55,7 +55,7 @@ Record subset_crules {T} (g : mixfixgrammar T) (Q : crules T) := mk_subset_crule
 
 Definition safe_crules {T} (Q : crules T) : Prop := ∀ p1 p2, ¬ (p1 CL p2 ∠ Q ∧ p2 CR p1 ∠ Q).
 Definition complete_crules {T} (Q : crules T) : Prop := ∀ p1 p2,
-  left_dangling p1 → right_dangling p2 → p1 CL p2 ∠ Q ∨ p2 CR p1 ∠ Q.
+  left_recursive p1 → right_recursive p2 → p1 CL p2 ∠ Q ∨ p2 CR p1 ∠ Q.
 
 Inductive in_rightmost_branch {T} (p : production T) : parse_tree T → Prop :=
   | in_rightmost_branch_root t1 τ tn :
@@ -131,32 +131,32 @@ Definition crules_sentence {T} (g : mixfixgrammar T) (Q : crules T) w :=
 Inductive as_conflict_right_rule {T} (PR : drules T) : production T → production T → Prop :=
   | priority_pattern_right p1 p2 :
       p1 >> p2 ∠ PR →
-      right_dangling p1 →
-      left_dangling p2 →
+      right_recursive p1 →
+      left_recursive p2 →
       as_conflict_right_rule PR p1 p2
   | left_associativity_right p1 p2 :
       p1 lefta p2 ∠ PR →
-      right_dangling p1 →
-      left_dangling p2 →
+      right_recursive p1 →
+      left_recursive p2 →
       as_conflict_right_rule PR p1 p2.
 
 Inductive as_conflict_left_rule {T} (PR : drules T) : production T → production T → Prop :=
   | priority_pattern_left p1 p2 :
       p1 >> p2 ∠ PR →
-      left_dangling p1 →
-      right_dangling p2 →
+      left_recursive p1 →
+      right_recursive p2 →
       as_conflict_left_rule PR p1 p2
   | right_associativity_left p1 p2 :
       p1 righta p2 ∠ PR →
-      left_dangling p1 →
-      right_dangling p2 →
+      left_recursive p1 →
+      right_recursive p2 →
       as_conflict_left_rule PR p1 p2.
 
 Global Instance as_conflict_right_rule_decidable {T} (PR : drules T) : RelDecision (as_conflict_right_rule PR).
 Proof.
   intros p1 p2.
-  destruct (decide (right_dangling p1)) as [Hrd|Hnrd].
-  - destruct (decide (left_dangling p2)) as [Hld|Hnld].
+  destruct (decide (right_recursive p1)) as [Hrd|Hnrd].
+  - destruct (decide (left_recursive p2)) as [Hld|Hnld].
     + destruct (decide (p1 >> p2 ∠ PR)) as [Hprio|Hnprio].
       * left. auto using priority_pattern_right.
       * destruct (decide (p1 lefta p2 ∠ PR)) as [Hlefta|Hnlefta].
@@ -169,8 +169,8 @@ Qed.
 Global Instance as_conflict_left_rule_decidable {T} (PR : drules T) : RelDecision (as_conflict_left_rule PR).
 Proof.
   intros p1 p2.
-  destruct (decide (left_dangling p1)) as [Hld|Hnld].
-  - destruct (decide (right_dangling p2)) as [Hrd|Hnrd].
+  destruct (decide (left_recursive p1)) as [Hld|Hnld].
+  - destruct (decide (right_recursive p2)) as [Hrd|Hnrd].
     + destruct (decide (p1 >> p2 ∠ PR)) as [Hprio|Hnprio].
       * left. auto using priority_pattern_left.
       * destruct (decide (p1 righta p2 ∠ PR)) as [Hrighta|Hnrighta].
@@ -181,13 +181,13 @@ Proof.
 Qed.
 
 Lemma as_conflict_right_rule_well_formed {T} (PR : drules T) :
-  ∀ p1 p2, as_conflict_right_rule PR p1 p2 → right_dangling p1 ∧ left_dangling p2.
+  ∀ p1 p2, as_conflict_right_rule PR p1 p2 → right_recursive p1 ∧ left_recursive p2.
 Proof.
   intros. inv H; auto.
 Qed.
 
 Lemma as_conflict_left_rule_well_formed {T} (PR : drules T) :
-  ∀ p1 p2, as_conflict_left_rule PR p1 p2 → left_dangling p1 ∧ right_dangling p2.
+  ∀ p1 p2, as_conflict_left_rule PR p1 p2 → left_recursive p1 ∧ right_recursive p2.
 Proof.
   intros. inv H; auto.
 Qed.

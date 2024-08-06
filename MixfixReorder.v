@@ -32,15 +32,15 @@ with reorder_step_list_tree_rec := Induction for reorder_step_list Sort Prop.
 Definition reorder {T} := rtsc (@reorder_step T).
 Definition reorder_list {T} := rtsc (@reorder_step_list T).
 
-Inductive left_dangling {T} : production T → Prop :=
-  | left_dangling_intro σ Xn :
-      left_dangling (large_production E σ Xn).
+Inductive left_recursive {T} : production T → Prop :=
+  | left_recursive_intro σ Xn :
+      left_recursive (large_production E σ Xn).
 
-Inductive right_dangling {T} : production T → Prop :=
-  | right_dangling_intro X1 σ :
-      right_dangling (large_production X1 σ E).
+Inductive right_recursive {T} : production T → Prop :=
+  | right_recursive_intro X1 σ :
+      right_recursive (large_production X1 σ E).
 
-Global Instance left_dangling_decidable {T} (p : production T) : Decision (left_dangling p).
+Global Instance left_recursive_decidable {T} (p : production T) : Decision (left_recursive p).
 Proof.
   destruct p.
   - right. intro. inv H.
@@ -49,7 +49,7 @@ Proof.
     + left. constructor.
 Qed.
 
-Global Instance right_dangling_decidable {T} (p : production T) : Decision (right_dangling p).
+Global Instance right_recursive_decidable {T} (p : production T) : Decision (right_recursive p).
 Proof.
   destruct p.
   - right. intro. inv H.
