@@ -13,11 +13,13 @@ Proof.
   intro. inv H. revert H5 H6 H7. revert X1 σ t1 τ. induction H8; simpl; intros.
   - constructor; auto. constructor.
   - constructor; auto. constructor; auto.
-  - destruct (decide (rncf Q (large_production X0 σ0 E) t0 τ0 (large_node (large_production X1 σ Xn) t1 τ tn))).
+  - destruct (decide (rncf Q (large_production X0 σ0 E) (large_node (large_production X1 σ Xn) t1 τ tn))).
     + constructor; auto. constructor; auto.
-    + constructor; auto. inv H8_; auto. exfalso. apply n. intros ???. inv H2. inv H4.
+    + constructor; auto. inv H8_; auto. exfalso. apply n. intros ???. inv H2.
       * apply conflict_right_well_formed in H1. inv H1. inv H3.
-      * inv H3.
+      * inv H4.
+      * apply conflict_right_well_formed in H1. inv H1.
+    +
 Qed.
 
 Lemma repair_top_well_formed g X Q p t1 τ t2 :

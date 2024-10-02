@@ -1,59 +1,63 @@
 From disamb Require Export MixfixDisambiguation.
 From disamb Require Import MyUtils.
 
-Global Instance right_neighborhood_conflict_free_decidable {T} (Q : crules T) p t1 τ tn :
-  Decision (rncf Q p t1 τ tn).
+Global Instance right_neighborhood_conflict_free_decidable {T} (Q : crules T) p t :
+  Decision (rncf Q p t).
 Proof.
   unfold rncf.
-  assert (Decision (∀ p2, p CR p2 ∠ Q → ¬ p2 LM tn)). {
-    clear t1 τ. induction tn.
-    - left. intros ???. inv H0.
-    - left. intros ???. inv H0.
-    - destruct (decide (p CR p0 ∠ Q)).
-      + right. intro. eapply H; eauto. constructor.
-      + destruct (decide (∀ p2, p CR p2 ∠ Q → ¬ p2 LM tn1)).
-        * left. intros ???. inv H0. contradiction. eapply n0; eauto.
-        * right. intro. apply n0. intros ???. eapply H; eauto. constructor. assumption. 
-  }
-  destruct (decide (∀ p2 : production T, p CR p2 ∠ Q → ¬ p2 LM tn)).
-  - left. intros ???. inv H1. eapply n; eauto.
-  - right. intro. apply n. intros ???. eapply H0; eauto. constructor. assumption.
+  induction t.
+  - left. intros ???. inv H0.
+  - left. intros ???. inv H0.
+  - destruct (decide (p CR p0 ∠ Q)).
+    + right. intro. eapply H; eauto. constructor.
+    + destruct IHt1.
+      * destruct IHt2.
+        **left. intros ???. inv H0.
+          ***contradiction.
+          ***eapply n0; eauto.
+          ***eapply n1; eauto.
+        **right. intro. apply n1. intros ???. eapply H; eauto.
+          apply in_neighborhood_right. assumption.
+      * right. intro. apply n0. intros ???. eapply H; eauto.
+          apply in_neighborhood_left. assumption.
 Qed.
 
 Fixpoint repair_cr {T} (Q : crules T) (p : production T)
     (t1 : parse_tree T) (τ : parse_list T) (tn : parse_tree T) :=
   match tn with
   | large_node pn tn1 τn tnn =>
-      if decide (rncf Q p t1 τ tn)
+      if decide (rncf Q p tn)
       then large_node p t1 τ tn
       else large_node pn (repair_cr Q p t1 τ tn1) τn tnn
   | _ => (large_node p t1 τ tn)
   end.
 
-Global Instance left_neighborhood_conflict_free_decidable {T} (Q : crules T) p t1 τ tn :
-  Decision (lncf Q p t1 τ tn).
+Global Instance left_neighborhood_conflict_free_decidable {T} (Q : crules T) p t :
+  Decision (lncf Q p t).
 Proof.
   unfold lncf.
-  assert (Decision (∀ p2, p CL p2 ∠ Q → ¬ p2 RM t1)). {
-    clear tn τ. induction t1.
-    - left. intros ???. inv H0.
-    - left. intros ???. inv H0.
-    - destruct (decide (p CL p0 ∠ Q)).
-      + right. intro. eapply H; eauto. constructor.
-      + destruct (decide (∀ p2 : production T, p CL p2 ∠ Q → ¬ p2 RM t1_2)).
-        * left. intros ???. inv H0. contradiction. eapply n0; eauto.
-        * right. intro. apply n0. intros ???. eapply H; eauto. constructor. assumption. 
-  }
-  destruct (decide (∀ p2 : production T, p CL p2 ∠ Q → ¬ p2 RM t1)).
-  - left. intros ???. inv H1. eapply n; eauto.
-  - right. intro. apply n. intros ???. eapply H0; eauto. constructor. assumption.
+  induction t.
+  - left. intros ???. inv H0.
+  - left. intros ???. inv H0.
+  - destruct (decide (p CL p0 ∠ Q)).
+    + right. intro. eapply H; eauto. constructor.
+    + destruct IHt1.
+      * destruct IHt2.
+        **left. intros ???. inv H0.
+          ***contradiction.
+          ***eapply n0; eauto.
+          ***eapply n1; eauto.
+        **right. intro. apply n1. intros ???. eapply H; eauto.
+          apply in_neighborhood_right. assumption.
+      * right. intro. apply n0. intros ???. eapply H; eauto.
+          apply in_neighborhood_left. assumption.
 Qed.
 
 Fixpoint repair_top {T} (Q : crules T) (p : production T)
     (t1 : parse_tree T) (τ : parse_list T) (tn: parse_tree T) :=
   match t1 with
   | large_node p1 t11 τ1 t1n =>
-      if decide (lncf Q p t1 τ tn)
+      if decide (lncf Q p t1)
       then repair_cr Q p t1 τ tn
       else repair_top Q p1 t11 τ1 (repair_top Q p t1n τ tn)
   | _ => repair_cr Q p t1 τ tn

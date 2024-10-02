@@ -57,43 +57,23 @@ Definition safe_crules {T} (Q : crules T) : Prop := ∀ p1 p2, ¬ (p1 CL p2 ∠ 
 Definition complete_crules {T} (Q : crules T) : Prop := ∀ p1 p2,
   left_recursive p1 → right_recursive p2 → p1 CL p2 ∠ Q ∨ p2 CR p1 ∠ Q.
 
-Inductive in_rightmost_branch {T} (p : production T) : parse_tree T → Prop :=
-  | in_rightmost_branch_root t1 τ tn :
-      in_rightmost_branch p (large_node p t1 τ tn)
-      (*Note: We don't check for small_nodes, because disambiguation rules involving them are nonsensical.*)
-  | in_rightmost_branch_sub p0 t1 τ tn :
-      in_rightmost_branch p tn →
-      in_rightmost_branch p (large_node p0 t1 τ tn).
+Inductive in_neighborhood {T} (p : production T) : parse_tree T → Prop :=
+  | in_neighborhood_root t1 τ tn :
+      in_neighborhood p (large_node p t1 τ tn)
+  | in_neighborhood_left p' t1 τ tn :
+      in_neighborhood p t1 →
+      in_neighborhood p (large_node p' t1 τ tn)
+  | in_neighborhood_right p' t1 τ tn :
+      in_neighborhood p tn →
+      in_neighborhood p (large_node p' t1 τ tn).
 
-Inductive in_leftmost_branch {T} (p : production T) : parse_tree T → Prop :=
-  | in_leftmost_branch_root t1 τ tn :
-      in_leftmost_branch p (large_node p t1 τ tn)
-      (*Note: We don't check for small_nodes, because disambiguation rules involving them are nonsensical.*)
-  | in_leftmost_branch_sub p0 t1 τ tn :
-      in_leftmost_branch p t1 →
-      in_leftmost_branch p (large_node p0 t1 τ tn).
+Notation "p 'N' t" := (in_neighborhood p t) (at level 55).
 
-Notation "p 'LM' t" := (in_leftmost_branch p t) (at level 55).
-Notation "p 'RM' t" := (in_rightmost_branch p t) (at level 56).
+Definition left_neighborhood_conflict_free {T} (Q : conflict_rules T) p t : Prop :=
+  ∀ p', p CL p' ∠ Q → ¬ p' N t.
 
-Inductive in_left_neighborhood {T} (p : production T) : parse_tree T → Prop :=
-  | in_left_neighborhood_intro p0 t1 τ tn :
-      in_rightmost_branch p t1 →
-      in_left_neighborhood p (large_node p0 t1 τ tn).
-
-Inductive in_right_neighborhood {T} (p : production T) : parse_tree T → Prop :=
-  | in_right_neighborhood_intro p0 t1 τ tn :
-      in_leftmost_branch p tn →
-      in_right_neighborhood p (large_node p0 t1 τ tn).
-
-Notation "p 'LN' t" := (in_left_neighborhood p t) (at level 57).
-Notation "p 'RN' t" := (in_right_neighborhood p t) (at level 58).
-
-Definition left_neighborhood_conflict_free {T} (Q : conflict_rules T) p1 t1 τ tn : Prop :=
-  ∀ p2, p1 CL p2 ∠ Q → ¬ p2 LN (large_node p1 t1 τ tn).
-
-Definition right_neighborhood_conflict_free {T} (Q : conflict_rules T) p1 t1 τ tn : Prop :=
-  ∀ p2, p1 CR p2 ∠ Q → ¬ p2 RN (large_node p1 t1 τ tn).
+Definition right_neighborhood_conflict_free {T} (Q : conflict_rules T) p t : Prop :=
+  ∀ p', p CR p' ∠ Q → ¬ p' N t.
 
 Notation lncf := left_neighborhood_conflict_free.
 Notation rncf := right_neighborhood_conflict_free.
@@ -104,8 +84,8 @@ Inductive conflict_free {T} (Q : conflict_rules T) : parse_tree T → Prop :=
   | conflict_free_small_node p opt_a :
       conflict_free Q (small_node p opt_a)
   | conflict_free_large_node p t1 τ tn :
-      lncf Q p t1 τ tn →
-      rncf Q p t1 τ tn →
+      lncf Q p t1 →
+      rncf Q p tn →
       conflict_free Q t1 →
       conflict_free_list Q τ →
       conflict_free Q tn →
